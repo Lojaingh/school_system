@@ -81,13 +81,13 @@ class _SidebarState extends State<Sidebar> {
           ),
         ),
 
-        // ── Header: الشعار + اسم النظام ──
+        
         headerBuilder: (context, extended) {
           return Container(
             padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
             child: Column(
               children: [
-                // أيقونة الشعار
+              
                 Container(
                   width: 56,
                   height: 56,
@@ -111,7 +111,7 @@ class _SidebarState extends State<Sidebar> {
                 ),
                 const SizedBox(height: 12),
 
-                // اسم النظام (فقط لما يكون extended)
+                
                 if (extended) ...[
                   const Text(
                     'نظام إدارة المدرسة',
@@ -143,7 +143,7 @@ class _SidebarState extends State<Sidebar> {
           );
         },
 
-        // ── Footer: تسجيل الخروج ──
+        
         footerBuilder: (context, extended) {
           return Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
