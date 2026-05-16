@@ -23,7 +23,7 @@ class TopBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // ── الشعار + اسم النظام ──
+         
           Row(
             children: [
               Container(
@@ -66,7 +66,7 @@ class TopBar extends StatelessWidget {
 
           const Spacer(),
 
-          // ── شريط البحث ──
+          
           Container(
             width: 240,
             height: 40,
@@ -102,7 +102,7 @@ class TopBar extends StatelessWidget {
 
           const SizedBox(width: 20),
 
-          // ── زر الإشعارات ──
+          
           Stack(
             clipBehavior: Clip.none,
             children: [
@@ -140,7 +140,7 @@ class TopBar extends StatelessWidget {
 
           const SizedBox(width: 16),
 
-          // ── صورة المدير + الاسم والصلاحية ──
+        
           Row(
             children: [
               Container(
