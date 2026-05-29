@@ -23,7 +23,6 @@ class TopBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-         
           Row(
             children: [
               Container(
@@ -63,10 +62,7 @@ class TopBar extends StatelessWidget {
               ),
             ],
           ),
-
           const Spacer(),
-
-          
           Container(
             width: 240,
             height: 40,
@@ -99,10 +95,7 @@ class TopBar extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(width: 20),
-
-          
           Stack(
             clipBehavior: Clip.none,
             children: [
@@ -137,10 +130,7 @@ class TopBar extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(width: 16),
-
-        
           Row(
             children: [
               Container(

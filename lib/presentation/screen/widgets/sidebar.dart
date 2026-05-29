@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sidebarx/sidebarx.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_colors.dart' as app;
-import '../attendance_page.dart';
-import '../library_page.dart';
 
 class Sidebar extends StatefulWidget {
   final String role;
@@ -22,25 +20,6 @@ class Sidebar extends StatefulWidget {
 }
 
 class _SidebarState extends State<Sidebar> {
-  @override
-  void initState() {
-    super.initState();
-    widget.controller.addListener(() {
-      final index = widget.controller.selectedIndex;
-      if (index == 4) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AttendancePage()),
-        );
-      } else if (index == 5) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const LibraryPage()),
-        );
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -80,14 +59,11 @@ class _SidebarState extends State<Sidebar> {
             size: 22,
           ),
         ),
-
-        
         headerBuilder: (context, extended) {
           return Container(
             padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
             child: Column(
               children: [
-              
                 Container(
                   width: 56,
                   height: 56,
@@ -98,7 +74,6 @@ class _SidebarState extends State<Sidebar> {
                       BoxShadow(
                         color: AppColors.primary.withOpacity(0.4),
                         blurRadius: 12,
-                        spreadRadius: 0,
                         offset: const Offset(0, 4),
                       ),
                     ],
@@ -110,8 +85,6 @@ class _SidebarState extends State<Sidebar> {
                   ),
                 ),
                 const SizedBox(height: 12),
-
-                
                 if (extended) ...[
                   const Text(
                     'نظام إدارة المدرسة',
@@ -131,7 +104,6 @@ class _SidebarState extends State<Sidebar> {
                     ),
                   ),
                 ],
-
                 const SizedBox(height: 20),
                 Divider(
                   color: Colors.white.withOpacity(0.1),
@@ -142,8 +114,6 @@ class _SidebarState extends State<Sidebar> {
             ),
           );
         },
-
-        
         footerBuilder: (context, extended) {
           return Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
@@ -192,7 +162,6 @@ class _SidebarState extends State<Sidebar> {
             ),
           );
         },
-
         items: const [
           SidebarXItem(
             icon: Icons.dashboard_rounded,
