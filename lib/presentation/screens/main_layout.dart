@@ -38,13 +38,10 @@ class _MainLayoutState extends State<MainLayout> {
         body: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Sidebar ثابت
             SizedBox(
               width: 250,
               child: Sidebar(controller: controller),
             ),
-
-            // المحتوى + التوب بار
             Expanded(
               child: Column(
                 children: [
