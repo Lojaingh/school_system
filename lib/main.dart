@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:school_management/presentation/screen/attendance_page.dart';
-import 'package:school_management/presentation/screen/library_page.dart';
-import 'package:school_management/presentation/screen/widgets/sidebar.dart';
-import 'package:school_management/presentation/screen/widgets/topbar.dart';
-import 'package:school_management/presentation/screens/main_layout.dart';
+import 'presentation/screen/dashboard_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,8 +10,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-        debugShowCheckedModeBanner: false,
-         home: MainLayout());
+    return MaterialApp(
+      title: 'School Management',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        fontFamily: 'Cairo',
+        useMaterial3: true,
+      ),
+      home: const DashboardPage(),
+    );
   }
 }

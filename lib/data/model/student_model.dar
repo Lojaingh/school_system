@@ -1,0 +1,136 @@
+// models/student_attendance.dart
+
+class StudentAttendance {
+  final String id;
+  final String name;
+  final String? className;     // الصف (مثلاً Grade 7)
+  final String? section;        // الشعبة (مثلاً A)
+  String status;                // 'Present', 'Absent', 'Late'
+  final String? time;           // وقت الحضور (إذا كان Present)
+  final DateTime date;          // تاريخ الحضور
+
+  StudentAttendance({
+    required this.id,
+    required this.name,
+    this.className,
+    this.section,
+    required this.status,
+    this.time,
+    required this.date,
+  });
+
+  // ✅ بيانات وهمية (Mock Data)
+  static List<StudentAttendance> getMockData() {
+    final now = DateTime.now();
+    return [
+      StudentAttendance(
+        id: '001',
+        name: 'Mohamed Ahmed',
+        className: 'Grade 7',
+        section: 'A',
+        status: 'Present',
+        time: '07:45',
+        date: now,
+      ),
+      StudentAttendance(
+        id: '002',
+        name: 'Sara Khaled',
+        className: 'Grade 7',
+        section: 'A',
+        status: 'Absent',
+        time: null,
+        date: now,
+      ),
+      StudentAttendance(
+        id: '003',
+        name: 'Ali Mahmoud',
+        className: 'Grade 7',
+        section: 'B',
+        status: 'Present',
+        time: '08:15',
+        date: now,
+      ),
+      StudentAttendance(
+        id: '004',
+        name: 'Nour Hasan',
+        className: 'Grade 8',
+        section: 'A',
+        status: 'Present',
+        time: '07:50',
+        date: now,
+      ),
+      StudentAttendance(
+        id: '005',
+        name: 'Lili Omar',
+        className: 'Grade 8',
+        section: 'B',
+        status: 'Late',
+        time: '08:30',
+        date: now,
+      ),
+      StudentAttendance(
+        id: '006',
+        name: 'Khaled Waleed',
+        className: 'Grade 9',
+        section: 'A',
+        status: 'Absent',
+        time: null,
+        date: now,
+      ),
+      StudentAttendance(
+        id: '007',
+        name: 'Sana Ali',
+        className: 'Grade 9',
+        section: 'C',
+        status: 'Present',
+        time: '07:55',
+        date: now,
+      ),
+      StudentAttendance(
+        id: '008',
+        name: 'Kareem Samir',
+        className: 'Grade 9',
+        section: 'C',
+        status: 'Present',
+        time: '07:48',
+        date: now,
+      ),
+    ];
+  }
+
+  // ✅ حساب الإحصائيات من القائمة
+  static Map<String, int> getStats(List<StudentAttendance> list) {
+    return {
+      'total': list.length,
+      'present': list.where((s) => s.status == 'Present').length,
+      'absent': list.where((s) => s.status == 'Absent').length,
+      'late': list.where((s) => s.status == 'Late').length,
+    };
+  }
+
+  // ✅ من JSON (للاستقبال من API)
+  factory StudentAttendance.fromJson(Map<String, dynamic> json) {
+    return StudentAttendance(
+      id: json['id'],
+      name: json['name'],
+      className: json['className'],
+      section: json['section'],
+      status: json['status'],
+      time: json['time'],
+      date: DateTime.parse(json['date']),
+    );
+  }
+
+  // ✅ إلى JSON (للإرسال إلى API)
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'className': className,
+      'section': section,
+      'status': status,
+      'time': time,
+      'date': date.toIso8601String(),
+    };
+  }
+}
