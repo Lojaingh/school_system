@@ -1,6 +1,9 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:school_management/cubit/auth/login/login_cubit.dart';
+import 'package:school_management/cubit/auth/login/login_state.dart';
+import '../../../constants/app_colors.dart';
+import '../screen/dashboard_page.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,11 +14,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController usernameController = TextEditingController();
-
   final TextEditingController passwordController = TextEditingController();
-
   bool isPasswordHidden = true;
-  bool isLoading = false;
 
   @override
   void dispose() {
@@ -28,75 +28,94 @@ class _LoginScreenState extends State<LoginScreen> {
     if (usernameController.text.trim().isEmpty ||
         passwordController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please fill all fields"),
-        ),
+        const SnackBar(content: Text("Please fill all fields")),
       );
       return;
     }
 
-    setState(() {
-      isLoading = true;
-    });
-
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        isLoading = false;
-      });
-    });
+    context.read<LoginCubit>().login(
+          usernameController.text.trim(),
+          passwordController.text.trim(),
+        );
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: AppGradients.backgroundGradient,
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: BlocConsumer<LoginCubit, LoginState>(
+          listener: (context, state) {
+            if (state is LoginSuccess) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const DashboardPage()),
+              );
+            }
+            if (state is LoginError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+            }
+          },
+          builder: (context, state) {
+            final screenWidth = MediaQuery.of(context).size.width;
+            final isLoading = state is LoginLoading;
 
-    return Scaffold(
-      body: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Container(
-                  width: screenWidth > 600 ? 430 : screenWidth * 0.9,
-                  padding: const EdgeInsets.all(24),
+                  width: screenWidth > 600 ? 450 : screenWidth * 0.9,
+                  padding: const EdgeInsets.all(28),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.07),
-                    borderRadius: BorderRadius.circular(20),
+                    gradient: AppGradients.cardGradient,
+                    borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
+                      color: AppColors.cardBorder,
+                      width: 0.5,
                     ),
+                    boxShadow: AppShadows.cardShadow,
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      /// 🎓 LOGO
-                      const Icon(
-                        Icons.school,
-                        size: 70,
-                        color: Colors.white,
+                      // LOGO
+                      Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          gradient: AppGradients.glowGradient,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(
+                          Icons.school_rounded,
+                          size: 40,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
 
                       const Text(
                         "School Management System",
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
 
-                      const SizedBox(height: 35),
+                      const SizedBox(height: 30),
 
                       const Text(
-                        "Welcome Back !",
+                        "Welcome Back!",
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 30,
+                          color: AppColors.textPrimary,
+                          fontSize: 28,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -105,23 +124,26 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       const Text(
                         "Login to your account",
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 14,
+                        ),
                       ),
 
-                      const SizedBox(height: 45),
+                      const SizedBox(height: 40),
 
                       _buildInput(
                         controller: usernameController,
                         hint: "Username",
-                        icon: Icons.person,
+                        icon: Icons.person_outline_rounded,
                       ),
 
-                      const SizedBox(height: 25),
+                      const SizedBox(height: 20),
 
                       _buildInput(
                         controller: passwordController,
                         hint: "Password",
-                        icon: Icons.lock,
+                        icon: Icons.lock_outline_rounded,
                         isPassword: true,
                       ),
 
@@ -129,11 +151,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       SizedBox(
                         width: double.infinity,
+                        height: 50,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 14,
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           onPressed: isLoading ? null : login,
@@ -143,13 +168,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   width: 22,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
+                                    color: Colors.white,
                                   ),
                                 )
                               : const Text(
                                   "Login",
                                   style: TextStyle(
-                                    color: Color.fromARGB(255, 10, 7, 67),
-                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                         ),
@@ -158,13 +184,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
+      ),
     );
   }
 
- 
   Widget _buildInput({
     required TextEditingController controller,
     required String hint,
@@ -174,11 +200,17 @@ class _LoginScreenState extends State<LoginScreen> {
     return TextField(
       controller: controller,
       obscureText: isPassword ? isPasswordHidden : false,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(
+        color: AppColors.textPrimary,
+        fontSize: 14,
+      ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.white60),
-        prefixIcon: Icon(icon, color: Colors.white70),
+        hintStyle: const TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: 14,
+        ),
+        prefixIcon: Icon(icon, size: 20, color: AppColors.textSecondary),
         suffixIcon: isPassword
             ? IconButton(
                 onPressed: () {
@@ -187,16 +219,25 @@ class _LoginScreenState extends State<LoginScreen> {
                   });
                 },
                 icon: Icon(
-                  isPasswordHidden ? Icons.visibility_off : Icons.visibility,
-                  color: Colors.white70,
+                  isPasswordHidden
+                      ? Icons.visibility_off_rounded
+                      : Icons.visibility_rounded,
+                  size: 20,
+                  color: AppColors.textSecondary,
                 ),
               )
             : null,
         filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
+        fillColor: AppColors.cardBg.withOpacity(0.5),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: AppColors.primary.withOpacity(0.5),
+          ),
         ),
       ),
     );
