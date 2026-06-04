@@ -1,5 +1,3 @@
-// models/dashboard_model.dart
-
 import 'package:flutter/material.dart';
 
 class DashboardStats {
@@ -29,7 +27,6 @@ class DashboardStats {
     required this.recentActivities,
   });
 
-  // ✅ بيانات وهمية (Mock Data)
   static DashboardStats getMockData() {
     return DashboardStats(
       studentsCount: 512,
@@ -46,7 +43,6 @@ class DashboardStats {
     );
   }
 
-  // ✅ من JSON (للاستقبال من API)
   factory DashboardStats.fromJson(Map<String, dynamic> json) {
     return DashboardStats(
       studentsCount: json['studentsCount'] ?? 0,
@@ -66,7 +62,6 @@ class DashboardStats {
     );
   }
 
-  // ✅ إلى JSON (للإرسال إلى API)
   Map<String, dynamic> toJson() {
     return {
       'studentsCount': studentsCount,
@@ -84,13 +79,10 @@ class DashboardStats {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-
 class RecentActivity {
   final String title;
-  final String
-      iconName; // اسم الأيقونة (مثلاً 'person_add', 'edit', 'assignment')
-  final String colorHex; // لون الأيقونة
+  final String iconName;
+  final String colorHex;
 
   RecentActivity({
     required this.title,
@@ -98,7 +90,6 @@ class RecentActivity {
     required this.colorHex,
   });
 
-  // ✅ بيانات وهمية
   static List<RecentActivity> getMockData() {
     return [
       RecentActivity(
@@ -122,7 +113,6 @@ class RecentActivity {
     ];
   }
 
-  // ✅ من JSON
   factory RecentActivity.fromJson(Map<String, dynamic> json) {
     return RecentActivity(
       title: json['title'] ?? '',
@@ -131,7 +121,6 @@ class RecentActivity {
     );
   }
 
-  // ✅ إلى JSON
   Map<String, dynamic> toJson() {
     return {
       'title': title,
@@ -140,7 +129,6 @@ class RecentActivity {
     };
   }
 
-  // ✅ تحويل اسم الأيقونة إلى IconData
   IconData get icon {
     switch (iconName) {
       case 'person_add':
