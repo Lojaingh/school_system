@@ -15,7 +15,6 @@ class AuthRepository {
       password: password,
     );
 
-   
     if (response.data is Map<String, dynamic>) {
       return LoginResponse.fromJson(response.data);
     } else {
