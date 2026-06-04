@@ -1,4 +1,4 @@
-// lib/presentation/widgets/attendance_content.dart
+
 
 import 'package:flutter/material.dart';
 import 'package:school_management/constants/app_colors.dart';
@@ -12,15 +12,14 @@ class AttendanceContent extends StatefulWidget {
 }
 
 class _AttendanceContentState extends State<AttendanceContent> {
-  // Tab index (0 = Students, 1 = Teachers)
+  
   int selectedTab = 0;
 
-  // Common filters
+
   String selectedClass = 'Grade 7';
   String selectedSection = 'A';
   DateTime selectedDate = DateTime.now();
 
-  // Teachers data
   List<Map<String, dynamic>> teachers = [
     {
       'name': 'Ahmad Mahmod',
@@ -52,11 +51,11 @@ class _AttendanceContentState extends State<AttendanceContent> {
     },
   ];
 
-  // Teachers filters
+ 
   String selectedDepartment = 'Math';
   final List<String> departmentList = ['Math', 'Science', 'Arabic', 'English'];
 
-  // Students data
+
   List<Map<String, dynamic>> students = [
     {
       'name': 'Mohamad Ahmad',
@@ -157,7 +156,7 @@ class _AttendanceContentState extends State<AttendanceContent> {
 
           const SizedBox(height: 24),
 
-          // Content based on selected tab
+          
           selectedTab == 0
               ? _StudentsAttendanceContent(
                   students: students,
@@ -217,7 +216,7 @@ class _AttendanceContentState extends State<AttendanceContent> {
   }
 }
 
-// ── Students Attendance Content ─────────────────────────────────
+
 class _StudentsAttendanceContent extends StatelessWidget {
   final List<Map<String, dynamic>> students;
   final String selectedClass;
