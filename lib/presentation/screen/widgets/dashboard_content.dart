@@ -115,17 +115,43 @@ class DashboardContent extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _StatCard(
-                      title: 'Total Fees',
-                      value: '\$24,560',
-                      icon: Icons.attach_money_rounded,
+                      title: 'Subjects',
+                      value: '12',
+                      icon: Icons.book_rounded,
                       color: AppColors.cardPurple,
-                      change: '+8% this month',
+                      change: '+1 this month',
                       changePositive: true,
                     ),
                   ),
                 ],
               ),
 
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: _StatCard(
+                      title: 'Present Today',
+                      value: '285',
+                      icon: Icons.check_circle_outline,
+                      color: AppColors.cardGreen,
+                      change: '89%',
+                      changePositive: true,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _StatCard(
+                      title: 'Absent Today',
+                      value: '35',
+                      icon: Icons.cancel_outlined,
+                      color: AppColors.cardOrange,
+                      change: '11%',
+                      changePositive: false,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 20),
 
               // ── Row 2: Attendance Chart + Recent Activities ──
@@ -155,7 +181,7 @@ class DashboardContent extends StatelessWidget {
                   // Fees Collection
                   Expanded(
                     flex: 5,
-                    child: _FeesCollectionCard(),
+                    child: _StudentsDistributionCard(),
                   ),
                   const SizedBox(width: 16),
                   // Top Classes
@@ -604,8 +630,8 @@ class _ActivityTile extends StatelessWidget {
 // ══════════════════════════════════════════
 // Fees Collection Card
 // ══════════════════════════════════════════
-class _FeesCollectionCard extends StatelessWidget {
-  const _FeesCollectionCard();
+class _StudentsDistributionCard extends StatelessWidget {
+  const _StudentsDistributionCard();
 
   @override
   Widget build(BuildContext context) {
@@ -624,7 +650,7 @@ class _FeesCollectionCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Fees Collection',
+                'Students Distribution',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -674,7 +700,7 @@ class _FeesCollectionCard extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Text(
-                          '\$24,560',
+                          '320',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -682,7 +708,7 @@ class _FeesCollectionCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Total',
+                          'Students',
                           style: TextStyle(
                             fontSize: 10,
                             color: AppColors.textSecondary,
@@ -701,14 +727,14 @@ class _FeesCollectionCard extends StatelessWidget {
                 children: [
                   _LegendItem(
                     color: AppColors.primary,
-                    label: 'Collected',
-                    value: '\$18,450 (75%)',
+                    label: 'Grade 10',
+                    value: '120 Students (38%)',
                   ),
                   const SizedBox(height: 12),
                   _LegendItem(
                     color: AppColors.cardPurple,
-                    label: 'Pending',
-                    value: '\$6,110 (25%)',
+                    label: 'Other Grades',
+                    value: '200 Students (62%)',
                   ),
                 ],
               ),
@@ -848,7 +874,7 @@ class _TopClassesCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Top Classes',
+                'Top Performing Classes',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,

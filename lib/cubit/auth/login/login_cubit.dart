@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'package:school_management/data/repository/auth_repository.dart';
+import 'package:school_management/utils/shared_prefs_helper.dart';
 import 'login_state.dart';
 
 class LoginCubit extends Cubit<LoginState> {
@@ -19,8 +19,19 @@ class LoginCubit extends Cubit<LoginState> {
         userName,
         password,
       );
+      await SharedPrefsHelper.saveToken(response.token);
 
       emit(LoginSuccess(response.token));
+    } catch (e) {
+      emit(LoginError(e.toString()));
+    }
+  }
+
+  Future<void> logout() async {
+    try {
+      await repository.logout();
+      await SharedPrefsHelper.clearToken();
+      emit(LogoutSuccess());
     } catch (e) {
       emit(LoginError(e.toString()));
     }
