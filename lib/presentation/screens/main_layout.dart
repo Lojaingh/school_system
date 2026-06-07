@@ -1,11 +1,16 @@
 // lib/presentation/screens/main_layout.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:school_management/constants/app_colors.dart';
 import 'package:sidebarx/sidebarx.dart';
 import '../screen/widgets/dashboard_content.dart';
 import '../screen/widgets/attendance_content.dart';
 import '../screen/widgets/library_content.dart';
 import '../../constants/app_colors.dart' as app;
+import '../../cubit/auth/login/login_cubit.dart';
+import '../../cubit/auth/login/login_state.dart';
+import '../screens/login_screen.dart';
 
 class MainLayout extends StatefulWidget {
   final int initialIndex;
@@ -36,8 +41,31 @@ class _MainLayoutState extends State<MainLayout> {
         SidebarXController(selectedIndex: widget.initialIndex, extended: true);
   }
 
+  void _logout(BuildContext context) {
+    context.read<LoginCubit>().logout();
+  }
+
   @override
   Widget build(BuildContext context) {
+    // ✅ الحصول على LoginCubit من الأعلى (أو إنشاء واحد إذا لم يوجد)
+    return BlocListener<LoginCubit, LoginState>(
+      listener: (context, state) {
+        if (state is LogoutSuccess) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+          );
+        } else if (state is LoginError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message)),
+          );
+        }
+      },
+      child: _buildMainContent(),
+    );
+  }
+
+  Widget _buildMainContent() {
     return Container(
       decoration: const BoxDecoration(
         gradient: app.AppGradients.backgroundGradient,
@@ -80,7 +108,7 @@ class _MainLayoutState extends State<MainLayout> {
                       children: [
                         const CircleAvatar(
                           radius: 28,
-                          backgroundColor: Color(0xFF6C4CF1),
+                          backgroundColor: AppColors.primary,
                           child: Icon(Icons.school_rounded,
                               color: Colors.white, size: 30),
                         ),
@@ -122,19 +150,39 @@ class _MainLayoutState extends State<MainLayout> {
                 footerBuilder: (context, extended) {
                   return Padding(
                     padding: const EdgeInsets.all(12),
-                    child: InkWell(
-                      onTap: () {},
-                      child: Row(
-                        children: [
-                          const Icon(Icons.logout_rounded,
-                              color: Colors.redAccent),
-                          if (extended) ...[
-                            const SizedBox(width: 12),
-                            const Text('تسجيل الخروج',
-                                style: TextStyle(color: Colors.redAccent)),
-                          ],
-                        ],
-                      ),
+                    child: BlocBuilder<LoginCubit, LoginState>(
+                      builder: (context, state) {
+                        final isLoading = state is LoginLoading;
+                        return InkWell(
+                          onTap: isLoading ? null : () => _logout(context),
+                          child: Row(
+                            children: [
+                              if (isLoading)
+                                const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.redAccent,
+                                  ),
+                                )
+                              else
+                                const Icon(Icons.logout_rounded,
+                                    color: Colors.redAccent),
+                              if (extended) ...[
+                                const SizedBox(width: 12),
+                                Text(
+                                  isLoading
+                                      ? 'جاري تسجيل الخروج...'
+                                      : 'تسجيل الخروج',
+                                  style:
+                                      const TextStyle(color: Colors.redAccent),
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   );
                 },
@@ -173,7 +221,7 @@ class _MainLayoutState extends State<MainLayout> {
         children: [
           const CircleAvatar(
             radius: 20,
-            backgroundColor: Color(0xFF6C4CF1),
+            backgroundColor: AppColors.primary,
             child:
                 Text('أ', style: TextStyle(color: Colors.white, fontSize: 16)),
           ),
