@@ -9,6 +9,8 @@ class DioClient {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'Authorization':
+            'Bearer 19|f7vMHq3Ds1M173NnBrAKWm76Gkqv2dipYMah93Ka2790c5b3',
       },
     ),
   );
