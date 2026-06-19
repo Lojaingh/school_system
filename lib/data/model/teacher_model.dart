@@ -1,13 +1,13 @@
-// models/teacher_attendance.dart
+
 
 class TeacherAttendance {
   final String id;
   final String name;
-  final String? subject; // المادة التي يدرسها
-  final String? department; // القسم
-  String status; // 'Present', 'Absent', 'Late'
-  final String? time; // وقت الحضور (إذا كان Present)
-  final DateTime date; // تاريخ الحضور
+  final String? subject;
+  final String? department; 
+  String status;
+  final String? time;
+  final DateTime date;
 
   TeacherAttendance({
     required this.id,
@@ -19,7 +19,7 @@ class TeacherAttendance {
     required this.date,
   });
 
-  // ✅ بيانات وهمية (Mock Data)
+ 
   static List<TeacherAttendance> getMockData() {
     final now = DateTime.now();
     return [
@@ -62,7 +62,6 @@ class TeacherAttendance {
     ];
   }
 
-  // ✅ حساب الإحصائيات من القائمة
   static Map<String, int> getStats(List<TeacherAttendance> list) {
     return {
       'total': list.length,
@@ -72,7 +71,7 @@ class TeacherAttendance {
     };
   }
 
-  // ✅ من JSON (للاستقبال من API)
+
   factory TeacherAttendance.fromJson(Map<String, dynamic> json) {
     return TeacherAttendance(
       id: json['id'],
@@ -85,7 +84,7 @@ class TeacherAttendance {
     );
   }
 
-  // ✅ إلى JSON (للإرسال إلى API)
+  
   Map<String, dynamic> toJson() {
     return {
       'id': id,

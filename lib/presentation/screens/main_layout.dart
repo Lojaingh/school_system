@@ -1,8 +1,7 @@
-// lib/presentation/screens/main_layout.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/constants/app_colors.dart';
+import 'package:school_management/presentation/screens/register_screen.dart';
 import 'package:sidebarx/sidebarx.dart';
 import '../screen/widgets/dashboard_content.dart';
 import '../screen/widgets/attendance_content.dart';
@@ -25,7 +24,7 @@ class _MainLayoutState extends State<MainLayout> {
 
   late final List<Widget> _pages = [
     const DashboardContent(),
-    const Center(child: Text("الطلاب")),
+    const RegisterScreen(),
     const Center(child: Text("الأساتذة")),
     const Center(child: Text("الصفوف")),
     const AttendanceContent(),
@@ -137,7 +136,7 @@ class _MainLayoutState extends State<MainLayout> {
                 items: const [
                   SidebarXItem(
                       icon: Icons.dashboard_rounded, label: 'الرئيسية'),
-                  SidebarXItem(icon: Icons.people_rounded, label: 'الطلاب'),
+                  SidebarXItem(icon: Icons.people_rounded, label: 'التسجيل'),
                   SidebarXItem(icon: Icons.school_rounded, label: 'الأساتذة'),
                   SidebarXItem(icon: Icons.grid_view_rounded, label: 'الصفوف'),
                   SidebarXItem(icon: Icons.how_to_reg_rounded, label: 'الحضور'),
