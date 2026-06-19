@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/presentation/screen/dashboard_page.dart';
+import 'package:school_management/presentation/screen/widgets/library_content.dart';
+import 'package:school_management/presentation/screens/register_screen.dart';
 import 'cubit/auth/login/login_cubit.dart';
 import 'data/network/dio_client.dart';
 import 'data/repository/auth_repository.dart';
@@ -30,7 +32,7 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'School Management',
         theme: ThemeData(useMaterial3: true),
-        home: const DashboardPage(),
+        home: const LoginScreen(),
       ),
     );
   }
