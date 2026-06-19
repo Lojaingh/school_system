@@ -9,7 +9,6 @@ class StaffModel {
   final String hireDate;
   final double salary;
   final String contact;
-  final String employmentStatus;
 
   StaffModel({
     required this.fName,
@@ -22,7 +21,6 @@ class StaffModel {
     required this.hireDate,
     required this.salary,
     required this.contact,
-    required this.employmentStatus,
   });
 
   Map<String, dynamic> toJson() {
@@ -37,7 +35,6 @@ class StaffModel {
       "hire_date": hireDate,
       "salary": salary,
       "contact": contact,
-      "employment_status": employmentStatus,
     };
   }
 }

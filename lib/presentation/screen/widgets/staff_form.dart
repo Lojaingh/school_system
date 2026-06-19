@@ -17,7 +17,6 @@ class StaffForm extends StatefulWidget {
 class _StaffFormState extends State<StaffForm> {
   String? gender;
   String? roleId;
-  String? employmentStatus;
 
   DateTime? birthDate;
   DateTime? hireDate;
@@ -30,8 +29,6 @@ class _StaffFormState extends State<StaffForm> {
     {"id": "4", "title": "Librarian"},
     {"id": "5", "title": "Teacher"},
   ];
-
-  final statusList = ["employed", "unemployed"];
 
   final firstNameController = TextEditingController();
   final middleNameController = TextEditingController();
@@ -183,7 +180,6 @@ class _StaffFormState extends State<StaffForm> {
                       hireDate: hireDate!.toIso8601String().split('T')[0],
                       salary: double.tryParse(salaryController.text) ?? 0,
                       contact: contactController.text,
-                      employmentStatus: employmentStatus ?? "employed",
                     );
 
                     context.read<StaffCubit>().registerStaff(staff);
@@ -222,7 +218,7 @@ class _StaffFormState extends State<StaffForm> {
           setState(() {
             gender = null;
             roleId = null;
-            employmentStatus = null;
+
             birthDate = null;
             hireDate = null;
           });
@@ -273,12 +269,6 @@ class _StaffFormState extends State<StaffForm> {
             const SizedBox(height: 12),
             _input("Contact", contactController, type: TextInputType.phone),
             const SizedBox(height: 12),
-            _dropdown(
-              hint: "Employment Status",
-              value: employmentStatus,
-              items: statusList,
-              onChanged: (v) => setState(() => employmentStatus = v),
-            ),
             const SizedBox(height: 20),
             _button(),
           ],

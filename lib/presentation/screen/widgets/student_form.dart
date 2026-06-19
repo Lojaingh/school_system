@@ -16,16 +16,23 @@ class StudentForm extends StatefulWidget {
 
 class _StudentFormState extends State<StudentForm> {
   String? gender;
+  String? selectedClassId;
   DateTime? birthDate;
 
   final genders = ["Male", "Female"];
+
+  final classes = [
+    {"id": 1, "name": "Class 1"},
+    {"id": 2, "name": "Class 2"},
+    {"id": 3, "name": "Class 3"},
+    {"id": 4, "name": "Class 4"},
+  ];
 
   // Controllers
   final firstNameController = TextEditingController();
   final middleNameController = TextEditingController();
   final lastNameController = TextEditingController();
   final addressController = TextEditingController();
-  final classIdController = TextEditingController();
   final healthController = TextEditingController();
 
   @override
@@ -34,7 +41,6 @@ class _StudentFormState extends State<StudentForm> {
     middleNameController.dispose();
     lastNameController.dispose();
     addressController.dispose();
-    classIdController.dispose();
     healthController.dispose();
     super.dispose();
   }
@@ -57,11 +63,16 @@ class _StudentFormState extends State<StudentForm> {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-              color: AppColors.cardBorder.withOpacity(0.3), width: 1),
+            color: AppColors.cardBorder.withOpacity(0.3),
+            width: 1,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: const BorderSide(
+            color: AppColors.primary,
+            width: 1.5,
+          ),
         ),
       ),
     );
@@ -73,7 +84,9 @@ class _StudentFormState extends State<StudentForm> {
       decoration: BoxDecoration(
         color: AppColors.cardElement,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cardBorder.withOpacity(0.3)),
+        border: Border.all(
+          color: AppColors.cardBorder.withOpacity(0.3),
+        ),
       ),
       child: DropdownButton<String>(
         value: genders.contains(gender) ? gender : null,
@@ -84,17 +97,69 @@ class _StudentFormState extends State<StudentForm> {
         dropdownColor: AppColors.cardBg,
         isExpanded: true,
         underline: const SizedBox(),
-        icon: const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
+        icon: const Icon(
+          Icons.arrow_drop_down,
+          color: AppColors.textSecondary,
+        ),
         items: genders
-            .map((g) => DropdownMenuItem(
-                  value: g,
-                  child: Text(
-                    g,
-                    style: const TextStyle(color: AppColors.textPrimary),
+            .map(
+              (g) => DropdownMenuItem(
+                value: g,
+                child: Text(
+                  g,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
                   ),
-                ))
+                ),
+              ),
+            )
             .toList(),
         onChanged: (v) => setState(() => gender = v),
+      ),
+    );
+  }
+
+  Widget _dropdownClass() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: AppColors.cardElement,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.cardBorder.withOpacity(0.3),
+        ),
+      ),
+      child: DropdownButton<String>(
+        value: selectedClassId,
+        hint: const Text(
+          "Class",
+          style: TextStyle(color: AppColors.textHelper),
+        ),
+        dropdownColor: AppColors.cardBg,
+        isExpanded: true,
+        underline: const SizedBox(),
+        icon: const Icon(
+          Icons.arrow_drop_down,
+          color: AppColors.textSecondary,
+        ),
+        items: classes
+            .map(
+              (c) => DropdownMenuItem<String>(
+                value: c["id"].toString(),
+                child: Text(
+                  c["name"].toString(),
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            )
+            .toList(),
+        onChanged: (value) {
+          setState(() {
+            selectedClassId = value;
+          });
+        },
       ),
     );
   }
@@ -104,11 +169,12 @@ class _StudentFormState extends State<StudentForm> {
     middleNameController.clear();
     lastNameController.clear();
     addressController.clear();
-    classIdController.clear();
     healthController.clear();
+
     setState(() {
       gender = null;
       birthDate = null;
+      selectedClassId = null;
     });
   }
 
@@ -130,7 +196,11 @@ class _StudentFormState extends State<StudentForm> {
             onPressed: isLoading
                 ? null
                 : () async {
-                    if (gender == null || birthDate == null) return;
+                    if (gender == null ||
+                        birthDate == null ||
+                        selectedClassId == null) {
+                      return;
+                    }
 
                     final student = StudentModel(
                       username: "STU-${DateTime.now().millisecondsSinceEpoch}",
@@ -141,7 +211,7 @@ class _StudentFormState extends State<StudentForm> {
                       gender: gender!.toLowerCase(),
                       dob: birthDate!.toIso8601String(),
                       address: addressController.text,
-                      classId: int.parse(classIdController.text),
+                      classId: int.parse(selectedClassId!),
                       healthStatus: healthController.text,
                       roleId: 6,
                     );
@@ -149,7 +219,9 @@ class _StudentFormState extends State<StudentForm> {
                     await context.read<RegisterCubit>().register(student);
                   },
             child: isLoading
-                ? const CircularProgressIndicator(color: Colors.white)
+                ? const CircularProgressIndicator(
+                    color: Colors.white,
+                  )
                 : const Text(
                     "Register Student",
                     style: TextStyle(color: Colors.white),
@@ -171,12 +243,14 @@ class _StudentFormState extends State<StudentForm> {
             color: Colors.green,
             icon: Icons.check_circle,
           );
+
           _clearFields();
         }
+
         if (state is RegisterError) {
           AppToast.show(
             context,
-            message: state.message ?? "Registration failed",
+            message: state.message,
             color: Colors.red,
             icon: Icons.error,
           );
@@ -202,7 +276,7 @@ class _StudentFormState extends State<StudentForm> {
             const SizedBox(height: 12),
             _input("Address", addressController),
             const SizedBox(height: 12),
-            _input("Class ID", classIdController),
+            _dropdownClass(),
             const SizedBox(height: 12),
             _input("Health Status", healthController),
             const SizedBox(height: 20),
