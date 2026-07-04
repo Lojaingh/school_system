@@ -144,3 +144,50 @@ class RecentActivity {
     }
   }
 }
+
+class StaffStats {
+  final int total;
+  final int teachers;
+  final int staffWithoutTeachers;
+
+  StaffStats({
+    required this.total,
+    required this.teachers,
+    required this.staffWithoutTeachers,
+  });
+
+  factory StaffStats.fromJson(Map<String, dynamic> json) {
+    return StaffStats(
+      total: json['total'],
+      teachers: json['teachers'],
+      staffWithoutTeachers: json['staff without teachers'],
+    );
+  }
+}
+
+class StudentStats {
+  final int total;
+
+  StudentStats({required this.total});
+
+  factory StudentStats.fromJson(Map<String, dynamic> json) {
+    return StudentStats(
+      total: json['total number of students'] ?? 0,
+    );
+  }
+}
+
+// إحصائيات الداشبورد المجمعة
+class DashboardApiStats {
+  final int students;
+  final int teachers;
+  final int employees;
+  final int books; // مؤقتاً 0 حتى يتوفر API
+
+  DashboardApiStats({
+    required this.students,
+    required this.teachers,
+    required this.employees,
+    this.books = 0,
+  });
+}
