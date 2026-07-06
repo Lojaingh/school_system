@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:school_management/cubit/assignment/assignment_cubit.dart';
+import 'package:school_management/cubit/dashboard/dashboard_cubit.dart';
 import 'package:school_management/presentation/screen/dashboard_page.dart';
+import 'package:school_management/presentation/screen/widgets/library_content.dart';
+import 'package:school_management/presentation/screens/register_screen.dart';
 import 'cubit/auth/login/login_cubit.dart';
 import 'data/network/dio_client.dart';
 import 'data/repository/auth_repository.dart';
@@ -20,12 +24,22 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => LoginCubit(
-        AuthRepository(
-          AuthService(DioClient.dio),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => LoginCubit(
+            AuthRepository(
+              AuthService(DioClient.dio),
+            ),
+          ),
         ),
-      ),
+        BlocProvider(
+          create: (_) => AssignmentCubit()..getAssignments(),
+        ),
+        BlocProvider(
+          create: (_) => DashboardCubit()..loadStats(),
+        )
+      ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'School Management',
