@@ -10,7 +10,7 @@ class DioClient {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'Authorization':
-            'Bearer 19|f7vMHq3Ds1M173NnBrAKWm76Gkqv2dipYMah93Ka2790c5b3',
+            'Bearer 1|2IcYCUOtSeUZ8gjWqy5LSvwsolDlHjOz9oBgrGAH2ed32404',
       },
     ),
   );
