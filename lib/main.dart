@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'School Management',
         theme: ThemeData(useMaterial3: true),
-        home: const DashboardPage(),
+        home: const LoginScreen(),
       ),
     );
   }
