@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-<<<<<<< HEAD
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/constants/app_colors.dart';
-=======
 import 'package:school_management/presentation/screens/register_screen.dart';
->>>>>>> 05c98b37fef7530febc10ab8d4ec214288626bb2
 import 'package:sidebarx/sidebarx.dart';
 import '../screen/widgets/dashboard_content.dart';
 import '../screen/widgets/attendance_content.dart';
