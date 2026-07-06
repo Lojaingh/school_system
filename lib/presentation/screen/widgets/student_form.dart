@@ -211,7 +211,7 @@ class _StudentFormState extends State<StudentForm> {
                       gender: gender!.toLowerCase(),
                       dob: birthDate!.toIso8601String(),
                       address: addressController.text,
-                      classId: int.parse(selectedClassId!),
+                      grade: int.parse(selectedClassId!),
                       healthStatus: healthController.text,
                       roleId: 6,
                     );

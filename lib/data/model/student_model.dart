@@ -7,7 +7,7 @@ class StudentModel {
   final String gender;
   final String dob;
   final String address;
-  final int classId;
+  final int grade;
   final String healthStatus;
   final int roleId;
 
@@ -20,7 +20,7 @@ class StudentModel {
     required this.gender,
     required this.dob,
     required this.address,
-    required this.classId,
+    required this.grade,
     required this.healthStatus,
     required this.roleId,
   });
@@ -36,7 +36,7 @@ class StudentModel {
       "gender": gender,
       "dob": dob,
       "address": address,
-      "class_id": classId,
+      "grade": grade,
       "health_status": healthStatus,
     };
   }
