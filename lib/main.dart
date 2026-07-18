@@ -2,13 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:school_management/cubit/assignment/assignment_cubit.dart';
+import 'package:school_management/cubit/dashboard/dashboard_cubit.dart';
+import 'package:school_management/presentation/screen/dashboard_page.dart';
+import 'package:school_management/presentation/screen/widgets/library_content.dart';
+import 'package:school_management/presentation/screens/register_screen.dart';
 import 'cubit/auth/login/login_cubit.dart';
 import 'data/network/dio_client.dart';
 import 'data/repository/auth_repository.dart';
 import 'data/services/auth_service.dart';
 import 'presentation/screens/login_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await DioClient.init();
   runApp(const MyApp());
 }
 
@@ -17,17 +24,27 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'School Management',
-      theme: ThemeData(useMaterial3: true),
-      home: BlocProvider(
-        create: (_) => LoginCubit(
-          AuthRepository(
-            AuthService(DioClient.dio),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => LoginCubit(
+            AuthRepository(
+              AuthService(DioClient.dio),
+            ),
           ),
         ),
-        child: const LoginScreen(),
+        BlocProvider(
+          create: (_) => AssignmentCubit()..getAssignments(),
+        ),
+        BlocProvider(
+          create: (_) => DashboardCubit()..loadStats(),
+        )
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'School Management',
+        theme: ThemeData(useMaterial3: true),
+        home: const LoginScreen(),
       ),
     );
   }

@@ -1,6 +1,15 @@
+// lib/presentation/screen/widgets/dashboard_content.dart
+
 import 'package:flutter/material.dart';
+import 'package:school_management/data/model/dashboard_model.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_colors.dart' as app;
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+
+import 'package:school_management/cubit/assignment/assignment_cubit.dart';
+import 'package:school_management/cubit/assignment/assignment_state.dart';
+import 'package:school_management/cubit/dashboard/dashboard_cubit.dart';
 
 class DashboardContent extends StatelessWidget {
   const DashboardContent({super.key});
@@ -12,162 +21,298 @@ class DashboardContent extends StatelessWidget {
         decoration: const BoxDecoration(
           gradient: app.AppGradients.backgroundGradient,
         ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── Welcome Row ──
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Dashboard',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Welcome back, Admin !',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  // Date Picker Button
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      gradient: app.AppGradients.cardGradient,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: AppColors.cardBorder.withOpacity(0.4),
-                        width: 0.8,
-                      ),
-                    ),
-                    child: Row(
+        child: RefreshIndicator(
+          onRefresh: () {
+            return context.read<DashboardCubit>().loadStats();
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Welcome Row ──
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.calendar_today_rounded,
-                            size: 14, color: AppColors.textSecondary),
-                        const SizedBox(width: 6),
-                        Text(
-                          'May 20, 2025',
+                        const Text(
+                          'Dashboard',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Welcome back, Admin !',
+                          style: TextStyle(
+                            fontSize: 13,
                             color: AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        Icon(Icons.keyboard_arrow_down_rounded,
-                            size: 16, color: AppColors.textSecondary),
                       ],
                     ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              // ── Stat Cards Row ──
-              Row(
-                children: [
-                  Expanded(
-                    child: _StatCard(
-                      title: 'Students',
-                      value: '320',
-                      icon: Icons.people_rounded,
-                      color: AppColors.cardBlue,
-                      change: '+12 this month',
-                      changePositive: true,
+                    // Date Picker Button
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: app.AppGradients.cardGradient,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppColors.cardBorder.withOpacity(0.4),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_today_rounded,
+                              size: 14, color: AppColors.textSecondary),
+                          const SizedBox(width: 6),
+                          Text(
+                            DateFormat('MMM dd, yyyy').format(DateTime.now()),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(Icons.keyboard_arrow_down_rounded,
+                              size: 16, color: AppColors.textSecondary),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _StatCard(
-                      title: 'Teachers',
-                      value: '28',
-                      icon: Icons.school_rounded,
-                      color: AppColors.cardGreen,
-                      change: '+2 this month',
-                      changePositive: true,
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                // ── Stat Cards Row (معدل مع Cubit) ──
+                BlocBuilder<DashboardCubit, DashboardState>(
+                  builder: (context, state) {
+                    if (state is DashboardLoading) {
+                      return _buildSkeletonCards();
+                    } else if (state is DashboardLoaded) {
+                      return _buildStatsCards(context, state.stats);
+                    } else if (state is DashboardError) {
+                      return buildErrorCard(
+                        context,
+                        state.message,
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // ── Row 2: Attendance Chart + Recent Activities ──
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Attendance Overview
+                    Expanded(
+                      flex: 6,
+                      child: _AttendanceCard(),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _StatCard(
-                      title: 'Classes',
-                      value: '18',
-                      icon: Icons.menu_book_rounded,
-                      color: AppColors.cardOrange,
-                      change: 'No change',
-                      changePositive: false,
+                    const SizedBox(width: 16),
+                    // Recent Activities
+                    Expanded(
+                      flex: 4,
+                      child: _RecentActivitiesCard(),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _StatCard(
-                      title: 'Total Fees',
-                      value: '\$24,560',
-                      icon: Icons.attach_money_rounded,
-                      color: AppColors.cardPurple,
-                      change: '+8% this month',
-                      changePositive: true,
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // ── Row 3: Fees Collection + Upcoming Exams ──
+                Row(
+                  children: [
+                    Expanded(
+                      child: _FeesCollectionCard(),
                     ),
-                  ),
-                ],
-              ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _UpcomingExamsCard(),
+                    ),
+                  ],
+                ),
 
-              const SizedBox(height: 20),
-
-              // ── Row 2: Attendance Chart + Recent Activities ──
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Attendance Overview
-                  Expanded(
-                    flex: 6,
-                    child: _AttendanceCard(),
-                  ),
-                  const SizedBox(width: 16),
-                  // Recent Activities
-                  Expanded(
-                    flex: 4,
-                    child: _RecentActivitiesCard(),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // ── Row 3: Fees Collection + Top Classes ──
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Fees Collection
-                  Expanded(
-                    flex: 5,
-                    child: _FeesCollectionCard(),
-                  ),
-                  const SizedBox(width: 16),
-                  // Top Classes
-                  Expanded(
-                    flex: 5,
-                    child: _TopClassesCard(),
-                  ),
-                ],
-              ),
-            ],
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  // ── دوال مساعدة للـ Stats ──
+
+  Widget _buildSkeletonCards() {
+    return Row(
+      children: [
+        Expanded(child: _StatCardSkeleton()),
+        const SizedBox(width: 12),
+        Expanded(child: _StatCardSkeleton()),
+        const SizedBox(width: 12),
+        Expanded(child: _StatCardSkeleton()),
+        const SizedBox(width: 12),
+        Expanded(child: _StatCardSkeleton()),
+      ],
+    );
+  }
+
+  Widget _buildStatsCards(BuildContext context, DashboardApiStats stats) {
+    return Row(
+      children: [
+        Expanded(
+          child: _StatCard(
+            title: 'Students',
+            value: stats.students.toString(),
+            icon: Icons.people_rounded,
+            color: AppColors.cardBlue,
+            change: 'Total Students',
+            changePositive: true,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _StatCard(
+            title: 'Teachers',
+            value: stats.teachers.toString(),
+            icon: Icons.school_rounded,
+            color: AppColors.cardGreen,
+            change: 'Total Teachers',
+            changePositive: true,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _StatCard(
+            title: 'Employees',
+            value: stats.employees.toString(),
+            icon: Icons.badge_rounded,
+            color: AppColors.cardOrange,
+            change: 'Total Employees',
+            changePositive: true,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _StatCard(
+            title: 'Books',
+            value: stats.books.toString(),
+            icon: Icons.library_books_rounded,
+            color: AppColors.cardPurple,
+            change: 'Coming Soon',
+            changePositive: true,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildErrorCard(
+    BuildContext context,
+    String message,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.red.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.red.withOpacity(0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.error_outline,
+            color: Colors.red,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Error loading stats: $message',
+              style: const TextStyle(
+                color: Colors.red,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              context.read<DashboardCubit>().refreshStats();
+            },
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════
+// Skeleton Loader للبطاقات
+// ══════════════════════════════════════════
+class _StatCardSkeleton extends StatelessWidget {
+  const _StatCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: app.AppGradients.cardGradient,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: app.AppShadows.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: 60,
+            height: 26,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            width: 80,
+            height: 13,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: 100,
+            height: 11,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -269,6 +414,206 @@ class _StatCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+// ══════════════════════════════════════════
+// Library Overview Card
+// ══════════════════════════════════════════
+class _LibraryOverviewCard extends StatelessWidget {
+  const _LibraryOverviewCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: app.AppGradients.cardGradient,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: app.AppShadows.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          Text(
+            'Library Overview',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 24),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.library_books_rounded),
+            title: Text('Total Books'),
+            trailing: Text('1,250'),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.bookmark_added_rounded),
+            title: Text('Borrowed Books'),
+            trailing: Text('320'),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.warning_amber_rounded),
+            title: Text('Late Returns'),
+            trailing: Text('18'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════
+// Upcoming Exams Card
+// ══════════════════════════════════════════
+class _UpcomingExamsCard extends StatelessWidget {
+  const _UpcomingExamsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AssignmentCubit, AssignmentState>(
+      builder: (context, state) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: app.AppGradients.cardGradient,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: app.AppShadows.cardShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Upcoming Exams',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 20),
+              if (state is AssignmentLoading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              else if (state is AssignmentLoaded &&
+                  state.assignments.isNotEmpty)
+                Column(
+                  children: state.assignments.take(3).map((assignment) {
+                    final dateParts = assignment.dueDate.split('-');
+                    final monthName = _getMonthName(int.parse(dateParts[1]));
+                    final displayDate = '${dateParts[2]} $monthName';
+
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(
+                        Icons.assignment_rounded,
+                        color: AppColors.cardBlue,
+                      ),
+                      title: Text(
+                        assignment.title,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      subtitle: Text(
+                        assignment.subjectName,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color.fromARGB(255, 112, 111, 111),
+                        ),
+                      ),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            displayDate,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                )
+              else if (state is AssignmentLoaded && state.assignments.isEmpty)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text(
+                      'No upcoming exams or quizzes',
+                      style: TextStyle(color: AppColors.textSecondary),
+                    ),
+                  ),
+                )
+              else if (state is AssignmentError)
+                Center(
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        color: Colors.red,
+                        size: 40,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Error loading exams',
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        state.message,
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                )
+              else
+                const SizedBox.shrink(),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return months[month - 1];
   }
 }
 
@@ -494,9 +839,9 @@ class _RecentActivitiesCard extends StatelessWidget {
       time: 'Yesterday',
     ),
     _ActivityItem(
-      title: 'Fee payment received',
-      subtitle: 'John Doe',
-      icon: Icons.attach_money_rounded,
+      title: 'Book borrowed',
+      subtitle: 'Grade 10 Student',
+      icon: Icons.library_books_rounded,
       color: AppColors.cardPurple,
       time: 'May 18',
     ),
@@ -602,7 +947,7 @@ class _ActivityTile extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════
-// Fees Collection Card
+// Staff Attendance Card (Fees Collection)
 // ══════════════════════════════════════════
 class _FeesCollectionCard extends StatelessWidget {
   const _FeesCollectionCard();
@@ -624,7 +969,7 @@ class _FeesCollectionCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Fees Collection',
+                'Staff Attendance',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -665,7 +1010,7 @@ class _FeesCollectionCard extends StatelessWidget {
                     CustomPaint(
                       size: const Size(120, 120),
                       painter: _DonutChartPainter(
-                        collected: 0.75,
+                        collected: 0.85,
                         collectedColor: AppColors.primary,
                         pendingColor: AppColors.cardPurple,
                       ),
@@ -674,7 +1019,7 @@ class _FeesCollectionCard extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Text(
-                          '\$24,560',
+                          '85%',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -682,7 +1027,7 @@ class _FeesCollectionCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Total',
+                          'Present',
                           style: TextStyle(
                             fontSize: 10,
                             color: AppColors.textSecondary,
@@ -700,15 +1045,15 @@ class _FeesCollectionCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _LegendItem(
-                    color: AppColors.primary,
-                    label: 'Collected',
-                    value: '\$18,450 (75%)',
+                    color: AppColors.cardGreen,
+                    label: 'Present Staff',
+                    value: '34 Employees',
                   ),
                   const SizedBox(height: 12),
                   _LegendItem(
-                    color: AppColors.cardPurple,
-                    label: 'Pending',
-                    value: '\$6,110 (25%)',
+                    color: AppColors.cardOrange,
+                    label: 'Absent Staff',
+                    value: '6 Employees',
                   ),
                 ],
               ),

@@ -11,7 +11,7 @@ class AuthRepository {
     String password,
   ) async {
     final response = await authService.login(
-      userName: userName,
+      username: userName,
       password: password,
     );
 
@@ -20,5 +20,9 @@ class AuthRepository {
     } else {
       throw Exception('Invalid response format');
     }
+  }
+
+  Future<void> logout() async {
+    await authService.logout();
   }
 }

@@ -6,15 +6,19 @@ class AuthService {
   AuthService(this.dio);
 
   Future<Response> login({
-    required String userName,
+    required String username,
     required String password,
   }) async {
     return await dio.post(
       '/login',
       data: {
-        "user_name": userName,
+        "user_name": username,
         "password": password,
       },
     );
+  }
+
+  Future<Response> logout() async {
+    return await dio.post('/logout');
   }
 }
