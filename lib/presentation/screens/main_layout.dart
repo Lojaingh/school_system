@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/constants/app_colors.dart';
 import 'package:school_management/presentation/screens/register_screen.dart';
+import 'package:school_management/presentation/screens/staff_screen.dart';
+import 'package:school_management/presentation/screens/staff_profile_screen.dart';
+import 'package:school_management/presentation/screens/student-screen.dart';
+import 'package:school_management/presentation/screens/student_profile_screen.dart';
+import 'package:school_management/presentation/screens/subject_screen.dart';
+
 import 'package:sidebarx/sidebarx.dart';
 import '../screen/widgets/dashboard_content.dart';
 import '../screen/widgets/attendance_content.dart';
@@ -23,23 +29,84 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   late SidebarXController _controller;
 
-  late final List<Widget> _pages = [
-    const DashboardContent(),
-    const RegisterScreen(),
-    const Center(child: Text("Teachers")),
-    const Center(child: Text("Classes")),
-    const AttendanceContent(),
-    const LibraryContent(),
-    const AssignmentScreen(),
-    const Center(child: Text("Reports")),
-    const Center(child: Text("Settings")),
-  ];
-
+  late List<Widget> _pages;
   @override
   void initState() {
     super.initState();
-    _controller =
-        SidebarXController(selectedIndex: widget.initialIndex, extended: true);
+
+    _controller = SidebarXController(
+      selectedIndex: widget.initialIndex,
+      extended: true,
+    );
+
+    _pages = [
+      const DashboardContent(),
+      const RegisterScreen(),
+      const SubjectScreen(),
+      StudentScreen(
+        onOpenProfile: (id) {
+          setState(() {
+            _pages[3] = StudentProfileScreen(
+              studentId: id,
+              onBack: () {
+                setState(() {
+                  _pages[3] = StudentScreen(
+                    onOpenProfile: (id) {
+                      setState(() {
+                        _pages[3] = StudentProfileScreen(
+                          studentId: id,
+                          onBack: () {
+                            setState(() {
+                              _pages[3] = StudentScreen(
+                                onOpenProfile: (id) {},
+                              );
+                            });
+                          },
+                        );
+                      });
+                    },
+                  );
+                });
+              },
+            );
+          });
+        },
+      ),
+      const AttendanceContent(),
+      const LibraryContent(),
+      StaffScreen(
+        onOpenProfile: (id, isManager) {
+          setState(() {
+            _pages[6] = StaffProfileScreen(
+              staffId: id,
+              isManager: isManager,
+              onBack: () {
+                setState(() {
+                  _pages[6] = StaffScreen(
+                    onOpenProfile: (id, isManager) {
+                      setState(() {
+                        _pages[6] = StaffProfileScreen(
+                          staffId: id,
+                          isManager: isManager,
+                          onBack: () {
+                            setState(() {
+                              _pages[6] = StaffScreen(
+                                onOpenProfile: (id, isManager) {},
+                              );
+                            });
+                          },
+                        );
+                      });
+                    },
+                  );
+                });
+              },
+            );
+          });
+        },
+      ),
+      const Center(child: Text("الإعدادات")),
+    ];
   }
 
   void _logout(BuildContext context) {
@@ -413,7 +480,9 @@ class _MainLayoutState extends State<MainLayout> {
                   color: Color(0xFF8A9CB0),
                 ),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 10),
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: 10,
+                ),
               ),
             ),
           ),
