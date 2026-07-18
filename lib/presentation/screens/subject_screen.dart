@@ -141,7 +141,7 @@ class _SubjectScreenState extends State<SubjectScreen> {
 
                           Navigator.pop(ctx);
                         },
-                        child: Text(editingId == null ? "Add" : "Update"),
+                        child: Text(editingId == null ? "Add" : "Update",style: TextStyle(color:Colors.white),),
                       ),
                     ),
                   ],

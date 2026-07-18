@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:school_management/presentation/screens/register_screen.dart';
+import 'package:school_management/presentation/screens/staff_screen.dart';
+import 'package:school_management/presentation/screens/staff_profile_screen.dart';
+import 'package:school_management/presentation/screens/student-screen.dart';
+import 'package:school_management/presentation/screens/student_profile_screen.dart';
+import 'package:school_management/presentation/screens/subject_screen.dart';
+
 import 'package:sidebarx/sidebarx.dart';
 import '../screen/widgets/dashboard_content.dart';
 import '../screen/widgets/attendance_content.dart';
@@ -17,22 +23,85 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   late SidebarXController _controller;
 
-  late final List<Widget> _pages = [
-    const DashboardContent(),
-    const RegisterScreen(),
-    const Center(child: Text("الأساتذة")),
-    const Center(child: Text("الصفوف")),
-    const AttendanceContent(),
-    const LibraryContent(),
-    const Center(child: Text("التقارير")),
-    const Center(child: Text("الإعدادات")),
-  ];
+  late List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
-    _controller =
-        SidebarXController(selectedIndex: widget.initialIndex, extended: true);
+
+    _controller = SidebarXController(
+      selectedIndex: widget.initialIndex,
+      extended: true,
+    );
+
+    _pages = [
+      const DashboardContent(),
+      const RegisterScreen(),
+      const SubjectScreen(),
+      StudentScreen(
+        onOpenProfile: (id) {
+          setState(() {
+            _pages[3] = StudentProfileScreen(
+              studentId: id,
+              onBack: () {
+                setState(() {
+                  _pages[3] = StudentScreen(
+                    onOpenProfile: (id) {
+                      setState(() {
+                        _pages[3] = StudentProfileScreen(
+                          studentId: id,
+                          onBack: () {
+                            setState(() {
+                              _pages[3] = StudentScreen(
+                                onOpenProfile: (id) {},
+                              );
+                            });
+                          },
+                        );
+                      });
+                    },
+                  );
+                });
+              },
+            );
+          });
+        },
+      ),
+      const AttendanceContent(),
+      const LibraryContent(),
+      StaffScreen(
+        onOpenProfile: (id, isManager) {
+          setState(() {
+            _pages[6] = StaffProfileScreen(
+              staffId: id,
+              isManager: isManager,
+              onBack: () {
+                setState(() {
+                  _pages[6] = StaffScreen(
+                    onOpenProfile: (id, isManager) {
+                      setState(() {
+                        _pages[6] = StaffProfileScreen(
+                          staffId: id,
+                          isManager: isManager,
+                          onBack: () {
+                            setState(() {
+                              _pages[6] = StaffScreen(
+                                onOpenProfile: (id, isManager) {},
+                              );
+                            });
+                          },
+                        );
+                      });
+                    },
+                  );
+                });
+              },
+            );
+          });
+        },
+      ),
+      const Center(child: Text("الإعدادات")),
+    ];
   }
 
   @override
@@ -58,7 +127,9 @@ class _MainLayoutState extends State<MainLayout> {
                   textStyle:
                       const TextStyle(color: Colors.white70, fontSize: 14),
                   selectedTextStyle: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w500),
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
                   itemTextPadding: const EdgeInsets.only(right: 16),
                   selectedItemTextPadding: const EdgeInsets.only(right: 16),
                   itemDecoration:
@@ -80,25 +151,38 @@ class _MainLayoutState extends State<MainLayout> {
                         const CircleAvatar(
                           radius: 28,
                           backgroundColor: Color(0xFF6C4CF1),
-                          child: Icon(Icons.school_rounded,
-                              color: Colors.white, size: 30),
+                          child: Icon(
+                            Icons.school_rounded,
+                            color: Colors.white,
+                            size: 30,
+                          ),
                         ),
                         const SizedBox(height: 10),
                         if (extended) ...[
-                          const Text('نظام إدارة المدرسة',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 14)),
+                          const Text(
+                            'نظام إدارة المدرسة',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
                           const SizedBox(height: 4),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 3),
+                              horizontal: 10,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFF6C4CF1).withOpacity(0.3),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: const Text('مدير',
-                                style: TextStyle(
-                                    color: Colors.white70, fontSize: 12)),
+                            child: const Text(
+                              'مدير',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
                           ),
                         ],
                       ],
@@ -107,36 +191,38 @@ class _MainLayoutState extends State<MainLayout> {
                 },
                 items: const [
                   SidebarXItem(
-                      icon: Icons.dashboard_rounded, label: 'الرئيسية'),
-                  SidebarXItem(icon: Icons.people_rounded, label: 'التسجيل'),
-                  SidebarXItem(icon: Icons.school_rounded, label: 'الأساتذة'),
-                  SidebarXItem(icon: Icons.grid_view_rounded, label: 'الصفوف'),
-                  SidebarXItem(icon: Icons.how_to_reg_rounded, label: 'الحضور'),
-                  SidebarXItem(icon: Icons.menu_book_rounded, label: 'المكتبة'),
+                    icon: Icons.dashboard_rounded,
+                    label: 'الرئيسية',
+                  ),
                   SidebarXItem(
-                      icon: Icons.bar_chart_rounded, label: 'التقارير'),
+                    icon: Icons.people_rounded,
+                    label: 'التسجيل',
+                  ),
                   SidebarXItem(
-                      icon: Icons.settings_rounded, label: 'الإعدادات'),
+                    icon: Icons.school_rounded,
+                    label: 'الأساتذة',
+                  ),
+                  SidebarXItem(
+                    icon: Icons.grid_view_rounded,
+                    label: 'الصفوف',
+                  ),
+                  SidebarXItem(
+                    icon: Icons.how_to_reg_rounded,
+                    label: 'الحضور',
+                  ),
+                  SidebarXItem(
+                    icon: Icons.menu_book_rounded,
+                    label: 'المكتبة',
+                  ),
+                  SidebarXItem(
+                    icon: Icons.bar_chart_rounded,
+                    label: 'التقارير',
+                  ),
+                  SidebarXItem(
+                    icon: Icons.settings_rounded,
+                    label: 'الإعدادات',
+                  ),
                 ],
-                footerBuilder: (context, extended) {
-                  return Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: InkWell(
-                      onTap: () {},
-                      child: Row(
-                        children: [
-                          const Icon(Icons.logout_rounded,
-                              color: Colors.redAccent),
-                          if (extended) ...[
-                            const SizedBox(width: 12),
-                            const Text('تسجيل الخروج',
-                                style: TextStyle(color: Colors.redAccent)),
-                          ],
-                        ],
-                      ),
-                    ),
-                  );
-                },
               ),
             ),
             Expanded(
@@ -165,29 +251,45 @@ class _MainLayoutState extends State<MainLayout> {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
-        border:
-            Border(bottom: BorderSide(color: Colors.white.withOpacity(0.1))),
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.white.withOpacity(0.1),
+          ),
+        ),
       ),
       child: Row(
         children: [
           const CircleAvatar(
             radius: 20,
             backgroundColor: Color(0xFF6C4CF1),
-            child:
-                Text('أ', style: TextStyle(color: Colors.white, fontSize: 16)),
+            child: Text(
+              'أ',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+              ),
+            ),
           ),
           const SizedBox(width: 12),
           const Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('مرحباً، المدير 👋',
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white)),
-              Text('لوحة إدارة المدرسة',
-                  style: TextStyle(fontSize: 11, color: Colors.white70)),
+              Text(
+                'مرحباً، المدير 👋',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                'لوحة إدارة المدرسة',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.white70,
+                ),
+              ),
             ],
           ),
           const Spacer(),
@@ -199,13 +301,25 @@ class _MainLayoutState extends State<MainLayout> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: const TextField(
-              style: TextStyle(color: Colors.white, fontSize: 13),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+              ),
               decoration: InputDecoration(
                 hintText: 'بحث...',
-                hintStyle: TextStyle(color: Colors.white54, fontSize: 13),
-                prefixIcon: Icon(Icons.search, size: 18, color: Colors.white54),
+                hintStyle: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 13,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  size: 18,
+                  color: Colors.white54,
+                ),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 10),
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: 10,
+                ),
               ),
             ),
           ),
@@ -213,16 +327,22 @@ class _MainLayoutState extends State<MainLayout> {
           Stack(
             clipBehavior: Clip.none,
             children: [
-              const Icon(Icons.notifications_none_rounded,
-                  color: Colors.white70, size: 24),
+              const Icon(
+                Icons.notifications_none_rounded,
+                color: Colors.white70,
+                size: 24,
+              ),
               Positioned(
                 top: 0,
                 right: 0,
                 child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                        color: Colors.redAccent, shape: BoxShape.circle)),
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Colors.redAccent,
+                    shape: BoxShape.circle,
+                  ),
+                ),
               ),
             ],
           ),
