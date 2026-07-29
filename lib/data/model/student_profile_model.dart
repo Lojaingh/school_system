@@ -1,3 +1,5 @@
+// lib/data/model/student_profile_model.dart
+
 class StudentProfileModel {
   final int? userId;
   final String? username;
@@ -22,16 +24,64 @@ class StudentProfileModel {
   });
 
   factory StudentProfileModel.fromJson(Map<String, dynamic> json) {
+    // ✅ استخراج الـ profile
+    final profile = json['profile'] ?? {};
+
+    // ✅ محاولة استخراج الاسم من عدة مصادر
+    String firstName = '';
+    String lastName = '';
+    String gender = '';
+    String dob = '';
+
+    // الطريقة 1: من profile (API الجديد /class?class_id)
+    if (profile.isNotEmpty) {
+      firstName =
+          profile['name'] ?? profile['first name'] ?? profile['f_name'] ?? '';
+      lastName = profile['l_name'] ?? profile['last name'] ?? '';
+      gender = profile['gender'] ?? profile['Gender'] ?? '';
+      dob = profile['dob'] ?? profile['Date of Birth'] ?? '';
+    }
+
+    // الطريقة 2: من json مباشرة (API القديم)
+    if (firstName.isEmpty) {
+      firstName = json['f_name'] ?? json['first name'] ?? '';
+    }
+    if (lastName.isEmpty) {
+      lastName = json['l_name'] ?? json['last name'] ?? '';
+    }
+    if (gender.isEmpty) {
+      gender = json['gender'] ?? json['Gender'] ?? '';
+    }
+    if (dob.isEmpty) {
+      dob = json['dob'] ?? json['Date of Birth'] ?? '';
+    }
+
+    // ✅ استخراج class_id من details (إذا كان موجود)
+    int? classId;
+    if (json['details'] != null) {
+      classId = json['details']['class_id'];
+    }
+    // أو من enrollment
+    if (classId == null && json['enrollments'] != null) {
+      final enrollments = json['enrollments'] as List? ?? [];
+      if (enrollments.isNotEmpty) {
+        final schoolClass = enrollments.first['school_class'] ?? {};
+        classId = schoolClass['id'];
+      }
+    }
+
     return StudentProfileModel(
-      userId: json['user_id'],
+      userId: json['user_id'] ?? json['id'],
       username: json['username'],
-      firstName: json['profile']?['first name'] ?? json['f_name'] ?? '',
-      lastName: json['profile']?['last name'] ?? json['l_name'] ?? '',
-      gender: json['profile']?['Gender'] ?? json['gender'] ?? '',
-      dob: json['profile']?['Date of Birth'] ?? json['dob'] ?? '',
-      status: json['details']?['status'],
-      healthStatus: json['details']?['health_status'],
-      classId: json['details']?['class_id'],
+      firstName: firstName,
+      lastName: lastName,
+      gender: gender,
+      dob: dob,
+      status: json['details']?['status'] ?? json['status'],
+      healthStatus: json['details']?['health_status'] ?? json['health_status'],
+      classId: classId,
     );
   }
+
+  String get fullName => '$firstName $lastName'.trim();
 }

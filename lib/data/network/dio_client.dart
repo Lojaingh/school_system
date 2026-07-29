@@ -1,8 +1,9 @@
 import 'package:dio/dio.dart';
+import 'package:dio/dio.dart';
 import 'package:school_management/utils/shared_prefs_helper.dart';
 
 class DioClient {
-  // 1. تعرف المتغير هنا (مرة واحدة فقط!)
+  // هذا هو تعريفك (Incoming Change) وهو الأصح، سنحتفظ به
   static final Dio dio = Dio(
     BaseOptions(
       baseUrl: 'http://127.0.0.1:8000/api/v1',
@@ -15,7 +16,7 @@ class DioClient {
     ),
   );
 
-  // 2. دالة init فقط لإضافة الـ Interceptors (بدون إعادة تعريف المتغير)
+  // دالة init لإضافة الـ interceptors (هذا موجود عند الاثنين، سنحتفظ به)
   static Future<void> init() async {
     dio.interceptors.add(
       InterceptorsWrapper(

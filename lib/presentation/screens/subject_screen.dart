@@ -26,8 +26,8 @@ class _SubjectScreenState extends State<SubjectScreen> {
     "2": "Second Semester",
   };
 
-  List<dynamic> allSubjects = [];
-  List<dynamic> filteredSubjects = [];
+  List<SubjectModel> allSubjects = [];
+  List<SubjectModel> filteredSubjects = [];
 
   @override
   void initState() {
@@ -47,17 +47,17 @@ class _SubjectScreenState extends State<SubjectScreen> {
   void _filter(String value) {
     setState(() {
       filteredSubjects = allSubjects.where((s) {
-        final name = (s['name'] ?? '').toString().toLowerCase();
+        final name = s.name.toLowerCase();
         return name.contains(value.toLowerCase());
       }).toList();
     });
   }
 
-  void _openForm({Map? subject}) {
+  void _openForm({SubjectModel? subject}) {
     if (subject != null) {
-      nameController.text = subject['name'] ?? '';
-      partition = subject['partition']?.toString();
-      editingId = subject['id'];
+      nameController.text = subject.name;
+      partition = subject.partition;
+      editingId = subject.id;
     } else {
       nameController.clear();
       partition = null;
@@ -314,13 +314,13 @@ class _SubjectScreenState extends State<SubjectScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                s['name'] ?? '',
+                                s.name,
                                 style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold),
                               ),
                               Text(
-                                partitions[s['partition'].toString()] ?? '',
+                                partitions[s.partition] ?? s.partition,
                                 style: const TextStyle(
                                     color: Colors.white70, fontSize: 12),
                               ),
@@ -332,8 +332,8 @@ class _SubjectScreenState extends State<SubjectScreen> {
                           onPressed: () => _openForm(subject: s),
                         ),
                         DeleteButton(
-                          id: s['id'],
-                          title: s['name'] ?? "subject",
+                          id: s.id,
+                          title: s.name,
                           onDelete: (id) async {
                             await context
                                 .read<SubjectCubit>()
@@ -377,6 +377,6 @@ class _SubjectScreenState extends State<SubjectScreen> {
   }
 
   int _count(String p) {
-    return allSubjects.where((e) => e['partition'].toString() == p).length;
+    return allSubjects.where((e) => e.partition == p).length;
   }
 }

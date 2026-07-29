@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+// --- Cubits ---
 import 'package:school_management/cubit/assignment/assignment_cubit.dart';
 import 'package:school_management/cubit/auth/login/login_cubit.dart';
 import 'package:school_management/cubit/auth/subject/subject_cubit.dart';
@@ -8,21 +9,31 @@ import 'package:school_management/cubit/dashboard/dashboard_cubit.dart';
 import 'package:school_management/cubit/staff/staff_profile_cubit.dart';
 import 'package:school_management/cubit/student/student_cubit.dart';
 import 'package:school_management/cubit/student_profile/student_profile_cubit.dart';
+import 'package:school_management/cubit/attendance/attendance_cubit.dart';
+import 'package:school_management/cubit/class/class_cubit.dart';
 
-import 'package:school_management/data/network/dio_client.dart';
-
+// --- Repositories ---
 import 'package:school_management/data/repository/auth_repository.dart';
 import 'package:school_management/data/repository/subject_repository.dart';
 import 'package:school_management/data/repository/student_repository.dart';
 import 'package:school_management/data/repository/student_profile_repository.dart';
 import 'package:school_management/data/repository/staff_profile_repository.dart';
+import 'package:school_management/data/repository/assignment_repository.dart';
+import 'package:school_management/data/repository/class_repository.dart';
 
+// --- Services ---
 import 'package:school_management/data/services/auth_service.dart';
 import 'package:school_management/data/services/subject_service.dart';
 import 'package:school_management/data/services/student_service.dart';
 import 'package:school_management/data/services/student_profile_service.dart';
 import 'package:school_management/data/services/staff_profile_service.dart';
+import 'package:school_management/data/services/attendance_service.dart';
+import 'package:school_management/data/services/class_service.dart';
 
+// --- Network ---
+import 'package:school_management/data/network/dio_client.dart';
+
+// --- Screens ---
 import 'package:school_management/presentation/screens/login_screen.dart';
 
 void main() async {
@@ -48,7 +59,9 @@ class MyApp extends StatelessWidget {
           ),
         ),
         BlocProvider(
-          create: (_) => AssignmentCubit()..getAssignments(),
+          create: (_) => AssignmentCubit(
+            AssignmentRepository(),
+          ),
         ),
         BlocProvider(
           create: (_) => DashboardCubit()..loadStats(),
@@ -79,6 +92,18 @@ class MyApp extends StatelessWidget {
             StaffProfileRepository(
               StaffProfileService(),
             ),
+          ),
+        ),
+        BlocProvider(
+          create: (_) => ClassCubit(
+            ClassRepository(
+              ClassService(),
+            ),
+          )..loadClasses(),
+        ),
+        BlocProvider(
+          create: (_) => AttendanceCubit(
+            AttendanceService(),
           ),
         ),
       ],

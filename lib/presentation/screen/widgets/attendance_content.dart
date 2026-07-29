@@ -1,25 +1,40 @@
-
+// lib/presentation/screen/widgets/attendance_content.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/constants/app_colors.dart';
 import 'package:school_management/constants/app_colors.dart' as app;
+import 'package:school_management/cubit/attendance/attendance_cubit.dart';
+import 'package:school_management/data/model/class_students_model.dart';
+import 'package:school_management/data/network/dio_client.dart';
 
 class AttendanceContent extends StatefulWidget {
-  const AttendanceContent({super.key});
+  final int? initialClassId;
+
+  const AttendanceContent({super.key, this.initialClassId});
 
   @override
   State<AttendanceContent> createState() => _AttendanceContentState();
 }
 
 class _AttendanceContentState extends State<AttendanceContent> {
-  
   int selectedTab = 0;
 
+  // ✅ التاريخ مقفول على اليوم الحالي فقط — الباك ما بياخد تاريخ بالـ body
+  // خالص (شفنا هيك بملف الـ Postman)، فالحضور دائماً بينسجل لليوم الحالي
+  // وقت الاستدعاء. لهيك حذفنا أي إمكانية لتغيير التاريخ من المستخدم.
+  final DateTime selectedDate = DateTime.now();
 
-  String selectedClass = 'Grade 7';
-  String selectedSection = 'A';
-  DateTime selectedDate = DateTime.now();
+  // ✅ قائمة الصفوف من الـ API (سنملأها لاحقاً)
+  List<Map<String, dynamic>> classList = [];
+  int? selectedClassId;
+  bool isLoadingClasses = true;
 
+  // ✅ بيانات الطلاب من الـ API
+  List<ClassStudent> students = [];
+  int? currentClassId;
+
+  // ✅ بيانات المعلمين (وهمية مؤقتاً لأن الباك ما عنده API)
   List<Map<String, dynamic>> teachers = [
     {
       'name': 'Ahmad Mahmod',
@@ -51,136 +66,241 @@ class _AttendanceContentState extends State<AttendanceContent> {
     },
   ];
 
- 
   String selectedDepartment = 'Math';
   final List<String> departmentList = ['Math', 'Science', 'Arabic', 'English'];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadClasses();
+  }
 
-  List<Map<String, dynamic>> students = [
-    {
-      'name': 'Mohamad Ahmad',
-      'id': '001',
-      'status': 'Present',
-      'time': '07:45'
-    },
-    {'name': 'Sara Khaled', 'id': '002', 'status': 'Absent', 'time': '-'},
-    {'name': 'Ali Mahmod', 'id': '003', 'status': 'Present', 'time': '08:15'},
-    {'name': 'Nour Hasan', 'id': '004', 'status': 'Present', 'time': '07:50'},
-    {'name': 'Lili Omar', 'id': '005', 'status': 'Late', 'time': '08:30'},
-    {'name': 'Khaled Waleed', 'id': '006', 'status': 'Absent', 'time': '-'},
-    {'name': 'Sana Ali', 'id': '007', 'status': 'Present', 'time': '07:55'},
-    {'name': 'Kareem Samir', 'id': '008', 'status': 'Present', 'time': '07:48'},
-  ];
+  Future<void> _loadClasses() async {
+    setState(() {
+      isLoadingClasses = true;
+    });
 
-  final List<String> classList = ['Grade 7', 'Grade 8', 'Grade 9'];
-  final List<String> sectionList = ['A', 'B', 'C', 'D'];
+    try {
+      final response = await DioClient.dio.get('/class/all');
 
-  Future<void> _selectDate(BuildContext context) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
+      if (response.statusCode == 200) {
+        final data = response.data as List? ?? [];
+        final List<Map<String, dynamic>> loadedClasses = [];
+
+        for (var item in data) {
+          loadedClasses.add({
+            'id': item['id'],
+            'year': item['year'],
+            'number': item['number'],
+            'display': 'Grade ${item['year']} - Section ${item['number']}',
+          });
+        }
+
+        setState(() {
+          classList = loadedClasses;
+          if (classList.isNotEmpty) {
+            // ✅ اختر أول صف في القائمة
+            selectedClassId = classList[0]['id'];
+            _loadStudents(selectedClassId!);
+          }
+          isLoadingClasses = false;
+        });
+      } else {
+        throw Exception('Failed to load classes: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Error loading classes: $e');
       setState(() {
-        selectedDate = picked;
+        isLoadingClasses = false;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load classes: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
+  Future<void> _loadStudents(int classId) async {
+    try {
+      currentClassId = classId;
+      print('🔵 Loading students for class: $classId');
+      await context.read<AttendanceCubit>().loadClassStudents(classId);
+    } catch (e) {
+      print('❌ Error loading students for class $classId: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load students: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  // ❌ حذفنا _selectDate بالكامل — ما عاد في داعي لها بما إنه التاريخ
+  // مقفول على اليوم الحالي ومش قابل للتغيير من المستخدم.
+
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title
-          const Text(
-            'Attendance',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+    return BlocListener<AttendanceCubit, AttendanceState>(
+      listener: (context, state) {
+        if (state is AttendanceSaved) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: AppColors.cardGreen,
             ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Record and track attendance for students and teaching staff',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
+          );
+        } else if (state is AttendanceError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${state.message}'),
+              backgroundColor: AppColors.error,
             ),
-          ),
-          const SizedBox(height: 24),
+          );
+        }
+      },
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title
+            const Text(
+              'Attendance',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Record and track attendance for students and teaching staff',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 24),
 
-          // Tab Bar
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.cardBg.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildTabButton(
-                    label: '👨‍🎓 Students',
-                    index: 0,
-                    selectedTab: selectedTab,
-                    onTap: () => setState(() => selectedTab = 0),
+            // ✅ Tab Bar (Students + Teachers)
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.cardBg.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildTabButton(
+                      label: '👨‍🎓 Students',
+                      index: 0,
+                      selectedTab: selectedTab,
+                      onTap: () => setState(() => selectedTab = 0),
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: _buildTabButton(
-                    label: '👩‍🏫 Teachers',
-                    index: 1,
-                    selectedTab: selectedTab,
-                    onTap: () => setState(() => selectedTab = 1),
+                  Expanded(
+                    child: _buildTabButton(
+                      label: '👩‍🏫 Teachers',
+                      index: 1,
+                      selectedTab: selectedTab,
+                      onTap: () => setState(() => selectedTab = 1),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          
-          selectedTab == 0
-              ? _StudentsAttendanceContent(
-                  students: students,
-                  selectedClass: selectedClass,
-                  selectedSection: selectedSection,
-                  selectedDate: selectedDate,
-                  classList: classList,
-                  sectionList: sectionList,
-                  onClassChanged: (value) =>
-                      setState(() => selectedClass = value),
-                  onSectionChanged: (value) =>
-                      setState(() => selectedSection = value),
-                  onDateTap: () => _selectDate(context),
-                )
-              : _TeachersAttendanceContent(
-                  teachers: teachers,
-                  selectedDepartment: selectedDepartment,
-                  selectedDate: selectedDate,
-                  departmentList: departmentList,
-                  onDepartmentChanged: (value) =>
-                      setState(() => selectedDepartment = value),
-                  onDateTap: () => _selectDate(context),
-                ),
-        ],
+            // ✅ Students Tab
+            if (selectedTab == 0)
+              BlocBuilder<AttendanceCubit, AttendanceState>(
+                builder: (context, state) {
+                  if (state is AttendanceLoading) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  } else if (state is AttendanceLoaded) {
+                    students = state.data.students;
+                    currentClassId = state.classId;
+
+                    return _StudentsAttendanceContent(
+                      students: students,
+                      selectedDate: selectedDate,
+                      classList: classList,
+                      selectedClassId: selectedClassId,
+                      isLoadingClasses: isLoadingClasses,
+                      onClassChanged: (value) {
+                        setState(() {
+                          selectedClassId = value;
+                          _loadStudents(value);
+                        });
+                      },
+                      onSave: () => _saveAttendance(context),
+                    );
+                  } else if (state is AttendanceError) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.error_outline_rounded,
+                              size: 48,
+                              color: Colors.red.shade300,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              state.message,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () {
+                                if (selectedClassId != null) {
+                                  _loadStudents(selectedClassId!);
+                                }
+                              },
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+
+            // ✅ Teachers Tab (بيانات وهمية مؤقتاً)
+            if (selectedTab == 1)
+              _TeachersAttendanceContent(
+                teachers: teachers,
+                selectedDepartment: selectedDepartment,
+                selectedDate: selectedDate,
+                departmentList: departmentList,
+                onDepartmentChanged: (value) =>
+                    setState(() => selectedDepartment = value),
+                onSave: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Teachers attendance saved (coming soon)'),
+                      backgroundColor: AppColors.cardGreen,
+                    ),
+                  );
+                },
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -214,30 +334,70 @@ class _AttendanceContentState extends State<AttendanceContent> {
       ),
     );
   }
+
+  // ── حفظ الحضور للطلاب ──
+  void _saveAttendance(BuildContext context) {
+    if (currentClassId == null || students.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No students to save attendance for'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    // ✅ بناء المصفوفات
+    final List<int> absent = [];
+    final List<int> late = [];
+    final List<int> excused = [];
+
+    for (var student in students) {
+      final status = student.status;
+      final userId = student.userId;
+
+      if (status == 'Absent') {
+        absent.add(userId);
+      } else if (status == 'Late') {
+        late.add(userId);
+      } else if (status == 'Excused') {
+        excused.add(userId);
+      }
+      // ✅ Present لا نضيفه للمصفوفات — تلقائياً بيعتبر حاضر لأنه مش
+      // موجود بأي وحدة من المصفوفات التلاتة، تماماً متل ما الباك متوقع.
+    }
+
+    print('📊 Absent: $absent');
+    print('📊 Late: $late');
+    print('📊 Excused: $excused');
+
+    context.read<AttendanceCubit>().markAttendance(
+          classId: currentClassId!,
+          absent: absent,
+          late: late,
+          excused: excused,
+        );
+  }
 }
 
-
+// ── Students Attendance Content ─────────────────────────────────
 class _StudentsAttendanceContent extends StatelessWidget {
-  final List<Map<String, dynamic>> students;
-  final String selectedClass;
-  final String selectedSection;
+  final List<ClassStudent> students;
   final DateTime selectedDate;
-  final List<String> classList;
-  final List<String> sectionList;
-  final Function(String) onClassChanged;
-  final Function(String) onSectionChanged;
-  final VoidCallback onDateTap;
+  final List<Map<String, dynamic>> classList;
+  final int? selectedClassId;
+  final bool isLoadingClasses;
+  final Function(int) onClassChanged;
+  final VoidCallback onSave;
 
   const _StudentsAttendanceContent({
     required this.students,
-    required this.selectedClass,
-    required this.selectedSection,
     required this.selectedDate,
     required this.classList,
-    required this.sectionList,
+    required this.selectedClassId,
+    required this.isLoadingClasses,
     required this.onClassChanged,
-    required this.onSectionChanged,
-    required this.onDateTap,
+    required this.onSave,
   });
 
   @override
@@ -246,26 +406,22 @@ class _StudentsAttendanceContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _StudentsFilterRow(
-          selectedClass: selectedClass,
-          selectedSection: selectedSection,
           selectedDate: selectedDate,
           classList: classList,
-          sectionList: sectionList,
+          selectedClassId: selectedClassId,
+          isLoadingClasses: isLoadingClasses,
           onClassChanged: onClassChanged,
-          onSectionChanged: onSectionChanged,
-          onDateTap: onDateTap,
         ),
         const SizedBox(height: 24),
         _AttendanceStats(
           total: students.length,
-          present: students.where((s) => s['status'] == 'Present').length,
-          absent: students.where((s) => s['status'] == 'Absent').length,
-          late: students.where((s) => s['status'] == 'Late').length,
+          present: students.where((s) => s.status == 'Present').length,
+          absent: students.where((s) => s.status == 'Absent').length,
+          late: students.where((s) => s.status == 'Late').length,
+          excused: students.where((s) => s.status == 'Excused').length,
         ),
         const SizedBox(height: 24),
-        const _ActionButtons(),
         const SizedBox(height: 24),
-        // Wrap table in SingleChildScrollView horizontally to fix overflow
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: SizedBox(
@@ -274,7 +430,7 @@ class _StudentsAttendanceContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-        const _SaveButton(),
+        _SaveButton(onSave: onSave),
       ],
     );
   }
@@ -287,7 +443,7 @@ class _TeachersAttendanceContent extends StatelessWidget {
   final DateTime selectedDate;
   final List<String> departmentList;
   final Function(String) onDepartmentChanged;
-  final VoidCallback onDateTap;
+  final VoidCallback onSave;
 
   const _TeachersAttendanceContent({
     required this.teachers,
@@ -295,7 +451,7 @@ class _TeachersAttendanceContent extends StatelessWidget {
     required this.selectedDate,
     required this.departmentList,
     required this.onDepartmentChanged,
-    required this.onDateTap,
+    required this.onSave,
   });
 
   @override
@@ -308,7 +464,6 @@ class _TeachersAttendanceContent extends StatelessWidget {
           selectedDate: selectedDate,
           departmentList: departmentList,
           onDepartmentChanged: onDepartmentChanged,
-          onDateTap: onDateTap,
         ),
         const SizedBox(height: 24),
         _AttendanceStats(
@@ -316,9 +471,9 @@ class _TeachersAttendanceContent extends StatelessWidget {
           present: teachers.where((t) => t['status'] == 'Present').length,
           absent: teachers.where((t) => t['status'] == 'Absent').length,
           late: teachers.where((t) => t['status'] == 'Late').length,
+          excused: teachers.where((t) => t['status'] == 'Excused').length,
         ),
         const SizedBox(height: 24),
-        const _ActionButtons(),
         const SizedBox(height: 24),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -328,7 +483,7 @@ class _TeachersAttendanceContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-        const _SaveButton(),
+        _SaveButton(onSave: onSave),
       ],
     );
   }
@@ -336,24 +491,18 @@ class _TeachersAttendanceContent extends StatelessWidget {
 
 // ── Students Filters Row ─────────────────────────────────────────
 class _StudentsFilterRow extends StatelessWidget {
-  final String selectedClass;
-  final String selectedSection;
   final DateTime selectedDate;
-  final List<String> classList;
-  final List<String> sectionList;
-  final Function(String) onClassChanged;
-  final Function(String) onSectionChanged;
-  final VoidCallback onDateTap;
+  final List<Map<String, dynamic>> classList;
+  final int? selectedClassId;
+  final bool isLoadingClasses;
+  final Function(int) onClassChanged;
 
   const _StudentsFilterRow({
-    required this.selectedClass,
-    required this.selectedSection,
     required this.selectedDate,
     required this.classList,
-    required this.sectionList,
+    required this.selectedClassId,
+    required this.isLoadingClasses,
     required this.onClassChanged,
-    required this.onSectionChanged,
-    required this.onDateTap,
   });
 
   @override
@@ -367,57 +516,34 @@ class _StudentsFilterRow extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          if (constraints.maxWidth < 600) {
+          if (constraints.maxWidth < 500) {
             return Column(
               children: [
-                _FilterDropdown(
-                  label: 'Class / Grade',
-                  value: selectedClass,
-                  items: classList,
+                _ClassDropdown(
+                  classList: classList,
+                  selectedClassId: selectedClassId,
+                  isLoading: isLoadingClasses,
                   onChanged: onClassChanged,
-                  icon: Icons.class_rounded,
                 ),
                 const SizedBox(height: 12),
-                _FilterDropdown(
-                  label: 'Section',
-                  value: selectedSection,
-                  items: sectionList,
-                  onChanged: onSectionChanged,
-                  icon: Icons.group_rounded,
-                ),
-                const SizedBox(height: 12),
-                _DatePickerWidget(
-                  date: selectedDate,
-                  onTap: onDateTap,
-                ),
+                _TodayDateBadge(date: selectedDate),
               ],
             );
           } else {
             return Row(
               children: [
                 Expanded(
-                    child: _FilterDropdown(
-                  label: 'Class / Grade',
-                  value: selectedClass,
-                  items: classList,
-                  onChanged: onClassChanged,
-                  icon: Icons.class_rounded,
-                )),
+                  child: _ClassDropdown(
+                    classList: classList,
+                    selectedClassId: selectedClassId,
+                    isLoading: isLoadingClasses,
+                    onChanged: onClassChanged,
+                  ),
+                ),
                 const SizedBox(width: 16),
                 Expanded(
-                    child: _FilterDropdown(
-                  label: 'Section',
-                  value: selectedSection,
-                  items: sectionList,
-                  onChanged: onSectionChanged,
-                  icon: Icons.group_rounded,
-                )),
-                const SizedBox(width: 16),
-                Expanded(
-                    child: _DatePickerWidget(
-                  date: selectedDate,
-                  onTap: onDateTap,
-                )),
+                  child: _TodayDateBadge(date: selectedDate),
+                ),
               ],
             );
           }
@@ -433,14 +559,12 @@ class _TeachersFilterRow extends StatelessWidget {
   final DateTime selectedDate;
   final List<String> departmentList;
   final Function(String) onDepartmentChanged;
-  final VoidCallback onDateTap;
 
   const _TeachersFilterRow({
     required this.selectedDepartment,
     required this.selectedDate,
     required this.departmentList,
     required this.onDepartmentChanged,
-    required this.onDateTap,
   });
 
   @override
@@ -465,10 +589,7 @@ class _TeachersFilterRow extends StatelessWidget {
                   icon: Icons.business_center_rounded,
                 ),
                 const SizedBox(height: 12),
-                _DatePickerWidget(
-                  date: selectedDate,
-                  onTap: onDateTap,
-                ),
+                _TodayDateBadge(date: selectedDate),
               ],
             );
           } else {
@@ -484,15 +605,81 @@ class _TeachersFilterRow extends StatelessWidget {
                 )),
                 const SizedBox(width: 16),
                 Expanded(
-                    child: _DatePickerWidget(
-                  date: selectedDate,
-                  onTap: onDateTap,
-                )),
+                  child: _TodayDateBadge(date: selectedDate),
+                ),
               ],
             );
           }
         },
       ),
+    );
+  }
+}
+
+// ── Class Dropdown ─────────────────────────────────────────────
+class _ClassDropdown extends StatelessWidget {
+  final List<Map<String, dynamic>> classList;
+  final int? selectedClassId;
+  final bool isLoading;
+  final Function(int) onChanged;
+
+  const _ClassDropdown({
+    required this.classList,
+    required this.selectedClassId,
+    required this.isLoading,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Class',
+          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.cardBorder.withOpacity(0.3)),
+          ),
+          child: isLoading
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              : DropdownButtonHideUnderline(
+                  child: DropdownButton<int>(
+                    value: selectedClassId,
+                    isExpanded: true,
+                    icon: const Icon(Icons.class_rounded,
+                        size: 18, color: AppColors.textSecondary),
+                    dropdownColor: AppColors.cardBg,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                    ),
+                    items: classList
+                        .map((item) => DropdownMenuItem<int>(
+                              value: item['id'],
+                              child: Text(item['display']),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) onChanged(value);
+                    },
+                  ),
+                ),
+        ),
+      ],
     );
   }
 }
@@ -556,48 +743,53 @@ class _FilterDropdown extends StatelessWidget {
   }
 }
 
-// ── Date Picker ─────────────────────────────────────────────
-class _DatePickerWidget extends StatelessWidget {
+// ── ✅ جديد: Badge للتاريخ الحالي (غير قابل للتعديل) ──
+// حل مكان _DatePickerWidget القديم. بما إنه الباك بيسجل الحضور دائماً
+// لليوم الحالي بس، خلينا هالودجت للعرض فقط بدون أي تفاعل (بدون onTap
+// وبدون DatePicker) حتى ما يوهم المستخدم إنه فيه خيار لتغيير التاريخ.
+class _TodayDateBadge extends StatelessWidget {
   final DateTime date;
-  final VoidCallback onTap;
 
-  const _DatePickerWidget({required this.date, required this.onTap});
+  const _TodayDateBadge({required this.date});
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Date',
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-          const SizedBox(height: 8),
-          InkWell(
-            onTap: onTap,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-                border:
-                    Border.all(color: AppColors.cardBorder.withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.calendar_today_rounded,
-                      size: 18, color: AppColors.textSecondary),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
-                    style: const TextStyle(
-                        color: AppColors.textPrimary, fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
+    final formatted =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Date',
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.03),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.cardBorder.withOpacity(0.2)),
           ),
-        ],
-      ),
+          child: Row(
+            children: [
+              Icon(Icons.today_rounded,
+                  size: 18, color: AppColors.textSecondary.withOpacity(0.7)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '$formatted (Today)',
+                  style: TextStyle(
+                    color: AppColors.textPrimary.withOpacity(0.7),
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              Icon(Icons.lock_outline_rounded,
+                  size: 14, color: AppColors.textSecondary.withOpacity(0.5)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -608,12 +800,14 @@ class _AttendanceStats extends StatelessWidget {
   final int present;
   final int absent;
   final int late;
+  final int excused;
 
   const _AttendanceStats({
     required this.total,
     required this.present,
     required this.absent,
     required this.late,
+    required this.excused,
   });
 
   @override
@@ -630,6 +824,8 @@ class _AttendanceStats extends StatelessWidget {
           _StatChip(label: 'Absent', value: '$absent', color: AppColors.error),
           const SizedBox(width: 12),
           _StatChip(label: 'Late', value: '$late', color: AppColors.warning),
+          const SizedBox(width: 12),
+          _StatChip(label: 'Excused', value: '$excused', color: Colors.orange),
         ],
       ),
     );
@@ -673,83 +869,9 @@ class _StatChip extends StatelessWidget {
   }
 }
 
-// ── Action Buttons ─────────────────────────────────────────────────
-class _ActionButtons extends StatelessWidget {
-  const _ActionButtons();
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          _ActionButton(
-            label: 'Bulk Attendance',
-            icon: Icons.checklist_rounded,
-            color: AppColors.cardGreen,
-            onTap: () {},
-          ),
-          const SizedBox(width: 12),
-          _ActionButton(
-            label: 'Export Report',
-            icon: Icons.download_rounded,
-            color: AppColors.cardBlue,
-            onTap: () {},
-          ),
-          const SizedBox(width: 12),
-          _ActionButton(
-            label: 'Send Absence Notice',
-            icon: Icons.notifications_rounded,
-            color: AppColors.warning,
-            onTap: () {},
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _ActionButton({
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          gradient: app.AppGradients.cardGradient,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
-          boxShadow: AppShadows.cardShadow,
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: color),
-            const SizedBox(width: 8),
-            Text(label, style: TextStyle(fontSize: 12, color: color)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // ── Students Table ─────────────────────────────────────────────
 class _StudentsTable extends StatelessWidget {
-  final List<Map<String, dynamic>> students;
+  final List<ClassStudent> students;
 
   const _StudentsTable({required this.students});
 
@@ -878,8 +1000,13 @@ class _TeachersTable extends StatelessWidget {
 }
 
 // ── Student Row ─────────────────────────────────────
+// ✅ ملاحظة مهمة: قائمة الحالة (Present/Absent/Late/Excused) هون هي
+// حالة محلية بالواجهة بس، وما بتنبعت حرفياً "Present" للباك. لما تختار
+// "Present" لطالب، الكود بـ _saveAttendance ببساطة ما بضيفه لأي مصفوفة
+// (absent/late/excused)، وهيك تلقائياً بيعتبره الباك حاضر. فمنطقياً
+// صحيح نبقيها موجودة — هي أداة توضيح لحالة كل طالب للمستخدم بس.
 class _StudentRow extends StatefulWidget {
-  final Map<String, dynamic> student;
+  final ClassStudent student;
 
   const _StudentRow({required this.student});
 
@@ -893,7 +1020,7 @@ class _StudentRowState extends State<_StudentRow> {
   @override
   void initState() {
     super.initState();
-    selectedStatus = widget.student['status'];
+    selectedStatus = widget.student.status;
   }
 
   @override
@@ -914,7 +1041,9 @@ class _StudentRowState extends State<_StudentRow> {
                   radius: 18,
                   backgroundColor: AppColors.primary.withOpacity(0.2),
                   child: Text(
-                    widget.student['name'][0],
+                    widget.student.fullName.isNotEmpty
+                        ? widget.student.fullName[0].toUpperCase()
+                        : '?',
                     style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -924,7 +1053,7 @@ class _StudentRowState extends State<_StudentRow> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    widget.student['name'],
+                    widget.student.fullName,
                     style: const TextStyle(
                         fontSize: 14, color: AppColors.textPrimary),
                     overflow: TextOverflow.ellipsis,
@@ -937,7 +1066,9 @@ class _StudentRowState extends State<_StudentRow> {
           Expanded(
             flex: 1,
             child: Text(
-              selectedStatus == 'Present' ? widget.student['time'] : '-',
+              selectedStatus == 'Present'
+                  ? '${DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, '0')}'
+                  : '-',
               style: TextStyle(
                 fontSize: 13,
                 color: selectedStatus == 'Present'
@@ -971,14 +1102,22 @@ class _StudentRowState extends State<_StudentRow> {
                 ? AppColors.cardGreen
                 : selectedStatus == 'Absent'
                     ? AppColors.error
-                    : AppColors.warning,
+                    : selectedStatus == 'Late'
+                        ? AppColors.warning
+                        : Colors.orange,
           ),
           items: const [
             DropdownMenuItem(value: 'Present', child: Text('Present')),
             DropdownMenuItem(value: 'Absent', child: Text('Absent')),
             DropdownMenuItem(value: 'Late', child: Text('Late')),
+            DropdownMenuItem(value: 'Excused', child: Text('Excused')),
           ],
-          onChanged: (value) => setState(() => selectedStatus = value!),
+          onChanged: (value) {
+            setState(() {
+              selectedStatus = value!;
+              widget.student.status = value;
+            });
+          },
         ),
       ),
     );
@@ -1089,12 +1228,15 @@ class _TeacherRowState extends State<_TeacherRow> {
                 ? AppColors.cardGreen
                 : selectedStatus == 'Absent'
                     ? AppColors.error
-                    : AppColors.warning,
+                    : selectedStatus == 'Late'
+                        ? AppColors.warning
+                        : Colors.orange,
           ),
           items: const [
             DropdownMenuItem(value: 'Present', child: Text('Present')),
             DropdownMenuItem(value: 'Absent', child: Text('Absent')),
             DropdownMenuItem(value: 'Late', child: Text('Late')),
+            DropdownMenuItem(value: 'Excused', child: Text('Excused')),
           ],
           onChanged: (value) => setState(() => selectedStatus = value!),
         ),
@@ -1105,7 +1247,9 @@ class _TeacherRowState extends State<_TeacherRow> {
 
 // ── Save Button ─────────────────────────────────────────────────
 class _SaveButton extends StatelessWidget {
-  const _SaveButton();
+  final VoidCallback onSave;
+
+  const _SaveButton({required this.onSave});
 
   @override
   Widget build(BuildContext context) {
@@ -1122,14 +1266,7 @@ class _SaveButton extends StatelessWidget {
           ],
         ),
         child: ElevatedButton(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Attendance data saved successfully'),
-                backgroundColor: AppColors.cardGreen,
-              ),
-            );
-          },
+          onPressed: onSave,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,

@@ -1,3 +1,7 @@
+// lib/cubit/assignment/assignment_state.dart
+
+//part of 'assignment_cubit.dart';
+
 import 'package:school_management/data/model/assignment_model.dart';
 
 abstract class AssignmentState {}
@@ -8,8 +12,12 @@ class AssignmentLoading extends AssignmentState {}
 
 class AssignmentLoaded extends AssignmentState {
   final List<Assignment> assignments;
+  final List<Assignment> upcomingAssignments;
 
-  AssignmentLoaded(this.assignments);
+  AssignmentLoaded({
+    required this.assignments,
+    required this.upcomingAssignments,
+  });
 }
 
 class AssignmentError extends AssignmentState {

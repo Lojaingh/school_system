@@ -1,6 +1,8 @@
+// lib/presentation/screens/main_layout.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/constants/app_colors.dart';
+import 'package:school_management/presentation/screens/class_screen.dart';
 import 'package:school_management/presentation/screens/register_screen.dart';
 import 'package:school_management/presentation/screens/staff_screen.dart';
 import 'package:school_management/presentation/screens/staff_profile_screen.dart';
@@ -28,17 +30,17 @@ class MainLayout extends StatefulWidget {
 
 class _MainLayoutState extends State<MainLayout> {
   late SidebarXController _controller;
-
   late List<Widget> _pages;
+
   @override
   void initState() {
     super.initState();
-
     _controller = SidebarXController(
       selectedIndex: widget.initialIndex,
       extended: true,
     );
 
+    // تعريف الصفحات مرة واحدة فقط هنا
     _pages = [
       const DashboardContent(),
       const RegisterScreen(),
@@ -115,7 +117,6 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ الحصول على LoginCubit من الأعلى (أو إنشاء واحد إذا لم يوجد)
     return BlocListener<LoginCubit, LoginState>(
       listener: (context, state) {
         if (state is LogoutSuccess) {
@@ -142,6 +143,7 @@ class _MainLayoutState extends State<MainLayout> {
         backgroundColor: Colors.transparent,
         body: Row(
           children: [
+            // ── Sidebar ──
             SizedBox(
               width: 250,
               child: SidebarX(
@@ -173,9 +175,8 @@ class _MainLayoutState extends State<MainLayout> {
                   itemDecoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  // ✅ نفس لون زر Login بالضبط: #1E88E5 (ثابت بدون تدرج)
                   selectedItemDecoration: BoxDecoration(
-                    color: AppColors.primary, // #1E88E5
+                    color: AppColors.primary,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
@@ -203,7 +204,7 @@ class _MainLayoutState extends State<MainLayout> {
                       children: [
                         Container(
                           decoration: BoxDecoration(
-                            color: AppColors.primary, // #1E88E5
+                            color: AppColors.primary,
                             borderRadius: BorderRadius.circular(30),
                             boxShadow: [
                               BoxShadow(
@@ -248,7 +249,7 @@ class _MainLayoutState extends State<MainLayout> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.primary, // #1E88E5
+                              color: AppColors.primary,
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
@@ -287,7 +288,7 @@ class _MainLayoutState extends State<MainLayout> {
                   ),
                   SidebarXItem(
                     icon: Icons.grid_view_rounded,
-                    label: 'Classes',
+                    label: 'Classes', // ← الفهرس 3
                   ),
                   SidebarXItem(
                     icon: Icons.how_to_reg_rounded,
@@ -376,6 +377,7 @@ class _MainLayoutState extends State<MainLayout> {
                 },
               ),
             ),
+            // ── المحتوى الرئيسي ──
             Expanded(
               child: Column(
                 children: [
@@ -413,7 +415,7 @@ class _MainLayoutState extends State<MainLayout> {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: AppColors.primary, // #1E88E5
+              color: AppColors.primary,
               borderRadius: BorderRadius.circular(20),
             ),
             child: const CircleAvatar(
@@ -531,7 +533,7 @@ class _MainLayoutState extends State<MainLayout> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.primary, // #1E88E5
+              color: AppColors.primary,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(

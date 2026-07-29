@@ -1,3 +1,5 @@
+import 'package:school_management/data/model/subject_model.dart';
+
 abstract class SubjectState {}
 
 class SubjectInitial extends SubjectState {}
@@ -5,15 +7,9 @@ class SubjectInitial extends SubjectState {}
 class SubjectLoading extends SubjectState {}
 
 class SubjectsLoaded extends SubjectState {
-  final List<dynamic> subjects;
+  final List<SubjectModel> subjects;
 
   SubjectsLoaded(this.subjects);
-}
-
-class SubjectLoaded extends SubjectState {
-  final Map<String, dynamic> subject;
-
-  SubjectLoaded(this.subject);
 }
 
 class SubjectAdded extends SubjectState {
