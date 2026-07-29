@@ -22,14 +22,26 @@ class DioClient {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           final token = await SharedPrefsHelper.getToken();
-          if (token != null) {
+          if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
+          print('🔵 Request: ${options.method} ${options.path}');
           return handler.next(options);
         },
-        onError: (error, handler) {
-          if (error.response?.statusCode == 401) {
-            SharedPrefsHelper.clearToken();
+        onResponse: (response, handler) {
+          print(
+              '🟢 Response: ${response.statusCode} ${response.requestOptions.path}');
+          return handler.next(response);
+        },
+        onError: (error, handler) async {
+          print('🔴 Error: ${error.message}');
+          if (error.response != null) {
+            print('🔴 Status: ${error.response?.statusCode}');
+            print('🔴 Data: ${error.response?.data}');
+
+            if (error.response?.statusCode == 401) {
+              await SharedPrefsHelper.clearToken();
+            }
           }
           return handler.next(error);
         },

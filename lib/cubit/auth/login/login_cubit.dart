@@ -30,10 +30,13 @@ class LoginCubit extends Cubit<LoginState> {
   Future<void> logout() async {
     try {
       await repository.logout();
+
       await SharedPrefsHelper.clearToken();
       emit(LogoutSuccess());
     } catch (e) {
-      emit(LoginError(e.toString()));
+      await SharedPrefsHelper.clearToken();
+      emit(LogoutSuccess());
+      print('⚠️ Logout error (ignored): $e');
     }
   }
 }

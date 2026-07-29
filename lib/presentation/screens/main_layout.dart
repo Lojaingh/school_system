@@ -1,6 +1,9 @@
+// lib/presentation/screens/main_layout.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/constants/app_colors.dart';
+import 'package:school_management/presentation/screens/class_screen.dart';
 import 'package:school_management/presentation/screens/register_screen.dart';
 import 'package:sidebarx/sidebarx.dart';
 import '../screen/widgets/dashboard_content.dart';
@@ -11,6 +14,7 @@ import '../../cubit/auth/login/login_cubit.dart';
 import '../../cubit/auth/login/login_state.dart';
 import '../screens/login_screen.dart';
 import 'package:school_management/presentation/screens/assignment_screen.dart';
+import 'package:school_management/presentation/screens/subject_screen.dart';
 
 class MainLayout extends StatefulWidget {
   final int initialIndex;
@@ -24,22 +28,24 @@ class _MainLayoutState extends State<MainLayout> {
   late SidebarXController _controller;
 
   late final List<Widget> _pages = [
-    const DashboardContent(),
-    const RegisterScreen(),
+    const DashboardContent(), // 0: Dashboard
+    const RegisterScreen(), // 1: Register
     const Center(child: Text("Teachers")),
-    const Center(child: Text("Classes")),
-    const AttendanceContent(),
-    const LibraryContent(),
-    const AssignmentScreen(),
-    const Center(child: Text("Reports")),
-    const Center(child: Text("Settings")),
+    const ClassScreen(),
+    const AttendanceContent(), // 4: Attendance
+    const LibraryContent(), // 5: Library
+    const AssignmentScreen(), // 6: Assignments
+    const Center(child: Text("Reports")), // 7: Reports
+    const Center(child: Text("Settings")), // 8: Settings
   ];
 
   @override
   void initState() {
     super.initState();
-    _controller =
-        SidebarXController(selectedIndex: widget.initialIndex, extended: true);
+    _controller = SidebarXController(
+      selectedIndex: widget.initialIndex,
+      extended: true,
+    );
   }
 
   void _logout(BuildContext context) {
@@ -74,6 +80,7 @@ class _MainLayoutState extends State<MainLayout> {
         backgroundColor: Colors.transparent,
         body: Row(
           children: [
+            // ── Sidebar ──
             SizedBox(
               width: 250,
               child: SidebarX(
@@ -105,9 +112,8 @@ class _MainLayoutState extends State<MainLayout> {
                   itemDecoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  // ✅ نفس لون زر Login بالضبط: #1E88E5 (ثابت بدون تدرج)
                   selectedItemDecoration: BoxDecoration(
-                    color: AppColors.primary, // #1E88E5
+                    color: AppColors.primary,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
@@ -135,7 +141,7 @@ class _MainLayoutState extends State<MainLayout> {
                       children: [
                         Container(
                           decoration: BoxDecoration(
-                            color: AppColors.primary, // #1E88E5
+                            color: AppColors.primary,
                             borderRadius: BorderRadius.circular(30),
                             boxShadow: [
                               BoxShadow(
@@ -180,7 +186,7 @@ class _MainLayoutState extends State<MainLayout> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.primary, // #1E88E5
+                              color: AppColors.primary,
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
@@ -219,7 +225,7 @@ class _MainLayoutState extends State<MainLayout> {
                   ),
                   SidebarXItem(
                     icon: Icons.grid_view_rounded,
-                    label: 'Classes',
+                    label: 'Classes', // ← الفهرس 3
                   ),
                   SidebarXItem(
                     icon: Icons.how_to_reg_rounded,
@@ -308,6 +314,7 @@ class _MainLayoutState extends State<MainLayout> {
                 },
               ),
             ),
+            // ── المحتوى الرئيسي ──
             Expanded(
               child: Column(
                 children: [
@@ -345,7 +352,7 @@ class _MainLayoutState extends State<MainLayout> {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: AppColors.primary, // #1E88E5
+              color: AppColors.primary,
               borderRadius: BorderRadius.circular(20),
             ),
             child: const CircleAvatar(
@@ -461,7 +468,7 @@ class _MainLayoutState extends State<MainLayout> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.primary, // #1E88E5
+              color: AppColors.primary,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
