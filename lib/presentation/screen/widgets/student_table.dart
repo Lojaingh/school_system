@@ -14,6 +14,7 @@ class StudentTable extends StatelessWidget {
     required this.students,
     required this.onOpenProfile,
   });
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -35,34 +36,17 @@ class StudentTable extends StatelessWidget {
                 top: Radius.circular(14),
               ),
             ),
+            // ✅ حل الشريط الأصفر: قللنا الـ flex للأعمدة الصغيرة وزدنا للكبيرة
             child: const Row(
               children: [
+                Expanded(flex: 1, child: Text("#", style: _headerStyle)),
+                Expanded(flex: 3, child: Text("Student", style: _headerStyle)),
+                Expanded(flex: 2, child: Text("Username", style: _headerStyle)),
+                Expanded(flex: 1, child: Text("Gender", style: _headerStyle)),
+                Expanded(flex: 2, child: Text("DOB", style: _headerStyle)),
                 Expanded(
-                  flex: 1,
-                  child: Text("#", style: _headerStyle),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: Text("Student", style: _headerStyle),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text("Username", style: _headerStyle),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text("Gender", style: _headerStyle),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text("DOB", style: _headerStyle),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Center(
-                    child: Text("Actions", style: _headerStyle),
-                  ),
-                ),
+                    flex: 2,
+                    child: Center(child: Text("Actions", style: _headerStyle))),
               ],
             ),
           ),
@@ -136,7 +120,7 @@ class StudentTable extends StatelessWidget {
                       ),
                     ),
                     Expanded(
-                      flex: 2,
+                      flex: 1,
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Container(

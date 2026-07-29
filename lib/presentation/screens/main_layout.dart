@@ -1,4 +1,3 @@
-// lib/presentation/screens/main_layout.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/constants/app_colors.dart';
@@ -40,26 +39,28 @@ class _MainLayoutState extends State<MainLayout> {
       extended: true,
     );
 
-    // تعريف الصفحات مرة واحدة فقط هنا
+    // تعريف الصفحات بالترتيب (0 -> 9)
     _pages = [
-      const DashboardContent(),
-      const RegisterScreen(),
-      const SubjectScreen(),
+      const DashboardContent(), // 0: Dashboard
+      const RegisterScreen(), // 1: Register
+      const SubjectScreen(), // 2: Subjects
+      const ClassScreen(), // 3: Classes
       StudentScreen(
+        // 4: Students (جديد)
         onOpenProfile: (id) {
           setState(() {
-            _pages[3] = StudentProfileScreen(
+            _pages[4] = StudentProfileScreen(
               studentId: id,
               onBack: () {
                 setState(() {
-                  _pages[3] = StudentScreen(
+                  _pages[4] = StudentScreen(
                     onOpenProfile: (id) {
                       setState(() {
-                        _pages[3] = StudentProfileScreen(
+                        _pages[4] = StudentProfileScreen(
                           studentId: id,
                           onBack: () {
                             setState(() {
-                              _pages[3] = StudentScreen(
+                              _pages[4] = StudentScreen(
                                 onOpenProfile: (id) {},
                               );
                             });
@@ -74,25 +75,27 @@ class _MainLayoutState extends State<MainLayout> {
           });
         },
       ),
-      const AttendanceContent(),
-      const LibraryContent(),
+      const AttendanceContent(), // 5: Attendance
+      const LibraryContent(), // 6: Library
+      const AssignmentScreen(), // 7: Assignments
       StaffScreen(
+        // 8: Staff
         onOpenProfile: (id, isManager) {
           setState(() {
-            _pages[6] = StaffProfileScreen(
+            _pages[8] = StaffProfileScreen(
               staffId: id,
               isManager: isManager,
               onBack: () {
                 setState(() {
-                  _pages[6] = StaffScreen(
+                  _pages[8] = StaffScreen(
                     onOpenProfile: (id, isManager) {
                       setState(() {
-                        _pages[6] = StaffProfileScreen(
+                        _pages[8] = StaffProfileScreen(
                           staffId: id,
                           isManager: isManager,
                           onBack: () {
                             setState(() {
-                              _pages[6] = StaffScreen(
+                              _pages[8] = StaffScreen(
                                 onOpenProfile: (id, isManager) {},
                               );
                             });
@@ -107,7 +110,7 @@ class _MainLayoutState extends State<MainLayout> {
           });
         },
       ),
-      const Center(child: Text("الإعدادات")),
+      const Center(child: Text("الإعدادات")), // 9: Settings
     ];
   }
 
@@ -283,12 +286,16 @@ class _MainLayoutState extends State<MainLayout> {
                     label: 'Register',
                   ),
                   SidebarXItem(
-                    icon: Icons.school_rounded,
-                    label: 'Teachers',
+                    icon: Icons.book_rounded,
+                    label: 'Subjects',
                   ),
                   SidebarXItem(
                     icon: Icons.grid_view_rounded,
-                    label: 'Classes', // ← الفهرس 3
+                    label: 'Classes',
+                  ),
+                  SidebarXItem(
+                    icon: Icons.person_rounded,
+                    label: 'Students', // ✅ زر الطلاب الجديد
                   ),
                   SidebarXItem(
                     icon: Icons.how_to_reg_rounded,
@@ -303,8 +310,8 @@ class _MainLayoutState extends State<MainLayout> {
                     label: 'Assignments',
                   ),
                   SidebarXItem(
-                    icon: Icons.bar_chart_rounded,
-                    label: 'Reports',
+                    icon: Icons.badge_rounded,
+                    label: 'Staff', // ✅ زر الموظفين
                   ),
                   SidebarXItem(
                     icon: Icons.settings_rounded,

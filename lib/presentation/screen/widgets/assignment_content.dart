@@ -1,5 +1,3 @@
-// lib/presentation/screen/widgets/assignment_content.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -8,7 +6,7 @@ import '../../../cubit/assignment/assignment_cubit.dart';
 import '../../../cubit/assignment/assignment_state.dart';
 import '../../../data/model/assignment_model.dart';
 
-class AssignmentContent extends StatelessWidget {
+class AssignmentContent extends StatefulWidget {
   final bool showOnlyUpcoming;
   final int? limit;
 
@@ -17,6 +15,30 @@ class AssignmentContent extends StatelessWidget {
     this.showOnlyUpcoming = false,
     this.limit,
   });
+
+  @override
+  State<AssignmentContent> createState() => _AssignmentContentState();
+}
+
+class _AssignmentContentState extends State<AssignmentContent> {
+  // متغير للتحقق مما إذا تم تحميل البيانات لأول مرة لتجنب التحميل المكرر
+  bool _isFirstLoad = true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // التحقق: إذا كانت هذه هي المرة الأولى لفتح الصفحة، نقوم بتحميل البيانات
+    if (_isFirstLoad) {
+      final state = context.read<AssignmentCubit>().state;
+      // إذا كانت الحالة أولية (لم يتم تحميلها بعد)، نقوم بالجلب
+      if (state is AssignmentInitial) {
+        context.read<AssignmentCubit>().loadAssignments();
+      }
+      _isFirstLoad =
+          false; // نغير القيمة لكي لا يتم التحميل مرة أخرى إذا عدنا للصفحة
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,13 +63,13 @@ class AssignmentContent extends StatelessWidget {
           }
 
           if (state is AssignmentLoaded) {
-            final assignments = showOnlyUpcoming
+            final assignments = widget.showOnlyUpcoming
                 ? state.upcomingAssignments
                 : state.assignments;
 
             final displayAssignments =
-                limit != null && assignments.length > limit!
-                    ? assignments.take(limit!).toList()
+                widget.limit != null && assignments.length > widget.limit!
+                    ? assignments.take(widget.limit!).toList()
                     : assignments;
 
             if (displayAssignments.isEmpty) {
