@@ -32,18 +32,6 @@ class SubjectCubit extends Cubit<SubjectState> {
     }
   }
 
-  Future<void> getSubject(int id) async {
-    try {
-      emit(SubjectLoading());
-
-      final subject = await repository.getSubject(id);
-
-      emit(SubjectLoaded(subject));
-    } catch (e) {
-      emit(SubjectError(e.toString()));
-    }
-  }
-
   Future<void> updateSubject(int id, SubjectModel subject) async {
     try {
       emit(SubjectLoading());

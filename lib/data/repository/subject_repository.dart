@@ -22,19 +22,13 @@ class SubjectRepository {
     }
   }
 
-  Future<List<dynamic>> getSubjects() async {
+  Future<List<SubjectModel>> getSubjects() async {
     try {
       final response = await subjectService.getSubjects();
-      return response.data['data'];
-    } on DioException catch (e) {
-      throw Exception(e.response?.data.toString() ?? e.toString());
-    }
-  }
 
-  Future<Map<String, dynamic>> getSubject(int id) async {
-    try {
-      final response = await subjectService.getSubject(id);
-      return response.data['data'];
+      final List data = response.data['data'];
+
+      return data.map((e) => SubjectModel.fromJson(e)).toList();
     } on DioException catch (e) {
       throw Exception(e.response?.data.toString() ?? e.toString());
     }

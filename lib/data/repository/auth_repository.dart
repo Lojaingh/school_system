@@ -1,3 +1,5 @@
+// lib/data/repository/auth_repository.dart
+
 import '../model/login_response.dart';
 import '../services/auth_service.dart';
 
@@ -10,19 +12,31 @@ class AuthRepository {
     String userName,
     String password,
   ) async {
-    final response = await authService.login(
-      username: userName,
-      password: password,
-    );
+    try {
+      final response = await authService.login(
+        username: userName,
+        password: password,
+      );
 
-    if (response.data is Map<String, dynamic>) {
-      return LoginResponse.fromJson(response.data);
-    } else {
-      throw Exception('Invalid response format');
+      if (response.statusCode == 200) {
+        if (response.data is Map<String, dynamic>) {
+          return LoginResponse.fromJson(response.data);
+        } else {
+          throw Exception('Invalid response format');
+        }
+      } else {
+        throw Exception('Login failed: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Login error: $e');
     }
   }
 
   Future<void> logout() async {
-    await authService.logout();
+    try {
+      await authService.logout();
+    } catch (e) {
+      print('Logout API error: $e');
+    }
   }
 }

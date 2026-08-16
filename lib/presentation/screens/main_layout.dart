@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/constants/app_colors.dart';
+import 'package:school_management/presentation/screens/class_screen.dart';
 import 'package:school_management/presentation/screens/register_screen.dart';
 import 'package:school_management/presentation/screens/staff_screen.dart';
 import 'package:school_management/presentation/screens/staff_profile_screen.dart';
@@ -28,36 +29,38 @@ class MainLayout extends StatefulWidget {
 
 class _MainLayoutState extends State<MainLayout> {
   late SidebarXController _controller;
-
   late List<Widget> _pages;
+
   @override
   void initState() {
     super.initState();
-
     _controller = SidebarXController(
       selectedIndex: widget.initialIndex,
       extended: true,
     );
 
+    // تعريف الصفحات بالترتيب (0 -> 9)
     _pages = [
-      const DashboardContent(),
-      const RegisterScreen(),
-      const SubjectScreen(),
+      const DashboardContent(), // 0: Dashboard
+      const RegisterScreen(), // 1: Register
+      const SubjectScreen(), // 2: Subjects
+      const ClassScreen(), // 3: Classes
       StudentScreen(
+        // 4: Students (جديد)
         onOpenProfile: (id) {
           setState(() {
-            _pages[3] = StudentProfileScreen(
+            _pages[4] = StudentProfileScreen(
               studentId: id,
               onBack: () {
                 setState(() {
-                  _pages[3] = StudentScreen(
+                  _pages[4] = StudentScreen(
                     onOpenProfile: (id) {
                       setState(() {
-                        _pages[3] = StudentProfileScreen(
+                        _pages[4] = StudentProfileScreen(
                           studentId: id,
                           onBack: () {
                             setState(() {
-                              _pages[3] = StudentScreen(
+                              _pages[4] = StudentScreen(
                                 onOpenProfile: (id) {},
                               );
                             });
@@ -72,25 +75,27 @@ class _MainLayoutState extends State<MainLayout> {
           });
         },
       ),
-      const AttendanceContent(),
-      const LibraryContent(),
+      const AttendanceContent(), // 5: Attendance
+      const LibraryContent(), // 6: Library
+      const AssignmentScreen(), // 7: Assignments
       StaffScreen(
+        // 8: Staff
         onOpenProfile: (id, isManager) {
           setState(() {
-            _pages[6] = StaffProfileScreen(
+            _pages[8] = StaffProfileScreen(
               staffId: id,
               isManager: isManager,
               onBack: () {
                 setState(() {
-                  _pages[6] = StaffScreen(
+                  _pages[8] = StaffScreen(
                     onOpenProfile: (id, isManager) {
                       setState(() {
-                        _pages[6] = StaffProfileScreen(
+                        _pages[8] = StaffProfileScreen(
                           staffId: id,
                           isManager: isManager,
                           onBack: () {
                             setState(() {
-                              _pages[6] = StaffScreen(
+                              _pages[8] = StaffScreen(
                                 onOpenProfile: (id, isManager) {},
                               );
                             });
@@ -105,7 +110,7 @@ class _MainLayoutState extends State<MainLayout> {
           });
         },
       ),
-      const Center(child: Text("الإعدادات")),
+      const Center(child: Text("الإعدادات")), // 9: Settings
     ];
   }
 
@@ -115,7 +120,6 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ الحصول على LoginCubit من الأعلى (أو إنشاء واحد إذا لم يوجد)
     return BlocListener<LoginCubit, LoginState>(
       listener: (context, state) {
         if (state is LogoutSuccess) {
@@ -142,6 +146,7 @@ class _MainLayoutState extends State<MainLayout> {
         backgroundColor: Colors.transparent,
         body: Row(
           children: [
+            // ── Sidebar ──
             SizedBox(
               width: 250,
               child: SidebarX(
@@ -173,9 +178,8 @@ class _MainLayoutState extends State<MainLayout> {
                   itemDecoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  // ✅ نفس لون زر Login بالضبط: #1E88E5 (ثابت بدون تدرج)
                   selectedItemDecoration: BoxDecoration(
-                    color: AppColors.primary, // #1E88E5
+                    color: AppColors.primary,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
@@ -203,7 +207,7 @@ class _MainLayoutState extends State<MainLayout> {
                       children: [
                         Container(
                           decoration: BoxDecoration(
-                            color: AppColors.primary, // #1E88E5
+                            color: AppColors.primary,
                             borderRadius: BorderRadius.circular(30),
                             boxShadow: [
                               BoxShadow(
@@ -248,7 +252,7 @@ class _MainLayoutState extends State<MainLayout> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.primary, // #1E88E5
+                              color: AppColors.primary,
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
@@ -282,12 +286,16 @@ class _MainLayoutState extends State<MainLayout> {
                     label: 'Register',
                   ),
                   SidebarXItem(
-                    icon: Icons.school_rounded,
-                    label: 'Teachers',
+                    icon: Icons.book_rounded,
+                    label: 'Subjects',
                   ),
                   SidebarXItem(
                     icon: Icons.grid_view_rounded,
                     label: 'Classes',
+                  ),
+                  SidebarXItem(
+                    icon: Icons.person_rounded,
+                    label: 'Students', // ✅ زر الطلاب الجديد
                   ),
                   SidebarXItem(
                     icon: Icons.how_to_reg_rounded,
@@ -302,8 +310,8 @@ class _MainLayoutState extends State<MainLayout> {
                     label: 'Assignments',
                   ),
                   SidebarXItem(
-                    icon: Icons.bar_chart_rounded,
-                    label: 'Reports',
+                    icon: Icons.badge_rounded,
+                    label: 'Staff', // ✅ زر الموظفين
                   ),
                   SidebarXItem(
                     icon: Icons.settings_rounded,
@@ -376,6 +384,7 @@ class _MainLayoutState extends State<MainLayout> {
                 },
               ),
             ),
+            // ── المحتوى الرئيسي ──
             Expanded(
               child: Column(
                 children: [
@@ -413,7 +422,7 @@ class _MainLayoutState extends State<MainLayout> {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: AppColors.primary, // #1E88E5
+              color: AppColors.primary,
               borderRadius: BorderRadius.circular(20),
             ),
             child: const CircleAvatar(
@@ -531,7 +540,7 @@ class _MainLayoutState extends State<MainLayout> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.primary, // #1E88E5
+              color: AppColors.primary,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
