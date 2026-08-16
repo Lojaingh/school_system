@@ -453,7 +453,6 @@ class _AssignmentCard extends StatelessWidget {
     );
   }
 
-  // ── ✅ نافذة التعديل ──
   void _showEditAssignmentDialog(BuildContext context, Assignment assignment) {
     final titleController = TextEditingController(text: assignment.title);
     final bodyController = TextEditingController(text: assignment.body);
@@ -523,14 +522,39 @@ class _AssignmentCard extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              // ✅ تحديث المهمة
+              final title = titleController.text.trim();
+              final body = bodyController.text.trim();
+              final dueDate = dueDateController.text.trim();
+
+              // ✅ التحقق من وجود بيانات للتحديث
+              if (title.isEmpty && body.isEmpty && dueDate.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please enter at least one field to update'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              print('📤 Updating assignment:');
+              print('   id: ${assignment.id}');
+              print('   title: $title');
+              print('   body: $body');
+              print('   dueDate: $dueDate');
+
+              // ✅ إرسال التحديث
               await context.read<AssignmentCubit>().updateAssignment(
                     id: assignment.id,
-                    title: titleController.text.trim(),
-                    body: bodyController.text.trim(),
-                    dueDate: dueDateController.text.trim(),
+                    title: title.isNotEmpty ? title : null,
+                    body: body.isNotEmpty ? body : null,
+                    dueDate: dueDate.isNotEmpty ? dueDate : null,
                   );
+
+              // ✅ إغلاق النافذة بعد نجاح التحديث
               Navigator.pop(context);
+
+              // ✅ عرض رسالة نجاح
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text("Assignment updated successfully"),

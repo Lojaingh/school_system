@@ -35,18 +35,16 @@ class StaffProfileModel {
     this.contact,
   });
 
-  factory StaffProfileModel.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory StaffProfileModel.fromJson(Map<String, dynamic> json) {
     final roles = json["roles"] ?? [];
 
     return StaffProfileModel(
       userId: json["user_id"],
       username: json["username"],
-      firstName: json["profile"]?["first name"] ?? "",
-      lastName: json["profile"]?["last name"] ?? "",
-      gender: json["profile"]?["Gender"] ?? "",
-      dob: json["profile"]?["Date of Birth"] ?? "",
+      firstName: json["profile"]?["f_name"] ?? "",
+      lastName: json["profile"]?["l_name"] ?? "",
+      gender: json["profile"]?["gender"] ?? "",
+      dob: json["profile"]?["dob"] ?? "",
       role: roles.isNotEmpty ? roles[0]["title"] : null,
       roleId: roles.isNotEmpty ? roles[0]["role_id"] : null,
       startedAt: roles.isNotEmpty ? roles[0]["started_at"] : null,
@@ -54,19 +52,17 @@ class StaffProfileModel {
     );
   }
 
-  factory StaffProfileModel.fromProfileJson(
-    Map<String, dynamic> json,
-  ) {
+  factory StaffProfileModel.fromProfileJson(Map<String, dynamic> json) {
     final details = json["details"] ?? {};
     final roles = details["roles"] ?? [];
 
     return StaffProfileModel(
       userId: json["user_id"],
       username: json["username"],
-      firstName: json["profile"]?["first name"] ?? "",
-      lastName: json["profile"]?["last name"] ?? "",
-      gender: json["profile"]?["Gender"] ?? "",
-      dob: json["profile"]?["Date of Birth"] ?? "",
+      firstName: json["profile"]?["f_name"] ?? "",
+      lastName: json["profile"]?["l_name"] ?? "",
+      gender: json["profile"]?["gender"] ?? "",
+      dob: json["profile"]?["dob"] ?? "",
       role: roles.isNotEmpty ? roles[0]["title"] : null,
       roleId: roles.isNotEmpty ? roles[0]["role_id"] : null,
       startedAt: roles.isNotEmpty ? roles[0]["started_at"] : null,

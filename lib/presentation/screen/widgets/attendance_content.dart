@@ -1,12 +1,12 @@
 // lib/presentation/screen/widgets/attendance_content.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/constants/app_colors.dart';
 import 'package:school_management/constants/app_colors.dart' as app;
-import 'package:school_management/cubit/attendance/attendance_cubit.dart';
 import 'package:school_management/data/model/class_students_model.dart';
 import 'package:school_management/data/network/dio_client.dart';
+import 'package:school_management/data/services/attendance_service.dart';
+import 'package:school_management/utils/shared_prefs_helper.dart';
 
 class AttendanceContent extends StatefulWidget {
   final int? initialClassId;
@@ -20,59 +20,121 @@ class AttendanceContent extends StatefulWidget {
 class _AttendanceContentState extends State<AttendanceContent> {
   int selectedTab = 0;
 
-  // ✅ التاريخ مقفول على اليوم الحالي فقط — الباك ما بياخد تاريخ بالـ body
-  // خالص (شفنا هيك بملف الـ Postman)، فالحضور دائماً بينسجل لليوم الحالي
-  // وقت الاستدعاء. لهيك حذفنا أي إمكانية لتغيير التاريخ من المستخدم.
   final DateTime selectedDate = DateTime.now();
 
-  // ✅ قائمة الصفوف من الـ API (سنملأها لاحقاً)
   List<Map<String, dynamic>> classList = [];
   int? selectedClassId;
   bool isLoadingClasses = true;
 
-  // ✅ بيانات الطلاب من الـ API
   List<ClassStudent> students = [];
   int? currentClassId;
 
-  // ✅ بيانات المعلمين (وهمية مؤقتاً لأن الباك ما عنده API)
-  List<Map<String, dynamic>> teachers = [
-    {
-      'name': 'Ahmad Mahmod',
-      'id': 'T001',
-      'subject': 'Math',
-      'status': 'Present',
-      'time': '07:45'
-    },
-    {
-      'name': 'Soad Mohamad',
-      'id': 'T002',
-      'subject': 'Science',
-      'status': 'Present',
-      'time': '07:50'
-    },
-    {
-      'name': 'Khaled Ali',
-      'id': 'T003',
-      'subject': 'Arabic',
-      'status': 'Late',
-      'time': '08:20'
-    },
-    {
-      'name': 'Nawal Hasan',
-      'id': 'T004',
-      'subject': 'English',
-      'status': 'Absent',
-      'time': '-'
-    },
-  ];
+  // ✅ دور المستخدم الحالي
+  String? userRole;
+  bool isLoadingRole = true;
 
-  String selectedDepartment = 'Math';
-  final List<String> departmentList = ['Math', 'Science', 'Arabic', 'English'];
+  // ✅ بيانات الـ Staff (سيتم جلبها من الـ API)
+  List<Map<String, dynamic>> staffList = [];
+
+  // ✅ قائمة الأدوار (سيتم استخراجها من الـ API)
+  String selectedRole = 'All';
+  List<String> roleList = ['All'];
+
+  // ✅ AttendanceService
+  final AttendanceService _attendanceService = AttendanceService();
 
   @override
   void initState() {
     super.initState();
+    _loadUserRole();
     _loadClasses();
+  }
+
+  // ✅ جلب دور المستخدم الحالي من التخزين المحلي
+  Future<void> _loadUserRole() async {
+    final role = await SharedPrefsHelper.getRole();
+    if (!mounted) return;
+    setState(() {
+      userRole = role;
+      isLoadingRole = false;
+    });
+  }
+
+  // ✅ هل المستخدم الحالي مدير؟
+  bool get _isManager => userRole?.toLowerCase() == 'manager';
+
+  // lib/presentation/screen/widgets/attendance_content.dart
+
+  Future<void> _loadStaff() async {
+    try {
+      print('🔵 Loading staff from API...');
+      final response = await _attendanceService.getStaff();
+
+      print('📥 Staff API status: ${response.statusCode}');
+      print('📥 Staff API data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        // ✅ استخراج البيانات من الـ Response
+        final data = response.data['data'] as List? ?? [];
+
+        if (data.isEmpty) {
+          print('⚠️ No staff found in the system');
+          setState(() {
+            staffList = [];
+            roleList = ['All'];
+          });
+          return;
+        }
+
+        final Set<String> rolesSet = {'All'};
+        final List<Map<String, dynamic>> loadedStaff = [];
+
+        for (var item in data) {
+          // ✅ استخراج الـ profile (يحتوي على f_name, l_name)
+          final profile = item['profile'] ?? {};
+
+          // ✅ استخراج الأدوار
+          final roles = item['roles'] as List? ?? [];
+          final roleTitle =
+              roles.isNotEmpty ? (roles[0]['title'] ?? 'Staff') : 'Staff';
+
+          rolesSet.add(roleTitle);
+
+          // ✅ بناء كائن الموظف (استخدام f_name و l_name)
+          final staffMember = {
+            'id': item['user_id'] ?? 0,
+            'name':
+                '${profile['f_name'] ?? profile['first name'] ?? ''} ${profile['l_name'] ?? profile['last name'] ?? ''}'
+                    .trim(),
+            'role': roleTitle,
+            'status': 'Present',
+            'time': '-',
+          };
+
+          // ✅ إذا كان الاسم فارغاً، استخدم الـ username
+          if (staffMember['name'].toString().isEmpty) {
+            staffMember['name'] = item['username'] ?? 'Unknown Staff';
+          }
+
+          loadedStaff.add(staffMember);
+        }
+
+        setState(() {
+          staffList = loadedStaff;
+          roleList = rolesSet.toList();
+          if (!roleList.contains(selectedRole)) {
+            selectedRole = 'All';
+          }
+        });
+
+        print('✅ Staff loaded: ${staffList.length}');
+        print('📋 Roles: $roleList');
+      } else {
+        print('❌ Failed to load staff: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Error loading staff: $e');
+    }
   }
 
   Future<void> _loadClasses() async {
@@ -96,96 +158,217 @@ class _AttendanceContentState extends State<AttendanceContent> {
           });
         }
 
+        int? firstClassId;
+
+        if (loadedClasses.isNotEmpty) {
+          firstClassId = loadedClasses[0]['id'] as int;
+        }
+
         setState(() {
           classList = loadedClasses;
-          if (classList.isNotEmpty) {
-            // ✅ اختر أول صف في القائمة
-            selectedClassId = classList[0]['id'];
-            _loadStudents(selectedClassId!);
-          }
+          selectedClassId = firstClassId;
           isLoadingClasses = false;
         });
+
+        // تحميل الطلاب بعد انتهاء setState
+        if (firstClassId != null) {
+          await _loadStudents(firstClassId);
+        }
       } else {
-        throw Exception('Failed to load classes: ${response.statusCode}');
+        throw Exception(
+          'Failed to load classes: ${response.statusCode}',
+        );
       }
     } catch (e) {
       print('❌ Error loading classes: $e');
+
+      if (!mounted) return;
+
       setState(() {
         isLoadingClasses = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load classes: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
     }
   }
 
   Future<void> _loadStudents(int classId) async {
     try {
       currentClassId = classId;
-      print('🔵 Loading students for class: $classId');
-      await context.read<AttendanceCubit>().loadClassStudents(classId);
+
+      print('🔵 Loading students for class ID: $classId');
+
+      final response = await _attendanceService.getClassStudents(classId);
+
+      print('📥 Students API status: ${response.statusCode}');
+      print('📥 Students API data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        final data = ClassStudentsResponse.fromJson(response.data);
+
+        print('👨‍🎓 Students count: ${data.students.length}');
+
+        if (!mounted) return;
+
+        setState(() {
+          students = data.students;
+        });
+      }
     } catch (e) {
-      print('❌ Error loading students for class $classId: $e');
+      print('❌ Error loading students: $e');
+    }
+  }
+
+  // ── حفظ حضور الطلاب ──
+  void _saveAttendance() async {
+    if (currentClassId == null || students.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No students to save attendance for'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    final List<int> absent = [];
+    final List<int> late = [];
+    final List<int> excused = [];
+
+    for (var student in students) {
+      final status = student.status;
+      final userId = student.userId;
+
+      if (status == 'Absent') {
+        absent.add(userId);
+      } else if (status == 'Late') {
+        late.add(userId);
+      } else if (status == 'Excused') {
+        excused.add(userId);
+      }
+    }
+
+    try {
+      final response = await _attendanceService.markAttendance(
+        classId: currentClassId!,
+        absent: absent,
+        late: late,
+        excused: excused,
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Attendance saved successfully!'),
+            backgroundColor: AppColors.cardGreen,
+          ),
+        );
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to load students: $e'),
+          content: Text('Error: $e'),
           backgroundColor: AppColors.error,
         ),
       );
     }
   }
 
-  // ❌ حذفنا _selectDate بالكامل — ما عاد في داعي لها بما إنه التاريخ
-  // مقفول على اليوم الحالي ومش قابل للتغيير من المستخدم.
+  // ── حفظ حضور الـ Staff ──
+  void _saveStaffAttendance() async {
+    if (staffList.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No staff to save attendance for'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    final Map<int, String> statuses = {};
+
+    for (var staff in staffList) {
+      final status = staff['status'] as String;
+      final id = staff['id'] as int;
+
+      if (status != 'Present') {
+        statuses[id] = status.toLowerCase();
+      }
+    }
+
+    if (statuses.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Everyone is marked Present — nothing to save'),
+          backgroundColor: AppColors.cardGreen,
+        ),
+      );
+      return;
+    }
+
+    try {
+      await _attendanceService.markStaffAttendanceBulk(statuses);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Staff attendance saved successfully!'),
+          backgroundColor: AppColors.cardGreen,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AttendanceCubit, AttendanceState>(
-      listener: (context, state) {
-        if (state is AttendanceSaved) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: AppColors.cardGreen,
-            ),
-          );
-        } else if (state is AttendanceError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: ${state.message}'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      },
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title
-            const Text(
-              'Attendance',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Record and track attendance for students and teaching staff',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 24),
+    // ✅ إذا كان المدير ولم يتم تحميل الـ Staff بعد
+    if (_isManager && staffList.isEmpty && !isLoadingRole) {
+      _loadStaff();
+    }
 
-            // ✅ Tab Bar (Students + Teachers)
+    if (isLoadingRole) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(48.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Attendance',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _isManager
+                ? 'Record and track attendance for students and staff'
+                : 'Record and track attendance for your students',
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // ── Tab Bar: تظهر بس للمدير ──
+          if (_isManager) ...[
             Container(
               decoration: BoxDecoration(
                 color: AppColors.cardBg.withOpacity(0.5),
@@ -203,7 +386,7 @@ class _AttendanceContentState extends State<AttendanceContent> {
                   ),
                   Expanded(
                     child: _buildTabButton(
-                      label: '👩‍🏫 Teachers',
+                      label: '👩‍💼 Staff',
                       index: 1,
                       selectedTab: selectedTab,
                       onTap: () => setState(() => selectedTab = 1),
@@ -212,95 +395,37 @@ class _AttendanceContentState extends State<AttendanceContent> {
                 ],
               ),
             ),
-
             const SizedBox(height: 24),
-
-            // ✅ Students Tab
-            if (selectedTab == 0)
-              BlocBuilder<AttendanceCubit, AttendanceState>(
-                builder: (context, state) {
-                  if (state is AttendanceLoading) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(32.0),
-                        child: CircularProgressIndicator(),
-                      ),
-                    );
-                  } else if (state is AttendanceLoaded) {
-                    students = state.data.students;
-                    currentClassId = state.classId;
-
-                    return _StudentsAttendanceContent(
-                      students: students,
-                      selectedDate: selectedDate,
-                      classList: classList,
-                      selectedClassId: selectedClassId,
-                      isLoadingClasses: isLoadingClasses,
-                      onClassChanged: (value) {
-                        setState(() {
-                          selectedClassId = value;
-                          _loadStudents(value);
-                        });
-                      },
-                      onSave: () => _saveAttendance(context),
-                    );
-                  } else if (state is AttendanceError) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32.0),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.error_outline_rounded,
-                              size: 48,
-                              color: Colors.red.shade300,
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              state.message,
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () {
-                                if (selectedClassId != null) {
-                                  _loadStudents(selectedClassId!);
-                                }
-                              },
-                              child: const Text('Retry'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
-
-            // ✅ Teachers Tab (بيانات وهمية مؤقتاً)
-            if (selectedTab == 1)
-              _TeachersAttendanceContent(
-                teachers: teachers,
-                selectedDepartment: selectedDepartment,
-                selectedDate: selectedDate,
-                departmentList: departmentList,
-                onDepartmentChanged: (value) =>
-                    setState(() => selectedDepartment = value),
-                onSave: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Teachers attendance saved (coming soon)'),
-                      backgroundColor: AppColors.cardGreen,
-                    ),
-                  );
-                },
-              ),
           ],
-        ),
+
+          // ── Students Tab ──
+          if (!_isManager || selectedTab == 0)
+            _StudentsAttendanceContent(
+              students: students,
+              selectedDate: selectedDate,
+              classList: classList,
+              selectedClassId: selectedClassId,
+              isLoadingClasses: isLoadingClasses,
+              onClassChanged: (value) {
+                setState(() {
+                  selectedClassId = value;
+                  _loadStudents(value);
+                });
+              },
+              onSave: _saveAttendance,
+            ),
+
+          // ── Staff Tab: بس للمدير ──
+          if (_isManager && selectedTab == 1)
+            _StaffAttendanceContent(
+              staffList: staffList,
+              selectedRole: selectedRole,
+              selectedDate: selectedDate,
+              roleList: roleList,
+              onRoleChanged: (value) => setState(() => selectedRole = value),
+              onSave: _saveStaffAttendance,
+            ),
+        ],
       ),
     );
   }
@@ -333,50 +458,6 @@ class _AttendanceContentState extends State<AttendanceContent> {
         ),
       ),
     );
-  }
-
-  // ── حفظ الحضور للطلاب ──
-  void _saveAttendance(BuildContext context) {
-    if (currentClassId == null || students.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No students to save attendance for'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
-
-    // ✅ بناء المصفوفات
-    final List<int> absent = [];
-    final List<int> late = [];
-    final List<int> excused = [];
-
-    for (var student in students) {
-      final status = student.status;
-      final userId = student.userId;
-
-      if (status == 'Absent') {
-        absent.add(userId);
-      } else if (status == 'Late') {
-        late.add(userId);
-      } else if (status == 'Excused') {
-        excused.add(userId);
-      }
-      // ✅ Present لا نضيفه للمصفوفات — تلقائياً بيعتبر حاضر لأنه مش
-      // موجود بأي وحدة من المصفوفات التلاتة، تماماً متل ما الباك متوقع.
-    }
-
-    print('📊 Absent: $absent');
-    print('📊 Late: $late');
-    print('📊 Excused: $excused');
-
-    context.read<AttendanceCubit>().markAttendance(
-          classId: currentClassId!,
-          absent: absent,
-          late: late,
-          excused: excused,
-        );
   }
 }
 
@@ -421,7 +502,6 @@ class _StudentsAttendanceContent extends StatelessWidget {
           excused: students.where((s) => s.status == 'Excused').length,
         ),
         const SizedBox(height: 24),
-        const SizedBox(height: 24),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: SizedBox(
@@ -436,50 +516,53 @@ class _StudentsAttendanceContent extends StatelessWidget {
   }
 }
 
-// ── Teachers Attendance Content ─────────────────────────────────
-class _TeachersAttendanceContent extends StatelessWidget {
-  final List<Map<String, dynamic>> teachers;
-  final String selectedDepartment;
+// ── Staff Attendance Content ─────────────────────────────
+class _StaffAttendanceContent extends StatelessWidget {
+  final List<Map<String, dynamic>> staffList;
+  final String selectedRole;
   final DateTime selectedDate;
-  final List<String> departmentList;
-  final Function(String) onDepartmentChanged;
+  final List<String> roleList;
+  final Function(String) onRoleChanged;
   final VoidCallback onSave;
 
-  const _TeachersAttendanceContent({
-    required this.teachers,
-    required this.selectedDepartment,
+  const _StaffAttendanceContent({
+    required this.staffList,
+    required this.selectedRole,
     required this.selectedDate,
-    required this.departmentList,
-    required this.onDepartmentChanged,
+    required this.roleList,
+    required this.onRoleChanged,
     required this.onSave,
   });
 
   @override
   Widget build(BuildContext context) {
+    final filteredStaff = selectedRole == 'All'
+        ? staffList
+        : staffList.where((s) => s['role'] == selectedRole).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _TeachersFilterRow(
-          selectedDepartment: selectedDepartment,
+        _StaffFilterRow(
+          selectedRole: selectedRole,
           selectedDate: selectedDate,
-          departmentList: departmentList,
-          onDepartmentChanged: onDepartmentChanged,
+          roleList: roleList,
+          onRoleChanged: onRoleChanged,
         ),
         const SizedBox(height: 24),
         _AttendanceStats(
-          total: teachers.length,
-          present: teachers.where((t) => t['status'] == 'Present').length,
-          absent: teachers.where((t) => t['status'] == 'Absent').length,
-          late: teachers.where((t) => t['status'] == 'Late').length,
-          excused: teachers.where((t) => t['status'] == 'Excused').length,
+          total: filteredStaff.length,
+          present: filteredStaff.where((t) => t['status'] == 'Present').length,
+          absent: filteredStaff.where((t) => t['status'] == 'Absent').length,
+          late: filteredStaff.where((t) => t['status'] == 'Late').length,
+          excused: filteredStaff.where((t) => t['status'] == 'Excused').length,
         ),
-        const SizedBox(height: 24),
         const SizedBox(height: 24),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: SizedBox(
             width: MediaQuery.of(context).size.width - 48,
-            child: _TeachersTable(teachers: teachers),
+            child: _StaffTable(staffList: filteredStaff),
           ),
         ),
         const SizedBox(height: 20),
@@ -489,7 +572,7 @@ class _TeachersAttendanceContent extends StatelessWidget {
   }
 }
 
-// ── Students Filters Row ─────────────────────────────────────────
+// ── Students Filter Row ─────────────────────────────────────────
 class _StudentsFilterRow extends StatelessWidget {
   final DateTime selectedDate;
   final List<Map<String, dynamic>> classList;
@@ -553,18 +636,18 @@ class _StudentsFilterRow extends StatelessWidget {
   }
 }
 
-// ── Teachers Filters Row ─────────────────────────────────────────
-class _TeachersFilterRow extends StatelessWidget {
-  final String selectedDepartment;
+// ── Staff Filter Row ─────────────────────────────────────────
+class _StaffFilterRow extends StatelessWidget {
+  final String selectedRole;
   final DateTime selectedDate;
-  final List<String> departmentList;
-  final Function(String) onDepartmentChanged;
+  final List<String> roleList;
+  final Function(String) onRoleChanged;
 
-  const _TeachersFilterRow({
-    required this.selectedDepartment,
+  const _StaffFilterRow({
+    required this.selectedRole,
     required this.selectedDate,
-    required this.departmentList,
-    required this.onDepartmentChanged,
+    required this.roleList,
+    required this.onRoleChanged,
   });
 
   @override
@@ -582,11 +665,11 @@ class _TeachersFilterRow extends StatelessWidget {
             return Column(
               children: [
                 _FilterDropdown(
-                  label: 'Department',
-                  value: selectedDepartment,
-                  items: departmentList,
-                  onChanged: onDepartmentChanged,
-                  icon: Icons.business_center_rounded,
+                  label: 'Role',
+                  value: selectedRole,
+                  items: roleList,
+                  onChanged: onRoleChanged,
+                  icon: Icons.badge_rounded,
                 ),
                 const SizedBox(height: 12),
                 _TodayDateBadge(date: selectedDate),
@@ -596,13 +679,14 @@ class _TeachersFilterRow extends StatelessWidget {
             return Row(
               children: [
                 Expanded(
-                    child: _FilterDropdown(
-                  label: 'Department',
-                  value: selectedDepartment,
-                  items: departmentList,
-                  onChanged: onDepartmentChanged,
-                  icon: Icons.business_center_rounded,
-                )),
+                  child: _FilterDropdown(
+                    label: 'Role',
+                    value: selectedRole,
+                    items: roleList,
+                    onChanged: onRoleChanged,
+                    icon: Icons.badge_rounded,
+                  ),
+                ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: _TodayDateBadge(date: selectedDate),
@@ -743,10 +827,7 @@ class _FilterDropdown extends StatelessWidget {
   }
 }
 
-// ── ✅ جديد: Badge للتاريخ الحالي (غير قابل للتعديل) ──
-// حل مكان _DatePickerWidget القديم. بما إنه الباك بيسجل الحضور دائماً
-// لليوم الحالي بس، خلينا هالودجت للعرض فقط بدون أي تفاعل (بدون onTap
-// وبدون DatePicker) حتى ما يوهم المستخدم إنه فيه خيار لتغيير التاريخ.
+// ── Today Date Badge ─────────────────────────────────────────────
 class _TodayDateBadge extends StatelessWidget {
   final DateTime date;
 
@@ -885,7 +966,6 @@ class _StudentsTable extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Table Header
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -922,7 +1002,6 @@ class _StudentsTable extends StatelessWidget {
               ],
             ),
           ),
-          // Table Rows
           ...students.map((student) => _StudentRow(student: student)),
         ],
       ),
@@ -930,81 +1009,7 @@ class _StudentsTable extends StatelessWidget {
   }
 }
 
-// ── Teachers Table ─────────────────────────────────────────────
-class _TeachersTable extends StatelessWidget {
-  final List<Map<String, dynamic>> teachers;
-
-  const _TeachersTable({required this.teachers});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: app.AppGradients.cardGradient,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: AppShadows.cardShadow,
-      ),
-      child: Column(
-        children: [
-          // Table Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              border: Border(
-                  bottom:
-                      BorderSide(color: AppColors.cardBorder.withOpacity(0.3))),
-            ),
-            child: const Row(
-              children: [
-                Expanded(
-                    flex: 2,
-                    child: Text('Teacher',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary))),
-                Expanded(
-                    flex: 1,
-                    child: Text('Subject',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary))),
-                Expanded(
-                    flex: 1,
-                    child: Text('Status',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary))),
-                Expanded(
-                    flex: 1,
-                    child: Text('Time',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary))),
-              ],
-            ),
-          ),
-          // Table Rows
-          ...teachers.map((teacher) => _TeacherRow(teacher: teacher)),
-        ],
-      ),
-    );
-  }
-}
-
 // ── Student Row ─────────────────────────────────────
-// ✅ ملاحظة مهمة: قائمة الحالة (Present/Absent/Late/Excused) هون هي
-// حالة محلية بالواجهة بس، وما بتنبعت حرفياً "Present" للباك. لما تختار
-// "Present" لطالب، الكود بـ _saveAttendance ببساطة ما بضيفه لأي مصفوفة
-// (absent/late/excused)، وهيك تلقائياً بيعتبره الباك حاضر. فمنطقياً
-// صحيح نبقيها موجودة — هي أداة توضيح لحالة كل طالب للمستخدم بس.
 class _StudentRow extends StatefulWidget {
   final ClassStudent student;
 
@@ -1124,23 +1129,108 @@ class _StudentRowState extends State<_StudentRow> {
   }
 }
 
-// ── Teacher Row ─────────────────────────────────────
-class _TeacherRow extends StatefulWidget {
-  final Map<String, dynamic> teacher;
+// ── Staff Table ─────────────────────────────────────────────
+class _StaffTable extends StatelessWidget {
+  final List<Map<String, dynamic>> staffList;
 
-  const _TeacherRow({required this.teacher});
+  const _StaffTable({required this.staffList});
 
   @override
-  State<_TeacherRow> createState() => _TeacherRowState();
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: app.AppGradients.cardGradient,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: AppShadows.cardShadow,
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: AppColors.cardBorder.withOpacity(0.3),
+                ),
+              ),
+            ),
+            child: const Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Staff Member',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: Text(
+                    'Role',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: Text(
+                    'Status',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: Text(
+                    'Time',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...staffList.map((staff) => _StaffRow(staff: staff)),
+        ],
+      ),
+    );
+  }
 }
 
-class _TeacherRowState extends State<_TeacherRow> {
+// ── Staff Row ─────────────────────────────────────
+class _StaffRow extends StatefulWidget {
+  final Map<String, dynamic> staff;
+
+  const _StaffRow({required this.staff});
+
+  @override
+  State<_StaffRow> createState() => _StaffRowState();
+}
+
+class _StaffRowState extends State<_StaffRow> {
   late String selectedStatus;
 
   @override
   void initState() {
     super.initState();
-    selectedStatus = widget.teacher['status'];
+    selectedStatus = widget.staff['status'];
   }
 
   @override
@@ -1149,7 +1239,10 @@ class _TeacherRowState extends State<_TeacherRow> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: Border(
-            bottom: BorderSide(color: AppColors.cardBorder.withOpacity(0.15))),
+          bottom: BorderSide(
+            color: AppColors.cardBorder.withOpacity(0.15),
+          ),
+        ),
       ),
       child: Row(
         children: [
@@ -1161,19 +1254,22 @@ class _TeacherRowState extends State<_TeacherRow> {
                   radius: 18,
                   backgroundColor: AppColors.primary.withOpacity(0.2),
                   child: Text(
-                    widget.teacher['name'][0],
+                    widget.staff['name'][0],
                     style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary),
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    widget.teacher['name'],
+                    widget.staff['name'],
                     style: const TextStyle(
-                        fontSize: 14, color: AppColors.textPrimary),
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -1183,9 +1279,11 @@ class _TeacherRowState extends State<_TeacherRow> {
           Expanded(
             flex: 1,
             child: Text(
-              widget.teacher['subject'],
-              style:
-                  const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              widget.staff['role'],
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
             ),
@@ -1194,7 +1292,7 @@ class _TeacherRowState extends State<_TeacherRow> {
           Expanded(
             flex: 1,
             child: Text(
-              selectedStatus == 'Present' ? widget.teacher['time'] : '-',
+              selectedStatus == 'Present' ? widget.staff['time'] : '-',
               style: TextStyle(
                 fontSize: 13,
                 color: selectedStatus == 'Present'
@@ -1238,7 +1336,12 @@ class _TeacherRowState extends State<_TeacherRow> {
             DropdownMenuItem(value: 'Late', child: Text('Late')),
             DropdownMenuItem(value: 'Excused', child: Text('Excused')),
           ],
-          onChanged: (value) => setState(() => selectedStatus = value!),
+          onChanged: (value) {
+            setState(() {
+              selectedStatus = value!;
+              widget.staff['status'] = value;
+            });
+          },
         ),
       ),
     );

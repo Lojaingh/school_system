@@ -6,6 +6,7 @@ import 'package:school_management/cubit/assignment/assignment_cubit.dart';
 import 'package:school_management/cubit/auth/login/login_cubit.dart';
 import 'package:school_management/cubit/auth/subject/subject_cubit.dart';
 import 'package:school_management/cubit/dashboard/dashboard_cubit.dart';
+import 'package:school_management/cubit/library/book_cubit.dart';
 import 'package:school_management/cubit/staff/staff_profile_cubit.dart';
 import 'package:school_management/cubit/student/student_cubit.dart';
 import 'package:school_management/cubit/student_profile/student_profile_cubit.dart';
@@ -14,6 +15,7 @@ import 'package:school_management/cubit/class/class_cubit.dart';
 
 // --- Repositories ---
 import 'package:school_management/data/repository/auth_repository.dart';
+import 'package:school_management/data/repository/book_repository.dart';
 import 'package:school_management/data/repository/subject_repository.dart';
 import 'package:school_management/data/repository/student_repository.dart';
 import 'package:school_management/data/repository/student_profile_repository.dart';
@@ -23,6 +25,7 @@ import 'package:school_management/data/repository/class_repository.dart';
 
 // --- Services ---
 import 'package:school_management/data/services/auth_service.dart';
+import 'package:school_management/data/services/book_service.dart';
 import 'package:school_management/data/services/subject_service.dart';
 import 'package:school_management/data/services/student_service.dart';
 import 'package:school_management/data/services/student_profile_service.dart';
@@ -105,6 +108,13 @@ class MyApp extends StatelessWidget {
           create: (_) => AttendanceCubit(
             AttendanceService(),
           ),
+        ),
+        BlocProvider(
+          create: (_) => BookCubit(
+            BookRepository(
+              BookService(),
+            ),
+          )..loadBooks(),
         ),
       ],
       child: MaterialApp(

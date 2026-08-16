@@ -1,4 +1,3 @@
-// lib/repository/assignment_repository.dart
 // lib/data/repository/assignment_repository.dart
 
 import 'package:dio/dio.dart';
@@ -8,14 +7,45 @@ import '../network/dio_client.dart';
 class AssignmentRepository {
   AssignmentRepository();
 
-  // ── جلب جميع المهام ──
   Future<List<Assignment>> getAssignments() async {
     try {
       final response = await DioClient.dio.get('/assignments');
 
+      print('📥 Assignments response status: ${response.statusCode}');
+      print('📥 Assignments response data: ${response.data}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = response.data['data'] as List? ?? [];
-        return data.map((json) => Assignment.fromJson(json)).toList();
+        final responseData = response.data;
+        List dataList = [];
+
+        // ✅ معالجة مختلف أشكال الـ Response
+        if (responseData == null) {
+          return [];
+        }
+
+        // حالة 1: response.data['data'] هي مصفوفة مباشرة
+        if (responseData['data'] is List) {
+          dataList = responseData['data'] as List;
+        }
+        // حالة 2: response.data['data'] هي Map فيها 'data' مصفوفة (Pagination)
+        else if (responseData['data'] is Map &&
+            responseData['data']['data'] is List) {
+          dataList = responseData['data']['data'] as List;
+        }
+        // حالة 3: response.data نفسها مصفوفة
+        else if (responseData is List) {
+          dataList = responseData;
+        }
+        // حالة 4: response.data['data'] فيها 'data' مصفوفة
+        else if (responseData['data'] != null && responseData['data'] is List) {
+          dataList = responseData['data'] as List;
+        } else {
+          dataList = [];
+        }
+
+        print('📥 Found ${dataList.length} assignments');
+
+        return dataList.map((json) => Assignment.fromJson(json)).toList();
       } else {
         throw Exception('Failed to load assignments: ${response.statusCode}');
       }
@@ -51,7 +81,6 @@ class AssignmentRepository {
     String? filePath,
   }) async {
     try {
-      // إذا كان هناك ملف، نستخدم FormData
       if (filePath != null && filePath.isNotEmpty) {
         final formData = FormData.fromMap({
           'title': title,
@@ -79,7 +108,6 @@ class AssignmentRepository {
               'Failed to create assignment: ${response.statusCode}');
         }
       } else {
-        // بدون ملف (JSON)
         final response = await DioClient.dio.post(
           '/assignments',
           data: {
@@ -107,7 +135,7 @@ class AssignmentRepository {
     }
   }
 
-  // ── ✅ تحديث مهمة (معدل) ──
+  // ── تحديث مهمة ──
   Future<Assignment> updateAssignment({
     required int id,
     String? title,
@@ -115,14 +143,26 @@ class AssignmentRepository {
     String? dueDate,
   }) async {
     try {
+      final Map<String, dynamic> data = {};
+      if (title != null && title.trim().isNotEmpty)
+        data['title'] = title.trim();
+      if (body != null && body.trim().isNotEmpty) data['body'] = body.trim();
+      if (dueDate != null && dueDate.trim().isNotEmpty)
+        data['due_date'] = dueDate.trim();
+
+      if (data.isEmpty) {
+        throw Exception('No data to update');
+      }
+
+      print('📤 Updating assignment $id with: $data');
+
       final response = await DioClient.dio.put(
         '/assignments/$id',
-        data: {
-          if (title != null) "title": title,
-          if (body != null) "body": body,
-          if (dueDate != null) "due_date": dueDate,
-        },
+        data: data,
       );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final assignmentData = response.data['data'];
@@ -131,7 +171,7 @@ class AssignmentRepository {
         throw Exception('Failed to update assignment: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      print('❌ Error updating assignment: ${e.response?.data}');
+      print('❌ DioError updating assignment: ${e.response?.data}');
       rethrow;
     } catch (e) {
       print('❌ Error updating assignment: $e');
@@ -139,7 +179,7 @@ class AssignmentRepository {
     }
   }
 
-  // ── ✅ حذف مهمة (معدل) ──
+  // ── حذف مهمة ──
   Future<void> deleteAssignment(int id) async {
     try {
       final response = await DioClient.dio.delete('/assignments/$id');
