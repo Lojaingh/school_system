@@ -39,4 +39,26 @@ class AuthRepository {
       print('Logout API error: $e');
     }
   }
+
+  // ✅ جديد: جلب دور المستخدم الحالي من GET /get/profile
+  // (endpoint بياخد التوكن بس من الـ Header، وبيرجع بيانات المستخدم
+  // المسجل دخوله حالياً بما فيها roles[0]['title'])
+  Future<String?> fetchRole() async {
+    try {
+      final response = await authService.getProfile();
+
+      if (response.statusCode == 200) {
+        final data = response.data['data'];
+        final roles = data?['roles'] as List? ?? [];
+
+        if (roles.isNotEmpty) {
+          return roles.first['title'] as String?;
+        }
+      }
+      return null;
+    } catch (e) {
+      print('❌ Error fetching role: $e');
+      return null;
+    }
+  }
 }

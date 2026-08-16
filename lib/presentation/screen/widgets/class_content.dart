@@ -170,115 +170,239 @@ class ClassContent extends StatelessWidget {
   // ── ✅ معدّل: نقل طالب — هلق منستنى (await) النتيجة الحقيقية من الباك
   // ومنعرض رسالة نجاح/فشل مبنية فعلياً على شو صار، بدل ما نفترض النجاح
   // دايماً بمجرد إغلاق الـ Dialog.
-  void _showMoveStudentDialog(BuildContext context, int currentClassId) {
-    final studentIdController = TextEditingController();
-    final targetClassIdController = TextEditingController();
+  // lib/presentation/screen/widgets/class_content.dart
 
-    InputDecoration darkField(String label, String hint) => InputDecoration(
-          labelText: label,
-          hintText: hint,
-          labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-          hintStyle: TextStyle(color: Colors.white.withOpacity(0.35)),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: AppColors.primary),
-          ),
-        );
+  // lib/presentation/screen/widgets/class_content.dart
+
+  void _showMoveStudentDialog(BuildContext context, int currentClassId) {
+    // ✅ جلب قائمة الطلاب والصفوف
+    final cubit = context.read<ClassCubit>();
+    final studentsFuture = cubit.fetchAllStudents();
+    final classesFuture = cubit.fetchAllClasses();
+
+    int? selectedStudentId;
+    int? selectedClassId;
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: const Color(0xFF1E2746),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title:
-            const Text('Move Student', style: TextStyle(color: Colors.white)),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: studentIdController,
-                style: const TextStyle(color: Colors.white),
-                decoration: darkField('Student ID', 'Enter student user_id'),
-                keyboardType: TextInputType.number,
+      builder: (dialogContext) => FutureBuilder(
+        future: Future.wait([studentsFuture, classesFuture]),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const AlertDialog(
+              backgroundColor: Color(0xFF1E2746),
+              content: Center(
+                child: CircularProgressIndicator(color: Colors.white),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: targetClassIdController,
-                style: const TextStyle(color: Colors.white),
-                decoration:
-                    darkField('Target Class ID', 'Enter class id to move to'),
-                keyboardType: TextInputType.number,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text('Cancel',
-                style: TextStyle(color: Colors.white.withOpacity(0.7))),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final studentId = int.tryParse(studentIdController.text.trim());
-              final targetClassId =
-                  int.tryParse(targetClassIdController.text.trim());
+            );
+          }
 
-              if (studentId == null || targetClassId == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please enter valid IDs'),
-                    backgroundColor: Colors.red,
+          if (snapshot.hasError) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1E2746),
+              title: const Text(
+                'Error',
+                style: TextStyle(color: Colors.white),
+              ),
+              content: Text(
+                'Failed to load data: ${snapshot.error}',
+                style: const TextStyle(color: Colors.white70),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close'),
+                ),
+              ],
+            );
+          }
+
+          // ✅ استخراج البيانات
+          final students =
+              snapshot.data?[0] as List<StudentProfileModel>? ?? [];
+          final classes = snapshot.data?[1] as List<SchoolClass>? ?? [];
+
+          // ✅ فلترة الطلاب في الصف الحالي
+          final currentClassStudents =
+              students.where((s) => s.classId == currentClassId).toList();
+
+          if (currentClassStudents.isEmpty) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1E2746),
+              title: const Text(
+                'No Students',
+                style: TextStyle(color: Colors.white),
+              ),
+              content: const Text(
+                'No students in this class to move',
+                style: TextStyle(color: Colors.white70),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close'),
+                ),
+              ],
+            );
+          }
+
+          return StatefulBuilder(
+            builder: (context, setStateDialog) {
+              return AlertDialog(
+                backgroundColor: const Color(0xFF1E2746),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                title: const Text(
+                  'Move Student',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
-                );
-                return;
-              }
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // ── اختيار الطالب ──
+                    DropdownButtonFormField<int>(
+                      value: selectedStudentId,
+                      dropdownColor: const Color(0xFF1E2746),
+                      style: const TextStyle(color: Colors.white),
+                      hint: Text(
+                        'Select Student',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                        ),
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Student',
+                        labelStyle: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                            color: Colors.white.withOpacity(0.2),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      items: currentClassStudents.map((student) {
+                        return DropdownMenuItem<int>(
+                          value: student.userId,
+                          child: Text(
+                            student.fullName,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setStateDialog(() {
+                          selectedStudentId = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
 
-              // نسكر الـ Dialog قبل ما نستنى، حتى الواجهة تضل مستجيبة
-              Navigator.pop(dialogContext);
-
-              final cubit = context.read<ClassCubit>();
-
-              // ✅ ننتظر فعلياً انتهاء العملية بالباك
-              await cubit.moveStudent(
-                userId: studentId,
-                classId: targetClassId,
+                    // ── اختيار الصف الهدف ──
+                    DropdownButtonFormField<int>(
+                      value: selectedClassId,
+                      dropdownColor: const Color(0xFF1E2746),
+                      style: const TextStyle(color: Colors.white),
+                      hint: Text(
+                        'Select Target Class',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                        ),
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Target Class',
+                        labelStyle: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                            color: Colors.white.withOpacity(0.2),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      items: classes.map((classItem) {
+                        return DropdownMenuItem<int>(
+                          value: classItem.id,
+                          child: Text(
+                            classItem.displayName,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setStateDialog(() {
+                          selectedClassId = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (selectedStudentId != null &&
+                          selectedClassId != null) {
+                        // ✅ نقل الطالب
+                        cubit.moveStudent(
+                          userId: selectedStudentId!,
+                          classId: selectedClassId!,
+                        );
+                        Navigator.pop(dialogContext);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Student moved successfully!'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Please select both student and target class',
+                            ),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Move'),
+                  ),
+                ],
               );
-
-              if (!context.mounted) return;
-
-              // ✅ منشوف شو صارت حالة الـ Cubit فعلياً بعد الانتظار:
-              // ClassLoaded = نجح ورجع حمّل الصفوف، ClassError = فشل فعلياً
-              final resultState = cubit.state;
-              if (resultState is ClassError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content:
-                        Text('Failed to move student: ${resultState.message}'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Student moved successfully!'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Move'),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -299,7 +423,8 @@ class ClassContent extends StatelessWidget {
   }
 }
 
-// ── محتوى Bottom Sheet لتفاصيل الصف وطلابه ──
+// lib/presentation/screen/widgets/class_content.dart
+
 class _ClassDetailsSheet extends StatefulWidget {
   final SchoolClass classItem;
 
@@ -323,6 +448,219 @@ class _ClassDetailsSheetState extends State<_ClassDetailsSheet> {
           widget.classItem.id,
           widget.classItem.year,
         );
+  }
+
+  // lib/presentation/screen/widgets/class_content.dart
+
+// ── ✅ نافذة نقل طالب (معدلة) ──
+  void _showMoveStudentDialog(
+    BuildContext context,
+    int currentClassId, {
+    StudentProfileModel? student, // ✅ الطالب المحدد
+  }) {
+    final cubit = context.read<ClassCubit>();
+
+    // ✅ جلب الصفوف فقط (الطلاب مش مطلوبين)
+    final classesFuture = cubit.fetchAllClasses();
+
+    int? selectedClassId;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => FutureBuilder<List<SchoolClass>>(
+        future: classesFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const AlertDialog(
+              backgroundColor: Color(0xFF1E2746),
+              content: Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1E2746),
+              title: const Text(
+                'Error',
+                style: TextStyle(color: Colors.white),
+              ),
+              content: Text(
+                'Failed to load classes: ${snapshot.error}',
+                style: const TextStyle(color: Colors.white70),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close'),
+                ),
+              ],
+            );
+          }
+
+          final classes = snapshot.data ?? [];
+
+          // ✅ فلترة الصفوف: استبعاد الصف الحالي
+          final targetClasses =
+              classes.where((c) => c.id != currentClassId).toList();
+
+          if (targetClasses.isEmpty) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1E2746),
+              title: const Text(
+                'No Classes',
+                style: TextStyle(color: Colors.white),
+              ),
+              content: const Text(
+                'No other classes available to move the student to',
+                style: TextStyle(color: Colors.white70),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close'),
+                ),
+              ],
+            );
+          }
+
+          return StatefulBuilder(
+            builder: (context, setStateDialog) {
+              return AlertDialog(
+                backgroundColor: const Color(0xFF1E2746),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                title: const Text(
+                  'Move Student',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // ── عرض اسم الطالب (للتوضيح فقط) ──
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.person_rounded,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Moving: ${student?.fullName ?? 'Unknown'}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── ✅ فقط اختيار الشعبة الهدف ──
+                    DropdownButtonFormField<int>(
+                      value: selectedClassId,
+                      dropdownColor: const Color(0xFF1E2746),
+                      style: const TextStyle(color: Colors.white),
+                      hint: Text(
+                        'Select Target Class',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                        ),
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Target Class',
+                        labelStyle: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                            color: Colors.white.withOpacity(0.2),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      items: targetClasses.map((classItem) {
+                        return DropdownMenuItem<int>(
+                          value: classItem.id,
+                          child: Text(
+                            classItem.displayName,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setStateDialog(() {
+                          selectedClassId = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (selectedClassId != null && student != null) {
+                        // ✅ نقل الطالب
+                        cubit.moveStudent(
+                          userId: student.userId!,
+                          classId: selectedClassId!,
+                        );
+                        Navigator.pop(dialogContext);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Student moved successfully!'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please select a target class'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Move'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -413,6 +751,7 @@ class _ClassDetailsSheetState extends State<_ClassDetailsSheet> {
                       itemBuilder: (context, index) {
                         final s = students[index];
                         final fullName = '${s.firstName} ${s.lastName}'.trim();
+
                         return Container(
                           margin: const EdgeInsets.only(bottom: 10),
                           padding: const EdgeInsets.all(14),
@@ -420,10 +759,12 @@ class _ClassDetailsSheetState extends State<_ClassDetailsSheet> {
                             color: Colors.white.withOpacity(0.05),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                                color: Colors.white.withOpacity(0.08)),
+                              color: Colors.white.withOpacity(0.08),
+                            ),
                           ),
                           child: Row(
                             children: [
+                              // ── الصورة الرمزية ──
                               CircleAvatar(
                                 radius: 18,
                                 backgroundColor:
@@ -439,6 +780,8 @@ class _ClassDetailsSheetState extends State<_ClassDetailsSheet> {
                                 ),
                               ),
                               const SizedBox(width: 12),
+
+                              // ── معلومات الطالب ──
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -462,11 +805,34 @@ class _ClassDetailsSheetState extends State<_ClassDetailsSheet> {
                                   ],
                                 ),
                               ),
+
+                              // ── ✅ زر نقل الطالب ──
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.swap_horiz_rounded,
+                                  color: Colors.lightBlueAccent,
+                                ),
+                                tooltip: 'Move Student',
+                                onPressed: () {
+                                  // ✅ إغلاق الـ Bottom Sheet أولاً
+                                  Navigator.pop(context);
+                                  // ✅ ثم فتح نافذة النقل
+                                  _showMoveStudentDialog(
+                                    context,
+                                    widget.classItem.id,
+                                    student: s,
+                                  );
+                                },
+                              ),
+
+                              // ── الحالة الصحية ──
                               if (s.healthStatus != null &&
                                   s.healthStatus!.isNotEmpty)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
                                     color:
                                         Colors.orangeAccent.withOpacity(0.15),

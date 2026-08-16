@@ -76,6 +76,12 @@ class AssignmentCubit extends Cubit<AssignmentState> {
     try {
       emit(AssignmentLoading());
 
+      print('📤 Cubit - Updating assignment:');
+      print('   id: $id');
+      print('   title: $title');
+      print('   body: $body');
+      print('   dueDate: $dueDate');
+
       await repository.updateAssignment(
         id: id,
         title: title,
@@ -85,6 +91,7 @@ class AssignmentCubit extends Cubit<AssignmentState> {
 
       await loadAssignments();
     } catch (e) {
+      print('❌ Update error: $e');
       emit(AssignmentError(e.toString()));
     }
   }

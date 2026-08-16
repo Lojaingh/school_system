@@ -21,6 +21,14 @@ class LoginCubit extends Cubit<LoginState> {
       );
       await SharedPrefsHelper.saveToken(response.token);
 
+      // ✅ جديد: بعد ما ننجح بتسجيل الدخول وخزّنا التوكن، منجيب دور
+      // المستخدم فوراً من /get/profile ومنخزنه — حتى أي شاشة بالتطبيق
+      // (متل شاشة الحضور) تقدر تقرأه من SharedPrefsHelper بأي وقت.
+      final role = await repository.fetchRole();
+      if (role != null) {
+        await SharedPrefsHelper.saveRole(role);
+      }
+
       emit(LoginSuccess(response.token));
     } catch (e) {
       emit(LoginError(e.toString()));

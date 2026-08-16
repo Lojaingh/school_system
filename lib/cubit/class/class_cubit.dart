@@ -128,6 +128,10 @@ class ClassCubit extends Cubit<ClassState> {
     return repository.getAllStudents();
   }
 
+  Future<List<SchoolClass>> fetchAllClasses() {
+    return repository.getClasses();
+  }
+
   // ── تحديث الصفوف ──
   void refreshClasses() {
     loadClasses();
