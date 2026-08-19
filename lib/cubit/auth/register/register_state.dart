@@ -5,9 +5,13 @@ class RegisterInitial extends RegisterState {}
 class RegisterLoading extends RegisterState {}
 
 class RegisterSuccess extends RegisterState {
-  final String message;
+  final String username;
+  final String password;
 
-  RegisterSuccess(this.message);
+  RegisterSuccess({
+    required this.username,
+    required this.password,
+  });
 }
 
 class RegisterError extends RegisterState {

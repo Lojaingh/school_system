@@ -5,8 +5,6 @@ import '../network/dio_client.dart';
 
 class ClassService {
   final Dio _dio = DioClient.dio;
-
-  // ── جلب جميع الصفوف ──
   Future<Response> getClasses() async {
     try {
       print('🔵 Fetching classes from: /class/all');
@@ -19,7 +17,6 @@ class ClassService {
     }
   }
 
-  // ── جلب الصفوف حسب السنة ──
   Future<Response> getClassesByGrade(int year) async {
     try {
       print('🔵 Fetching classes by grade: $year');
@@ -37,7 +34,6 @@ class ClassService {
     }
   }
 
-  // ── ✅ جلب طلاب شعبة معينة (API جديد) ──
   Future<Response> getClassStudents(int classId) async {
     try {
       print('🔵 Fetching students for class: $classId');
@@ -54,7 +50,6 @@ class ClassService {
     }
   }
 
-  // ── جلب الطلاب حسب السنة ──
   Future<Response> getStudentsByGrade(int year) async {
     try {
       print('🔵 Fetching students by grade: $year');
@@ -88,8 +83,6 @@ class ClassService {
       rethrow;
     }
   }
-
-  // ── إضافة صف جديد ──
   Future<Response> addClass({
     required int year,
     required int number,
@@ -112,8 +105,6 @@ class ClassService {
       rethrow;
     }
   }
-
-  // ── حذف صف ──
   Future<Response> deleteClass(int id) async {
     try {
       print('🔵 Deleting class: $id');
@@ -125,8 +116,6 @@ class ClassService {
       rethrow;
     }
   }
-
-  // ── نقل طالب ──
   Future<Response> moveStudent({
     required int userId,
     required int classId,
@@ -147,8 +136,6 @@ class ClassService {
       rethrow;
     }
   }
-
-  // ── توزيع الطلاب ──
   Future<Response> distributeStudents(int capacity) async {
     try {
       print('🔵 Distributing students with capacity: $capacity');
@@ -166,7 +153,6 @@ class ClassService {
     }
   }
 
-  // ── جلب كل الطلاب ──
   Future<Response> getAllStudents() async {
     try {
       print('🔵 Fetching all students from: /students/all');
@@ -179,7 +165,6 @@ class ClassService {
     }
   }
 
-  // ── جلب تفاصيل طالب واحد ──
   Future<Response> getStudentById(int id) async {
     try {
       final response = await _dio.get('/student/$id');

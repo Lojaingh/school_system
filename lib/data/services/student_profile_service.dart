@@ -19,4 +19,18 @@ class StudentProfileService {
       queryParameters: data,
     );
   }
+
+  Future<Response> resetPassword(
+    int id,
+    String newPassword,
+    String confirmPassword,
+  ) async {
+    return await dio.patch(
+      "/update/$id/password",
+      data: {
+        "new_password": newPassword,
+        "new_password_confirmation": confirmPassword,
+      },
+    );
+  }
 }

@@ -28,7 +28,26 @@ class StudentProfileCubit extends Cubit<StudentProfileState> {
     Map<String, dynamic> data,
   ) async {
     try {
-      await repository.updateStudent(id, data);
+      await repository.updateStudent(
+        id,
+        data,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<String> resetPassword(
+    int id,
+    String newPassword,
+    String confirmPassword,
+  ) async {
+    try {
+      return await repository.resetPassword(
+        id,
+        newPassword,
+        confirmPassword,
+      );
     } catch (e) {
       rethrow;
     }

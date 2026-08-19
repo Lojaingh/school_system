@@ -1,6 +1,4 @@
 class StudentModel {
-  final String username;
-  final String password;
   final String fName;
   final String lName;
   final String mName;
@@ -12,8 +10,6 @@ class StudentModel {
   final int roleId;
 
   StudentModel({
-    required this.username,
-    required this.password,
     required this.fName,
     required this.lName,
     required this.mName,
@@ -27,8 +23,6 @@ class StudentModel {
 
   Map<String, dynamic> toJson() {
     return {
-      "username": username,
-      "password": password,
       "role_id": roleId,
       "f_name": fName,
       "l_name": lName,

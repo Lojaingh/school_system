@@ -33,4 +33,24 @@ class StudentProfileRepository {
       );
     }
   }
+
+  Future<String> resetPassword(
+    int id,
+    String newPassword,
+    String confirmPassword,
+  ) async {
+    try {
+      final response = await service.resetPassword(
+        id,
+        newPassword,
+        confirmPassword,
+      );
+
+      return response.data["message"] ?? "Password changed successfully";
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data.toString() ?? e.toString(),
+      );
+    }
+  }
 }

@@ -45,15 +45,22 @@ class _StudentFormState extends State<StudentForm> {
     super.dispose();
   }
 
-  Widget _input(String hint, TextEditingController controller,
-      {TextInputType? type}) {
+  Widget _input(
+    String hint,
+    TextEditingController controller, {
+    TextInputType? type,
+  }) {
     return TextField(
       controller: controller,
       keyboardType: type,
-      style: const TextStyle(color: AppColors.textPrimary),
+      style: const TextStyle(
+        color: AppColors.textPrimary,
+      ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textHelper),
+        hintStyle: const TextStyle(
+          color: AppColors.textHelper,
+        ),
         filled: true,
         fillColor: AppColors.cardElement,
         border: OutlineInputBorder(
@@ -92,7 +99,9 @@ class _StudentFormState extends State<StudentForm> {
         value: genders.contains(gender) ? gender : null,
         hint: const Text(
           "Gender",
-          style: TextStyle(color: AppColors.textHelper),
+          style: TextStyle(
+            color: AppColors.textHelper,
+          ),
         ),
         dropdownColor: AppColors.cardBg,
         isExpanded: true,
@@ -114,7 +123,11 @@ class _StudentFormState extends State<StudentForm> {
               ),
             )
             .toList(),
-        onChanged: (v) => setState(() => gender = v),
+        onChanged: (v) {
+          setState(() {
+            gender = v;
+          });
+        },
       ),
     );
   }
@@ -133,7 +146,9 @@ class _StudentFormState extends State<StudentForm> {
         value: selectedClassId,
         hint: const Text(
           "Class",
-          style: TextStyle(color: AppColors.textHelper),
+          style: TextStyle(
+            color: AppColors.textHelper,
+          ),
         ),
         dropdownColor: AppColors.cardBg,
         isExpanded: true,
@@ -178,6 +193,142 @@ class _StudentFormState extends State<StudentForm> {
     });
   }
 
+  // Dialog لعرض بيانات تسجيل الدخول
+  void _showCredentialsDialog({
+    required String username,
+    required String password,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: AppColors.cardBg,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Row(
+            children: [
+              Icon(
+                Icons.check_circle,
+                color: Colors.green,
+                size: 28,
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  "Account Created",
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Student account has been created successfully.",
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 14,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Username
+              const Text(
+                "Username",
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
+                ),
+              ),
+
+              const SizedBox(height: 6),
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.cardElement,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  username,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              // Password
+              const Text(
+                "Password",
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
+                ),
+              ),
+
+              const SizedBox(height: 6),
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.cardElement,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  password,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _clearFields();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text(
+                "Done",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _button() {
     return BlocBuilder<RegisterCubit, RegisterState>(
       builder: (context, state) {
@@ -188,7 +339,9 @@ class _StudentFormState extends State<StudentForm> {
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: const EdgeInsets.symmetric(
+                vertical: 14,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -203,8 +356,6 @@ class _StudentFormState extends State<StudentForm> {
                     }
 
                     final student = StudentModel(
-                      username: "STU-${DateTime.now().millisecondsSinceEpoch}",
-                      password: "123456",
                       fName: firstNameController.text,
                       mName: middleNameController.text,
                       lName: lastNameController.text,
@@ -224,7 +375,9 @@ class _StudentFormState extends State<StudentForm> {
                   )
                 : const Text(
                     "Register Student",
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: Colors.white,
+                    ),
                   ),
           ),
         );
@@ -237,14 +390,10 @@ class _StudentFormState extends State<StudentForm> {
     return BlocListener<RegisterCubit, RegisterState>(
       listener: (context, state) {
         if (state is RegisterSuccess) {
-          AppToast.show(
-            context,
-            message: "Registration successful",
-            color: Colors.green,
-            icon: Icons.check_circle,
+          _showCredentialsDialog(
+            username: state.username,
+            password: state.password,
           );
-
-          _clearFields();
         }
 
         if (state is RegisterError) {
@@ -260,25 +409,44 @@ class _StudentFormState extends State<StudentForm> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _input("First Name", firstNameController),
+            _input(
+              "First Name",
+              firstNameController,
+            ),
             const SizedBox(height: 12),
-            _input("Middle Name", middleNameController),
+            _input(
+              "Middle Name",
+              middleNameController,
+            ),
             const SizedBox(height: 12),
-            _input("Last Name", lastNameController),
+            _input(
+              "Last Name",
+              lastNameController,
+            ),
             const SizedBox(height: 12),
             _dropdownGender(),
             const SizedBox(height: 12),
             AppDatePicker(
               label: "Date of Birth",
               date: birthDate,
-              onPick: (d) => setState(() => birthDate = d),
+              onPick: (d) {
+                setState(() {
+                  birthDate = d;
+                });
+              },
             ),
             const SizedBox(height: 12),
-            _input("Address", addressController),
+            _input(
+              "Address",
+              addressController,
+            ),
             const SizedBox(height: 12),
             _dropdownClass(),
             const SizedBox(height: 12),
-            _input("Health Status", healthController),
+            _input(
+              "Health Status",
+              healthController,
+            ),
             const SizedBox(height: 20),
             _button(),
           ],

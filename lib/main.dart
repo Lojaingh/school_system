@@ -6,7 +6,9 @@ import 'package:school_management/cubit/assignment/assignment_cubit.dart';
 import 'package:school_management/cubit/auth/login/login_cubit.dart';
 import 'package:school_management/cubit/auth/subject/subject_cubit.dart';
 import 'package:school_management/cubit/dashboard/dashboard_cubit.dart';
+import 'package:school_management/cubit/external/external_cubit.dart';
 import 'package:school_management/cubit/library/book_cubit.dart';
+import 'package:school_management/cubit/objection/objection_cubit.dart';
 import 'package:school_management/cubit/staff/staff_profile_cubit.dart';
 import 'package:school_management/cubit/student/student_cubit.dart';
 import 'package:school_management/cubit/student_profile/student_profile_cubit.dart';
@@ -16,6 +18,8 @@ import 'package:school_management/cubit/class/class_cubit.dart';
 // --- Repositories ---
 import 'package:school_management/data/repository/auth_repository.dart';
 import 'package:school_management/data/repository/book_repository.dart';
+import 'package:school_management/data/repository/external_repository.dart';
+import 'package:school_management/data/repository/objection_repository.dart';
 import 'package:school_management/data/repository/subject_repository.dart';
 import 'package:school_management/data/repository/student_repository.dart';
 import 'package:school_management/data/repository/student_profile_repository.dart';
@@ -26,6 +30,9 @@ import 'package:school_management/data/repository/class_repository.dart';
 // --- Services ---
 import 'package:school_management/data/services/auth_service.dart';
 import 'package:school_management/data/services/book_service.dart';
+import 'package:school_management/data/services/external_service.dart';
+import 'package:school_management/data/services/objection_service.dart';
+
 import 'package:school_management/data/services/subject_service.dart';
 import 'package:school_management/data/services/student_service.dart';
 import 'package:school_management/data/services/student_profile_service.dart';
@@ -35,6 +42,7 @@ import 'package:school_management/data/services/class_service.dart';
 
 // --- Network ---
 import 'package:school_management/data/network/dio_client.dart';
+import 'package:school_management/presentation/screens/externals_screen.dart';
 
 // --- Screens ---
 import 'package:school_management/presentation/screens/login_screen.dart';
@@ -115,6 +123,20 @@ class MyApp extends StatelessWidget {
               BookService(),
             ),
           )..loadBooks(),
+        ),
+        BlocProvider(
+          create: (_) => ExternalCubit(
+            ExternalRepository(
+              ExternalService(),
+            ),
+          ),
+        ),
+        BlocProvider(
+          create: (_) => ObjectionCubit(
+            ObjectionRepository(
+              ObjectionService(),
+            ),
+          ),
         ),
       ],
       child: MaterialApp(

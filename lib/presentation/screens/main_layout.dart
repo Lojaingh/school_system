@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/constants/app_colors.dart';
 import 'package:school_management/presentation/screens/class_screen.dart';
+import 'package:school_management/presentation/screens/externals_screen.dart';
+import 'package:school_management/presentation/screens/objection_screen.dart';
 import 'package:school_management/presentation/screens/register_screen.dart';
 import 'package:school_management/presentation/screens/staff_screen.dart';
 import 'package:school_management/presentation/screens/staff_profile_screen.dart';
@@ -69,27 +71,26 @@ class _MainLayoutState extends State<MainLayout> {
     switch (userRole?.toLowerCase()) {
       case 'manager':
         return [
-          DashboardContent(
-              onOpenSchedule: () => _controller.selectIndex(8)), // index 0
-          const RegisterScreen(), // index 1
-          const SubjectScreen(), // index 2
-          const ClassScreen(), // index 3
-          StudentScreen(onOpenProfile: (id) {}), // index 4
-          const AttendanceContent(), // index 5
-          const LibraryContent(), // index 6
-          const AssignmentScreen(), // index 7
-          const ScheduleScreen(), // index 8 - جديد
-          StaffScreen(onOpenProfile: (id, isManager) {}), // index 9
-          const Center(child: Text("الإعدادات")), // index 10
+          const DashboardContent(),
+          const RegisterScreen(),
+          const SubjectScreen(),
+          const ClassScreen(),
+          StudentScreen(onOpenProfile: (id) {}),
+          const AttendanceContent(),
+          const LibraryContent(),
+          const AssignmentScreen(),
+          const ScheduleScreen(),
+          StaffScreen(onOpenProfile: (id, isManager) {}),
+          const Center(child: Text("الإعدادات")),
         ];
 
       case 'supervisor':
         return [
           const DashboardContent(),
           const AttendanceContent(),
-          const Center(child: Text("Objections")),
+          const ObjectionsScreen(),
           const AssignmentScreen(),
-          const Center(child: Text("Schedule")),
+          const ScheduleScreen(),
         ];
 
       case 'librarian':
@@ -108,10 +109,10 @@ class _MainLayoutState extends State<MainLayout> {
       case 'student':
         return [
           const DashboardContent(),
-          const Center(child: Text("Schedule")),
+          const ScheduleScreen(),
           const Center(child: Text("Exams")),
           const LibraryContent(),
-          const Center(child: Text("Objections")),
+          const ObjectionsScreen(),
         ];
 
       default:
@@ -130,34 +131,25 @@ class _MainLayoutState extends State<MainLayout> {
     switch (userRole?.toLowerCase()) {
       case 'manager':
         return const [
-          SidebarXItem(
-              icon: Icons.dashboard_rounded, label: 'Dashboard'), // index 0
-          SidebarXItem(
-              icon: Icons.people_rounded, label: 'Register'), // index 1
-          SidebarXItem(icon: Icons.book_rounded, label: 'Subjects'), // index 2
-          SidebarXItem(
-              icon: Icons.grid_view_rounded, label: 'Classes'), // index 3
-          SidebarXItem(
-              icon: Icons.person_rounded, label: 'Students'), // index 4
-          SidebarXItem(
-              icon: Icons.how_to_reg_rounded, label: 'Attendance'), // index 5
-          SidebarXItem(
-              icon: Icons.menu_book_rounded, label: 'Library'), // index 6
-          SidebarXItem(
-              icon: Icons.assignment_rounded, label: 'Assignments'), // index 7
-          SidebarXItem(
-              icon: Icons.calendar_month_rounded,
-              label: 'Schedule'), // index 8 - جديد
-          SidebarXItem(icon: Icons.badge_rounded, label: 'Staff'), // index 9
-          SidebarXItem(
-              icon: Icons.settings_rounded, label: 'Settings'), // index 10
+          SidebarXItem(icon: Icons.dashboard_rounded, label: 'Dashboard'),
+          SidebarXItem(icon: Icons.people_rounded, label: 'Register'),
+          SidebarXItem(icon: Icons.book_rounded, label: 'Subjects'),
+          SidebarXItem(icon: Icons.grid_view_rounded, label: 'Classes'),
+          SidebarXItem(icon: Icons.person_rounded, label: 'Students'),
+          SidebarXItem(icon: Icons.how_to_reg_rounded, label: 'Attendance'),
+          SidebarXItem(icon: Icons.menu_book_rounded, label: 'Library'),
+          SidebarXItem(icon: Icons.assignment_rounded, label: 'Assignments'),
+          SidebarXItem(icon: Icons.calendar_month_rounded, label: 'Schedule'),
+          SidebarXItem(icon: Icons.badge_rounded, label: 'Staff'),
+          SidebarXItem(icon: Icons.gavel_rounded, label: 'Objections'),
+          SidebarXItem(icon: Icons.settings_rounded, label: 'Settings'),
         ];
 
       case 'supervisor':
         return const [
           SidebarXItem(icon: Icons.dashboard_rounded, label: 'Dashboard'),
           SidebarXItem(icon: Icons.how_to_reg_rounded, label: 'Attendance'),
-          SidebarXItem(icon: Icons.feedback_rounded, label: 'Objections'),
+          SidebarXItem(icon: Icons.gavel_rounded, label: 'Objections'),
           SidebarXItem(icon: Icons.assignment_rounded, label: 'Assignments'),
           SidebarXItem(icon: Icons.calendar_month_rounded, label: 'Schedule'),
         ];
@@ -451,7 +443,6 @@ class _MainLayoutState extends State<MainLayout> {
   }
 
   Widget _buildTopBar() {
-    // ✅ اسم الدور للعرض
     Map<String, String> roleNames = {
       'manager': 'Admin',
       'supervisor': 'Supervisor',

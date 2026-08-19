@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/constants/app_colors.dart';
 import 'package:school_management/cubit/student_profile/student_profile_cubit.dart';
 import 'package:school_management/cubit/student_profile/student_profile_state.dart';
+import 'package:school_management/presentation/screen/widgets/reset_passwoed_dialog.dart';
 import 'package:school_management/presentation/screen/widgets/student_details_section.dart';
 import 'package:school_management/presentation/screen/widgets/stusent_overview_card.dart';
 import 'package:school_management/presentation/screens/edit_student_screen.dart';
@@ -27,7 +28,33 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<StudentProfileCubit>().getStudentProfile(widget.studentId);
+      loadProfile();
+    });
+  }
+
+  void loadProfile() {
+    context.read<StudentProfileCubit>().getStudentProfile(widget.studentId);
+  }
+
+  void _showResetPassword() {
+    showDialog(
+      context: context,
+      builder: (_) {
+        return ResetPasswordDialog(
+          userId: widget.studentId,
+        );
+      },
+    ).then((success) {
+      if (success == true && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Password changed successfully",
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     });
   }
 
@@ -64,11 +91,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
-                    onPressed: () {
-                      context
-                          .read<StudentProfileCubit>()
-                          .getStudentProfile(widget.studentId);
-                    },
+                    onPressed: loadProfile,
                     icon: const Icon(Icons.refresh),
                     label: const Text("Try Again"),
                   ),
@@ -98,6 +121,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                             color: Colors.white,
                           ),
                         ),
+
                         const Expanded(
                           child: Text(
                             "Student Profile",
@@ -108,6 +132,32 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                             ),
                           ),
                         ),
+
+                        // Reset Password
+                        ElevatedButton.icon(
+                          onPressed: _showResetPassword,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 14,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: const Icon(
+                            Icons.lock_reset_rounded,
+                          ),
+                          label: const Text(
+                            "Reset Password",
+                          ),
+                        ),
+
+                        const SizedBox(width: 10),
+
+                        // Edit Student
                         ElevatedButton.icon(
                           onPressed: () {
                             showDialog(
@@ -125,9 +175,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                               ),
                             ).then((value) {
                               if (value == true && mounted) {
-                                context
-                                    .read<StudentProfileCubit>()
-                                    .getStudentProfile(widget.studentId);
+                                loadProfile();
                               }
                             });
                           },
@@ -143,7 +191,9 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                             ),
                           ),
                           icon: const Icon(Icons.edit),
-                          label: const Text("Edit Student"),
+                          label: const Text(
+                            "Edit Student",
+                          ),
                         ),
                       ],
                     ),
