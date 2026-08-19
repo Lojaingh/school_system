@@ -1952,19 +1952,21 @@ class _WeeklyScheduleCard extends StatelessWidget {
                   );
                 }
 
-                // كل الأيام السبعة، حتى الفاضية
+                // أسبوع الدراسة 5 أيام بس: الأحد -> الخميس (0..4)
                 final Map<int, List<ScheduleSlot>> byDay = {
-                  for (int d = 0; d < 7; d++) d: <ScheduleSlot>[],
+                  for (int d = 0; d < 5; d++) d: <ScheduleSlot>[],
                 };
                 for (final s in loaded.slots) {
-                  byDay[s.dayOfWeek]?.add(s);
+                  if (s.dayOfWeek >= 0 && s.dayOfWeek < 5) {
+                    byDay[s.dayOfWeek]?.add(s);
+                  }
                 }
 
                 return SizedBox(
                   height: 260,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    itemCount: 7,
+                    itemCount: 5,
                     separatorBuilder: (_, __) => const SizedBox(width: 10),
                     itemBuilder: (context, day) {
                       final daySlots = byDay[day]!

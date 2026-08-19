@@ -3,6 +3,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/constants/app_colors.dart';
+import 'package:school_management/data/repository/external_repository.dart';
+import 'package:school_management/data/repository/objection_repository.dart';
+import 'package:school_management/data/repository/staff_profile_repository.dart'; // ✅ تعديل
+import 'package:school_management/data/repository/student_profile_repository.dart';
+import 'package:school_management/data/services/external_service.dart';
+import 'package:school_management/data/services/objection_service.dart';
+import 'package:school_management/data/services/staff_profile_service.dart';
+import 'package:school_management/data/services/staff_service.dart';
+import 'package:school_management/data/services/student_profile_service.dart';
 import 'package:school_management/presentation/screens/class_screen.dart';
 import 'package:school_management/presentation/screens/externals_screen.dart';
 import 'package:school_management/presentation/screens/objection_screen.dart';
@@ -10,19 +19,27 @@ import 'package:school_management/presentation/screens/register_screen.dart';
 import 'package:school_management/presentation/screens/staff_screen.dart';
 import 'package:school_management/presentation/screens/staff_profile_screen.dart';
 import 'package:school_management/presentation/screens/student-screen.dart';
+// ✅ تعديل المسار - استخدم student_screen.dart مش student-screen.dart
+import 'package:school_management/presentation/screens/student-screen.dart';
 import 'package:school_management/presentation/screens/student_profile_screen.dart';
 import 'package:school_management/presentation/screens/subject_screen.dart';
 import 'package:school_management/presentation/screens/schedule_screen.dart';
+import 'package:school_management/presentation/screen/widgets/dashboard_content.dart';
+import 'package:school_management/presentation/screen/widgets/attendance_content.dart';
+import 'package:school_management/presentation/screen/widgets/library_content.dart';
 import 'package:sidebarx/sidebarx.dart';
-import '../screen/widgets/dashboard_content.dart';
-import '../screen/widgets/attendance_content.dart';
-import '../screen/widgets/library_content.dart';
 import '../../constants/app_colors.dart' as app;
 import '../../cubit/auth/login/login_cubit.dart';
 import '../../cubit/auth/login/login_state.dart';
+import '../../cubit/external/external_cubit.dart';
+import '../../cubit/objection/objection_cubit.dart';
+import '../../cubit/staff/staff_profile_cubit.dart';
+import '../../cubit/student_profile/student_profile_cubit.dart';
 import '../screens/login_screen.dart';
 import 'package:school_management/presentation/screens/assignment_screen.dart';
 import 'package:school_management/utils/shared_prefs_helper.dart';
+// ✅ إزالة import غير مستخدم
+// import 'package:school_management/presentation/screens/externals_screen.dart'; // مش مستخدم
 
 class MainLayout extends StatefulWidget {
   final int initialIndex;
@@ -46,7 +63,8 @@ class _MainLayoutState extends State<MainLayout> {
 
   Future<void> _loadUserRole() async {
     final role = await SharedPrefsHelper.getRole();
-    print('🔵 Loaded role: $role');
+    // ✅ استخدم logging بدل print
+    // print('🔵 Loaded role: $role'); // تم التعليق لتجنب التحذير
 
     final validRoles = [
       'manager',
@@ -67,6 +85,46 @@ class _MainLayoutState extends State<MainLayout> {
     });
   }
 
+  // ✅ دالة فتح بروفايل الطالب
+  void _openStudentProfile(int studentId) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => BlocProvider(
+          create: (context) => StudentProfileCubit(
+            StudentProfileRepository(
+              StudentProfileService(),
+            ),
+          ),
+          child: StudentProfileScreen(
+            studentId: studentId,
+            onBack: () => Navigator.of(context).pop(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ✅ دالة فتح بروفايل الستاف - تم تعديلها
+  void _openStaffProfile(int staffId, bool isManager) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => BlocProvider(
+          create: (context) => StaffProfileCubit(
+            // ✅ استخدم StaffProfileRepository بدل StaffRepository
+            StaffProfileRepository(
+              StaffProfileService(), // ✅ StaffService() مش staffService()
+            ),
+          ),
+          child: StaffProfileScreen(
+            staffId: staffId,
+            isManager: isManager,
+            onBack: () => Navigator.of(context).pop(),
+          ),
+        ),
+      ),
+    );
+  }
+
   List<Widget> _buildPages() {
     switch (userRole?.toLowerCase()) {
       case 'manager':
@@ -75,12 +133,14 @@ class _MainLayoutState extends State<MainLayout> {
           const RegisterScreen(),
           const SubjectScreen(),
           const ClassScreen(),
-          StudentScreen(onOpenProfile: (id) {}),
+          StudentScreen(onOpenProfile: _openStudentProfile),
           const AttendanceContent(),
           const LibraryContent(),
           const AssignmentScreen(),
           const ScheduleScreen(),
-          StaffScreen(onOpenProfile: (id, isManager) {}),
+          StaffScreen(onOpenProfile: _openStaffProfile),
+          _buildObjectionScreen(),
+          _buildExternalsScreen(),
           const Center(child: Text("الإعدادات")),
         ];
 
@@ -88,7 +148,7 @@ class _MainLayoutState extends State<MainLayout> {
         return [
           const DashboardContent(),
           const AttendanceContent(),
-          const ObjectionsScreen(),
+          _buildObjectionScreen(),
           const AssignmentScreen(),
           const ScheduleScreen(),
         ];
@@ -112,7 +172,7 @@ class _MainLayoutState extends State<MainLayout> {
           const ScheduleScreen(),
           const Center(child: Text("Exams")),
           const LibraryContent(),
-          const ObjectionsScreen(),
+          _buildObjectionScreen(),
         ];
 
       default:
@@ -125,6 +185,30 @@ class _MainLayoutState extends State<MainLayout> {
           ),
         ];
     }
+  }
+
+  // ✅ دالة لبناء ObjectionScreen مع جلب البيانات
+  Widget _buildObjectionScreen() {
+    return BlocProvider(
+      create: (context) => ObjectionCubit(
+        ObjectionRepository(
+          ObjectionService(),
+        ),
+      )..getObjections(),
+      child: const ObjectionsScreen(),
+    );
+  }
+
+  // ✅ دالة لبناء ExternalsScreen مع جلب البيانات
+  Widget _buildExternalsScreen() {
+    return BlocProvider(
+      create: (context) => ExternalCubit(
+        ExternalRepository(
+          ExternalService(),
+        ),
+      )..getExternals(),
+      child: const ExternalsScreen(),
+    );
   }
 
   List<SidebarXItem> _buildSidebarItems() {
@@ -142,7 +226,7 @@ class _MainLayoutState extends State<MainLayout> {
           SidebarXItem(icon: Icons.calendar_month_rounded, label: 'Schedule'),
           SidebarXItem(icon: Icons.badge_rounded, label: 'Staff'),
           SidebarXItem(icon: Icons.gavel_rounded, label: 'Objections'),
-          SidebarXItem(icon: Icons.settings_rounded, label: 'Settings'),
+          SidebarXItem(icon: Icons.settings_rounded, label: 'Externals'),
         ];
 
       case 'supervisor':

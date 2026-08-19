@@ -50,6 +50,26 @@ class ScheduleCubit extends Cubit<ScheduleState> {
   List<StaffMember> get teachers =>
       _allStaff.where((s) => s.isTeacher).toList();
 
+  /// حل مؤقت لحد ما نتأكد من مكان subject_id الحقيقي بالـ API (GET /staff/{id}):
+  /// بيرجع الأساتذة يلي سبق ودرّسوا هالمادة (حسب الجدول الحالي).
+  /// إذا ما في ولا أستاذ درّسها لسا، بيرجع كل الأساتذة (منشان ما نعلّق الإضافة).
+  List<StaffMember> teachersForSubject(int? subjectId) {
+    final allTeachers = teachers;
+    if (subjectId == null) return allTeachers;
+
+    final teacherIdsForSubject = _slots
+        .where((s) => s.subjectId == subjectId)
+        .map((s) => s.teacherId)
+        .toSet();
+
+    if (teacherIdsForSubject.isEmpty) return allTeachers;
+
+    final filtered =
+        allTeachers.where((t) => teacherIdsForSubject.contains(t.id)).toList();
+
+    return filtered.isEmpty ? allTeachers : filtered;
+  }
+
   /// يجيب كل شي: الحصص + الصفوف + المواد + الموظفين (تستعمل بصفحة الجدول الكاملة)
   Future<void> loadAll() async {
     try {

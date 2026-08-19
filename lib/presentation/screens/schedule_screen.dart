@@ -323,32 +323,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  /// فلترة مؤقتة: الأساتذة يلي سبق درّسوا هاد المادة بأي حصة موجودة بالجدول.
-  /// إذا ما في أي حصة سابقة لهاد المادة، بيرجع كل الأساتذة (احتياطي).
-  /// TODO: استبدالها بفلترة حقيقية لما يوصلنا شكل GET /staff/{id} وفيه subject_id.
-  List<StaffMember> _teachersForSubject(
-    int? subjectId,
-    List<StaffMember> allTeachers,
-    List<ScheduleSlot> allSlots,
-  ) {
-    if (subjectId == null) return allTeachers;
-    final teacherIds = allSlots
-        .where((s) => s.subjectId == subjectId)
-        .map((s) => s.teacherId)
-        .toSet();
-    if (teacherIds.isEmpty) return allTeachers;
-    final filtered =
-        allTeachers.where((t) => teacherIds.contains(t.id)).toList();
-    return filtered.isEmpty ? allTeachers : filtered;
-  }
-
   void _openEditDialog(BuildContext context, ScheduleLoaded loaded,
       {ScheduleSlot? existing}) {
     final cubit = context.read<ScheduleCubit>();
     if (_selectedClassId == null) return;
 
     final subjects = loaded.subjects;
-    final allTeachers = loaded.teachers;
 
     int selectedDay = existing?.dayOfWeek ?? 0;
     int? selectedSubjectId = existing?.subjectId;
@@ -367,8 +347,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (dialogCtx, setDialogState) {
-          final filteredTeachers =
-              _teachersForSubject(selectedSubjectId, allTeachers, loaded.slots);
+          // فلترة الأساتذة حسب المادة المختارة (مؤقتاً معتمدة على الجدول الحالي)
+          final filteredTeachers = cubit.teachersForSubject(selectedSubjectId);
 
           // إذا الأستاذ المختار حالياً مش من ضمن الأساتذة المفلترين، صفّر الاختيار
           if (selectedTeacherId != null &&
@@ -386,12 +366,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // النظام أسبوع 5 أيام بس: الأحد -> الخميس
+                  // أسبوع الدراسة 5 أيام بس: الأحد -> الخميس (0..4)
                   _dialogDropdown<int>(
                     label: 'Day',
                     value: selectedDay,
                     items: List.generate(
-                      ScheduleSlot.dayNames.length,
+                      5,
                       (i) => DropdownMenuItem(
                           value: i, child: Text(ScheduleSlot.dayNames[i])),
                     ),

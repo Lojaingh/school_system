@@ -232,10 +232,17 @@ class StaffMember {
     bool isTeacher = false;
     final roles = json['roles'];
     if (roles is List) {
-      isTeacher = roles.any((r) =>
-          r is Map &&
-          (r['title']?.toString().trim().toLowerCase() == 'teacher') &&
-          (r['finished_at'] == null));
+      isTeacher = roles.any((r) {
+        if (r is! Map) return false;
+        final title = r['title']?.toString().trim().toLowerCase();
+        final roleId = r['role_id']?.toString();
+        return title == 'teacher' || roleId == '5';
+      });
+    } else if (json['role'] is Map) {
+      final r = json['role'] as Map;
+      final title = r['title']?.toString().trim().toLowerCase();
+      final roleId = r['role_id']?.toString();
+      isTeacher = title == 'teacher' || roleId == '5';
     }
 
     return StaffMember(
