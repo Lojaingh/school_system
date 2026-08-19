@@ -56,6 +56,7 @@ class StaffProfileCubit extends Cubit<StaffProfileState> {
           e.toString(),
         ),
       );
+
       rethrow;
     }
   }
@@ -81,6 +82,33 @@ class StaffProfileCubit extends Cubit<StaffProfileState> {
           e.toString(),
         ),
       );
+    }
+  }
+
+  // Reset Password
+  Future<String?> resetPassword(
+    int id,
+    String newPassword,
+    String confirmPassword,
+  ) async {
+    try {
+      final message = await repository.resetPassword(
+        id,
+        newPassword,
+        confirmPassword,
+      );
+
+      return message;
+    } catch (e) {
+      print("RESET PASSWORD ERROR: $e");
+
+      emit(
+        StaffError(
+          e.toString(),
+        ),
+      );
+
+      return null;
     }
   }
 }

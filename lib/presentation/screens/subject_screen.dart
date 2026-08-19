@@ -69,84 +69,147 @@ class _SubjectScreenState extends State<SubjectScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.65,
-          minChildSize: 0.4,
-          maxChildSize: 0.9,
-          builder: (_, controller) {
-            return Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: AppGradients.cardGradient,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.4),
-                    blurRadius: 20,
-                    offset: const Offset(0, -5),
-                  )
-                ],
-              ),
-              child: SingleChildScrollView(
-                controller: controller,
-                child: Column(
-                  children: [
-                    Container(
-                      width: 50,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return DraggableScrollableSheet(
+              initialChildSize: 0.65,
+              minChildSize: 0.4,
+              maxChildSize: 0.9,
+              builder: (_, controller) {
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: AppGradients.cardGradient,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(24),
                     ),
-                    const SizedBox(height: 20),
-                    Text(
-                      editingId == null ? "Add Subject" : "Update Subject",
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.4),
+                        blurRadius: 20,
+                        offset: const Offset(0, -5),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    _inputField(nameController, "Subject Name"),
-                    const SizedBox(height: 12),
-                    _dropdown(),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          padding: const EdgeInsets.all(14),
+                    ],
+                  ),
+                  child: SingleChildScrollView(
+                    controller: controller,
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 50,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: Colors.white24,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
                         ),
-                        onPressed: () {
-                          if (nameController.text.isEmpty || partition == null)
-                            return;
+                        const SizedBox(height: 20),
+                        Text(
+                          editingId == null ? "Add Subject" : "Update Subject",
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        _inputField(
+                          nameController,
+                          "Subject Name",
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white24,
+                            ),
+                          ),
+                          child: DropdownButton<String>(
+                            value: partition,
+                            isExpanded: true,
+                            underline: const SizedBox(),
+                            dropdownColor: const Color(0xFF1E1E2E),
+                            hint: const Text(
+                              "Partition",
+                              style: TextStyle(
+                                color: Colors.white70,
+                              ),
+                            ),
+                            iconEnabledColor: Colors.white,
+                            style: const TextStyle(
+                              color: Colors.white,
+                            ),
+                            items: partitions.entries.map((entry) {
+                              return DropdownMenuItem<String>(
+                                value: entry.key,
+                                child: Text(
+                                  entry.value,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value == null) return;
 
-                          final subject = SubjectModel(
-                            name: nameController.text,
-                            partition: partition!,
-                          );
+                              setModalState(() {
+                                partition = value;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              padding: const EdgeInsets.all(14),
+                            ),
+                            onPressed: () {
+                              if (nameController.text.trim().isEmpty ||
+                                  partition == null) {
+                                return;
+                              }
 
-                          if (editingId == null) {
-                            context.read<SubjectCubit>().addSubject(subject);
-                          } else {
-                            context
-                                .read<SubjectCubit>()
-                                .updateSubject(editingId!, subject);
-                          }
+                              final subjectData = SubjectModel(
+                                id: editingId ?? 0,
+                                name: nameController.text.trim(),
+                                partition: partition!,
+                              );
 
-                          Navigator.pop(ctx);
-                        },
-                        child: Text(editingId == null ? "Add" : "Update",style: TextStyle(color:Colors.white),),
-                      ),
+                              if (editingId == null) {
+                                context
+                                    .read<SubjectCubit>()
+                                    .addSubject(subjectData);
+                              } else {
+                                context.read<SubjectCubit>().updateSubject(
+                                      editingId!,
+                                      subjectData,
+                                    );
+                              }
+
+                              Navigator.pop(ctx);
+                            },
+                            child: Text(
+                              editingId == null ? "Add" : "Update",
+                              style: const TextStyle(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             );
           },
         );

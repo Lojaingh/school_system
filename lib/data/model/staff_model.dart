@@ -10,6 +10,10 @@ class StaffModel {
   final double salary;
   final String contact;
 
+  // Teacher only
+  final int? subjectId;
+  final String? notes;
+
   StaffModel({
     required this.fName,
     required this.mName,
@@ -21,6 +25,8 @@ class StaffModel {
     required this.hireDate,
     required this.salary,
     required this.contact,
+    this.subjectId,
+    this.notes,
   });
 
   Map<String, dynamic> toJson() {
@@ -35,6 +41,24 @@ class StaffModel {
       "hire_date": hireDate,
       "salary": salary,
       "contact": contact,
+    };
+  }
+
+  // JSON خاص بالأستاذ
+  Map<String, dynamic> toTeacherJson() {
+    return {
+      "f_name": fName,
+      "m_name": mName,
+      "l_name": lName,
+      "gender": gender,
+      "dob": dob,
+      "address": address,
+      "role_id": roleId,
+      "hire_date": hireDate,
+      "salary": salary,
+      "contact": contact,
+      "subject_id": subjectId,
+      "notes": notes,
     };
   }
 }

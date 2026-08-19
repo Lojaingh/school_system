@@ -15,12 +15,18 @@ class RegisterCubit extends Cubit<RegisterState> {
 
       emit(RegisterLoading());
 
-      final message = await repository.register(student);
+      final credentials = await repository.register(student);
 
       print('REGISTER SUCCESS');
-      print(message);
+      print('USERNAME: ${credentials['username']}');
+      print('PASSWORD: ${credentials['password']}');
 
-      emit(RegisterSuccess(message));
+      emit(
+        RegisterSuccess(
+          username: credentials['username']!,
+          password: credentials['password']!,
+        ),
+      );
     } catch (e) {
       print('REGISTER ERROR');
       print(e);

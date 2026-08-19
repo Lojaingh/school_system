@@ -14,19 +14,21 @@ class StaffProfileService {
             },
     );
   }
-
   Future<Response> deleteStaff(int id) async {
     return await dio.delete(
       "/staff/$id",
     );
   }
 
-  Future<Response> getStaffProfile(int id, {bool isManager = false}) {
+  Future<Response> getStaffProfile(
+    int id, {
+    bool isManager = false,
+  }) async {
     if (isManager) {
-      return dio.get("/get/profile");
+      return await dio.get("/get/profile");
     }
 
-    return dio.get("/staff/$id");
+    return await dio.get("/staff/$id");
   }
 
   Future<Response> updateStaff(
@@ -36,6 +38,27 @@ class StaffProfileService {
     return await dio.patch(
       "/staff/$id/update",
       queryParameters: data,
+    );
+  }
+
+  // Reset Password
+  Future<Response> resetPassword(
+    int id,
+    String newPassword,
+    String confirmPassword,
+  ) async {
+    final data = {
+      "new_password": newPassword,
+      "new_password_confirmation": confirmPassword,
+    };
+
+    print("🔐 RESET PASSWORD");
+    print("USER ID: $id");
+    print("BODY: $data");
+
+    return await dio.patch(
+      "/update/$id/password",
+      data: data,
     );
   }
 }

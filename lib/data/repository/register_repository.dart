@@ -7,19 +7,26 @@ class RegisterRepository {
 
   RegisterRepository(this.studentService);
 
-  Future<String> register(StudentModel student) async {
+  Future<Map<String, String>> register(StudentModel student) async {
     try {
       final response = await studentService.register(student);
 
       print('STATUS CODE: ${response.statusCode}');
       print('RESPONSE DATA: ${response.data}');
 
-      return response.data['message'] ?? 'Success';
+      final data = response.data['data'];
+
+      return {
+        'username': data['username'].toString(),
+        'password': data['password'].toString(),
+      };
     } on DioException catch (e) {
       print('STATUS: ${e.response?.statusCode}');
       print('DATA: ${e.response?.data}');
 
-      throw Exception(e.response?.data.toString() ?? e.toString());
+      throw Exception(
+        e.response?.data.toString() ?? e.toString(),
+      );
     }
   }
 }

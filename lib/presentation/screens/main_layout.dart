@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/constants/app_colors.dart';
 import 'package:school_management/presentation/screens/class_screen.dart';
+import 'package:school_management/presentation/screens/externals_screen.dart';
+import 'package:school_management/presentation/screens/objection_screen.dart';
 import 'package:school_management/presentation/screens/register_screen.dart';
 import 'package:school_management/presentation/screens/staff_screen.dart';
 import 'package:school_management/presentation/screens/staff_profile_screen.dart';
@@ -110,7 +112,8 @@ class _MainLayoutState extends State<MainLayout> {
           });
         },
       ),
-      const Center(child: Text("الإعدادات")), // 9: Settings
+      const ExternalsScreen(),
+      const ObjectionsScreen(), // 9: Settings
     ];
   }
 
@@ -316,6 +319,10 @@ class _MainLayoutState extends State<MainLayout> {
                   SidebarXItem(
                     icon: Icons.settings_rounded,
                     label: 'Settings',
+                  ),
+                  SidebarXItem(
+                    icon: Icons.gavel_rounded,
+                    label: 'Objections',
                   ),
                 ],
                 footerBuilder: (context, extended) {

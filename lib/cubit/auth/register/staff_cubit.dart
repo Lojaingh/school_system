@@ -9,6 +9,7 @@ class StaffCubit extends Cubit<StaffRegisterState> {
 
   StaffCubit(this.repository) : super(StaffRegisterInitial());
 
+  // تسجيل موظف عادي
   Future<void> registerStaff(StaffModel staff) async {
     try {
       print('STAFF REGISTER START');
@@ -25,7 +26,38 @@ class StaffCubit extends Cubit<StaffRegisterState> {
       print('STAFF REGISTER ERROR');
       print(e);
 
-      emit(StaffRegisterError(e.toString()));
+      emit(
+        StaffRegisterError(e.toString()),
+      );
+    }
+  }
+
+  // تسجيل أستاذ
+  Future<void> registerTeacher(StaffModel staff) async {
+    try {
+      print('TEACHER REGISTER START');
+
+      emit(StaffRegisterLoading());
+
+      final credentials = await repository.registerTeacher(staff);
+
+      print('TEACHER REGISTER SUCCESS');
+      print('USERNAME: ${credentials['username']}');
+      print('PASSWORD: ${credentials['password']}');
+
+      emit(
+        TeacherRegisterSuccess(
+          username: credentials['username']!,
+          password: credentials['password']!,
+        ),
+      );
+    } catch (e) {
+      print('TEACHER REGISTER ERROR');
+      print(e);
+
+      emit(
+        StaffRegisterError(e.toString()),
+      );
     }
   }
 }

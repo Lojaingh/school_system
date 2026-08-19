@@ -74,4 +74,28 @@ class StaffProfileRepository {
       );
     }
   }
+
+  // Reset Password
+  Future<String> resetPassword(
+    int id,
+    String newPassword,
+    String confirmPassword,
+  ) async {
+    try {
+      final response = await service.resetPassword(
+        id,
+        newPassword,
+        confirmPassword,
+      );
+
+      return response.data["message"] ?? "Password reset successfully";
+    } on DioException catch (e) {
+      print("RESET PASSWORD STATUS: ${e.response?.statusCode}");
+      print("RESET PASSWORD DATA: ${e.response?.data}");
+
+      throw Exception(
+        e.response?.data.toString() ?? e.toString(),
+      );
+    }
+  }
 }
