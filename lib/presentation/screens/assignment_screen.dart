@@ -10,39 +10,68 @@ import 'package:school_management/cubit/assignment/assignment_cubit.dart';
 import 'package:school_management/data/model/subject_model.dart';
 import 'package:school_management/data/repository/subject_repository.dart';
 import 'package:school_management/data/services/subject_service.dart';
+import 'package:school_management/utils/shared_prefs_helper.dart'; // ✅ استيراد الـ SharedPrefs
 
 import '../screen/widgets/assignment_content.dart';
-import 'package:school_management/data/model/assignment_model.dart';
 
 class AssignmentScreen extends StatefulWidget {
-  const AssignmentScreen({super.key});
+  const AssignmentScreen({
+    super.key,
+  });
 
   @override
   State<AssignmentScreen> createState() => _AssignmentScreenState();
 }
 
 class _AssignmentScreenState extends State<AssignmentScreen> {
-  final SubjectRepository repository = SubjectRepository(SubjectService());
+  final SubjectRepository repository = SubjectRepository(
+    SubjectService(),
+  );
 
   List<SubjectModel> subjects = [];
+  String userRole = ''; // ✅ متغير لحفظ الدور الحالي
 
   @override
   void initState() {
     super.initState();
+    _loadUserRole(); // ✅ جلب الدور عند فتح الصفحة
     loadSubjects();
   }
 
-  Future<void> loadSubjects() async {
-    try {
-      subjects = await repository.getSubjects();
-
-      if (mounted) {
-        setState(() {});
-      }
-    } catch (e) {
-      debugPrint(e.toString());
+  // ✅ دالة لجلب الدور الحقيقي من الـ SharedPrefs
+  Future<void> _loadUserRole() async {
+    final role = await SharedPrefsHelper.getRole();
+    if (mounted) {
+      setState(() {
+        userRole = role ??
+            ''; // إذا كان فارغاً، اجعله فارغاً لكي لا يظهر الزر بشكل خاطئ
+      });
     }
   }
+
+  // ============================================================
+  // LOAD SUBJECTS
+  // ============================================================
+
+  Future<void> loadSubjects() async {
+    try {
+      final result = await repository.getSubjects();
+
+      if (!mounted) return;
+
+      setState(() {
+        subjects = result;
+      });
+    } catch (e) {
+      debugPrint(
+        '❌ Error loading subjects: $e',
+      );
+    }
+  }
+
+  // ============================================================
+  // BUILD
+  // ============================================================
 
   @override
   Widget build(BuildContext context) {
@@ -75,33 +104,53 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(
+              Icons.refresh_rounded,
+            ),
             onPressed: () {
               context.read<AssignmentCubit>().refreshAssignments();
+              loadSubjects();
             },
           ),
           const SizedBox(width: 10),
         ],
       ),
-      body: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20),
-        child: AssignmentContent(),
+      // ✅ نمرر الـ userRole للـ AssignmentContent
+      body: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 20,
+        ),
+        child: AssignmentContent(userRole: userRole),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text("New Assignment"),
-        onPressed: () => _showAddAssignmentDialog(),
-      ),
+
+      // ============================================================
+      // التعديل: الزر يظهر فقط إذا كان المستخدم 'teacher'
+      // (المدير 'manager' لن يرى الزر إطلاقاً)
+      // ============================================================
+      floatingActionButton: userRole == 'teacher'
+          ? FloatingActionButton.extended(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              icon: const Icon(
+                Icons.add,
+              ),
+              label: const Text(
+                "New Assignment",
+              ),
+              onPressed: _showAddAssignmentDialog,
+            )
+          : null, // إخفاء الزر
     );
   }
+
+  // ============================================================
+  // ADD ASSIGNMENT DIALOG (بقية الكود كما هو تماماً دون تغيير)
+  // ============================================================
 
   void _showAddAssignmentDialog() {
     final titleController = TextEditingController();
     final bodyController = TextEditingController();
     final dueDateController = TextEditingController();
-
     SubjectModel? selectedSubject;
 
     showDialog(
@@ -144,10 +193,8 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                         readOnly: true,
                         style: const TextStyle(color: Colors.white),
                         decoration: _decoration("Due Date").copyWith(
-                          suffixIcon: const Icon(
-                            Icons.calendar_month,
-                            color: Colors.white70,
-                          ),
+                          suffixIcon: const Icon(Icons.calendar_month,
+                              color: Colors.white70),
                         ),
                         onTap: () async {
                           final picked = await showDatePicker(
@@ -172,7 +219,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                         items: subjects.map((subject) {
                           return DropdownMenuItem<SubjectModel>(
                             value: subject,
-                            child: Text(subject.name),
+                            child: Text("${subject.name} (${subject.id})"),
                           );
                         }).toList(),
                         onChanged: (value) {
@@ -181,15 +228,25 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                           });
                         },
                       ),
+                      const SizedBox(height: 8),
+                      if (selectedSubject != null)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            "Subject ID: ${selectedSubject!.id}",
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
               ),
               actions: [
                 TextButton(
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                  },
+                  onPressed: () => Navigator.pop(dialogContext),
                   child: const Text("Cancel"),
                 ),
                 ElevatedButton.icon(
@@ -198,31 +255,57 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                   ),
                   icon: const Icon(Icons.add),
                   label: const Text("Create"),
-                  onPressed: () {
+                  onPressed: () async {
+                    final title = titleController.text.trim();
+                    final body = bodyController.text.trim();
+                    final dueDate = dueDateController.text.trim();
+
+                    if (title.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text("Please enter a title"),
+                            backgroundColor: Colors.red),
+                      );
+                      return;
+                    }
+                    if (body.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text("Please enter a description"),
+                            backgroundColor: Colors.red),
+                      );
+                      return;
+                    }
+                    if (dueDate.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text("Please select a due date"),
+                            backgroundColor: Colors.red),
+                      );
+                      return;
+                    }
                     if (selectedSubject == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text("Please select a subject"),
-                          backgroundColor: Colors.red,
-                        ),
+                            content: Text("Please select a subject"),
+                            backgroundColor: Colors.red),
                       );
                       return;
                     }
 
-                    context.read<AssignmentCubit>().addAssignment(
-                          title: titleController.text.trim(),
-                          body: bodyController.text.trim(),
-                          dueDate: dueDateController.text.trim(),
+                    await context.read<AssignmentCubit>().addAssignment(
+                          title: title,
+                          body: body,
+                          dueDate: dueDate,
                           subjectId: selectedSubject!.id,
                         );
 
+                    if (!context.mounted) return;
                     Navigator.pop(dialogContext);
-
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text("Assignment created successfully"),
-                        backgroundColor: Colors.green,
-                      ),
+                          content: Text("Assignment created successfully"),
+                          backgroundColor: Colors.green),
                     );
                   },
                 ),
@@ -234,30 +317,20 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     );
   }
 
-  // ❌ ✅ حذف هذه الدالة (مكررة وغير مستخدمة)
-  // void _showEditAssignmentDialog(Assignment assignment) { ... }
-
   InputDecoration _decoration(String label) {
     return InputDecoration(
       labelText: label,
       labelStyle: const TextStyle(color: Colors.white70),
       filled: true,
       fillColor: AppColors.cardElement,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: AppColors.cardBorder,
-        ),
+        borderSide: const BorderSide(color: AppColors.cardBorder),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: AppColors.primary,
-          width: 2,
-        ),
+        borderSide: const BorderSide(color: AppColors.primary, width: 2),
       ),
     );
   }

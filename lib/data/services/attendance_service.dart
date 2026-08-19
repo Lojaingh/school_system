@@ -70,18 +70,23 @@ class AttendanceService {
     }
   }
 
+  // ✅ عدّلنا هون: ضفنا "date" لأنه الـ Backend (MarkStaffAttendanceRequest)
+  // عم يتطلبها ضمن الـ validated data، وكمان بدّلنا FormData إلى JSON عادي.
   Future<Response> markSingleStaffAttendance({
     required int userId,
     required String status, // present / absent / late / excused (حروف صغيرة)
+    required String date, // بصيغة yyyy-MM-dd
   }) async {
     try {
-      print('🔵 Marking staff attendance: user=$userId, status=$status');
+      print(
+          '🔵 Marking staff attendance: user=$userId, status=$status, date=$date');
       final response = await _dio.post(
         '/staff/attendance',
-        data: FormData.fromMap({
+        data: {
           'user_id': userId,
           'status': status,
-        }),
+          'date': date,
+        },
       );
       print('🟢 Staff attendance response status: ${response.statusCode}');
       return response;
@@ -91,7 +96,11 @@ class AttendanceService {
     }
   }
 
-  Future<void> markStaffAttendanceBulk(Map<int, String> statuses) async {
+  // ✅ عدّلنا هون: صار الـ method تاخد "date" وتمررها لكل نداء فردي
+  Future<void> markStaffAttendanceBulk(
+    Map<int, String> statuses, {
+    required String date,
+  }) async {
     final failures = <String>[];
 
     for (final entry in statuses.entries) {
@@ -99,6 +108,7 @@ class AttendanceService {
         await markSingleStaffAttendance(
           userId: entry.key,
           status: entry.value,
+          date: date,
         );
       } catch (e) {
         failures.add('user ${entry.key}: $e');

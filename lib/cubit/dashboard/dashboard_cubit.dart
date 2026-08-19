@@ -1,5 +1,3 @@
-// lib/cubit/dashboard/dashboard_cubit.dart
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/model/dashboard_model.dart';
 import '../../data/network/dio_client.dart';
@@ -16,13 +14,13 @@ class DashboardLoading extends DashboardState {}
 
 class DashboardLoaded extends DashboardState {
   final DashboardApiStats stats;
+  final WeeklyAttendanceResponse? weeklyAttendance;
 
-  DashboardLoaded(this.stats);
+  DashboardLoaded(this.stats, [this.weeklyAttendance]);
 }
 
 class DashboardError extends DashboardState {
   final String message;
-
   DashboardError(this.message);
 }
 
@@ -32,6 +30,7 @@ class DashboardError extends DashboardState {
 
 class DashboardCubit extends Cubit<DashboardState> {
   DashboardCubit() : super(DashboardInitial());
+
   Future<void> loadStats() async {
     try {
       emit(DashboardLoading());
@@ -39,6 +38,7 @@ class DashboardCubit extends Cubit<DashboardState> {
       final results = await Future.wait([
         DioClient.dio.get('/staff/numbers'),
         DioClient.dio.get('/students/number'),
+        DioClient.dio.get('/attendance/weekly'), // تأكد من صحة الـ endpoint
       ]);
 
       final staffStats = StaffStats.fromJson(results[0].data);
@@ -50,7 +50,15 @@ class DashboardCubit extends Cubit<DashboardState> {
         employees: staffStats.staffWithoutTeachers,
         books: 0,
       );
-      emit(DashboardLoaded(dashboardStats));
+
+      WeeklyAttendanceResponse? weeklyAttendance;
+      try {
+        weeklyAttendance = WeeklyAttendanceResponse.fromJson(results[2].data);
+      } catch (e) {
+        weeklyAttendance = null;
+      }
+
+      emit(DashboardLoaded(dashboardStats, weeklyAttendance));
     } catch (e) {
       emit(DashboardError(e.toString()));
     }

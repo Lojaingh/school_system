@@ -5,14 +5,23 @@ class Assignment {
   final String title;
   final String body;
   final String dueDate;
+
   final bool hasFile;
   final String? fileUrl;
   final String? fileName;
+
   final double daysRemaining;
   final bool isOverdue;
+
+  // رقم المادة
   final int subjectId;
+
+  // السنة الدراسية - تأتي من Backend
   final int academicId;
+
+  // اسم المادة
   final String subjectName;
+
   final String createdAt;
   final String updatedAt;
 
@@ -34,27 +43,57 @@ class Assignment {
   });
 
   factory Assignment.fromJson(Map<String, dynamic> json) {
-    // استخراج اسم المادة من الكائن الداخلي
+    int subjectId = _parseInt(json['subject_id']);
+
     String subjectName = '';
-    if (json['subject'] != null && json['subject'] is Map<String, dynamic>) {
-      subjectName = json['subject']['name'] ?? '';
+
+    // إذا الـ API رجع subject كـ object
+    if (json['subject'] is Map) {
+      final subject = json['subject'] as Map;
+
+      subjectName = subject['name']?.toString() ?? '';
+
+      // احتياطاً إذا subject_id غير موجود
+      if (subjectId == 0 && subject['id'] != null) {
+        subjectId = _parseInt(subject['id']);
+      }
+    }
+
+    // إذا الـ API رجع subject_name بشكل مباشر
+    if (subjectName.isEmpty && json['subject_name'] != null) {
+      subjectName = json['subject_name'].toString();
     }
 
     return Assignment(
-      id: json['id'] ?? 0,
-      title: json['title'] ?? '',
-      body: json['body'] ?? '',
-      dueDate: json['due_date'] ?? '',
-      hasFile: json['has_file'] ?? false,
-      fileUrl: json['file_url'],
-      fileName: json['file_name'],
-      daysRemaining: (json['days_remaining'] ?? 0).toDouble(),
-      isOverdue: json['is_overdue'] ?? false,
-      subjectId: int.parse(json['subject_id'].toString()),
-      academicId: int.parse(json['academic_id'].toString()),
+      id: _parseInt(json['id']),
+      title: json['title']?.toString() ?? '',
+      body: json['body']?.toString() ?? '',
+      dueDate: json['due_date']?.toString() ?? '',
+
+      hasFile: _parseBool(json['has_file']),
+
+      fileUrl: json['file_url']?.toString(),
+      fileName: json['file_name']?.toString(),
+
+      daysRemaining: _parseDouble(
+        json['days_remaining'],
+      ),
+
+      isOverdue: _parseBool(
+        json['is_overdue'],
+      ),
+
+      subjectId: subjectId,
+
+      // تأتي من Backend
+      academicId: _parseInt(
+        json['academic_id'],
+      ),
+
       subjectName: subjectName,
-      createdAt: json['created_at'] ?? '',
-      updatedAt: json['updated_at'] ?? '',
+
+      createdAt: json['created_at']?.toString() ?? '',
+      updatedAt: json['updated_at']?.toString() ?? '',
     );
   }
 
@@ -64,16 +103,66 @@ class Assignment {
       'title': title,
       'body': body,
       'due_date': dueDate,
+
       'has_file': hasFile,
       'file_url': fileUrl,
       'file_name': fileName,
+
       'days_remaining': daysRemaining,
       'is_overdue': isOverdue,
+
+      // رقم المادة
       'subject_id': subjectId,
+
+      // قراءة فقط من Backend
       'academic_id': academicId,
+
       'subject_name': subjectName,
+
       'created_at': createdAt,
       'updated_at': updatedAt,
     };
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+
+    if (value is int) {
+      return value;
+    }
+
+    return int.tryParse(
+          value.toString(),
+        ) ??
+        0;
+  }
+
+  static double _parseDouble(dynamic value) {
+    if (value == null) return 0;
+
+    if (value is num) {
+      return value.toDouble();
+    }
+
+    return double.tryParse(
+          value.toString(),
+        ) ??
+        0;
+  }
+
+  static bool _parseBool(dynamic value) {
+    if (value is bool) {
+      return value;
+    }
+
+    if (value is int) {
+      return value == 1;
+    }
+
+    if (value is String) {
+      return value.toLowerCase() == 'true' || value == '1';
+    }
+
+    return false;
   }
 }

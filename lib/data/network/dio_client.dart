@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:dio/dio.dart';
 import 'package:school_management/utils/shared_prefs_helper.dart';
 
 class DioClient {

@@ -1,13 +1,20 @@
 // lib/cubit/assignment/assignment_cubit.dart
+
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:school_management/cubit/assignment/assignment_state.dart';
 import 'package:school_management/data/repository/assignment_repository.dart';
+
 import '../../data/model/assignment_model.dart';
 
 class AssignmentCubit extends Cubit<AssignmentState> {
   final AssignmentRepository repository;
 
   AssignmentCubit(this.repository) : super(AssignmentInitial());
+
+  // ============================================================
+  // LOAD ASSIGNMENTS
+  // ============================================================
 
   Future<void> loadAssignments() async {
     try {
@@ -16,10 +23,16 @@ class AssignmentCubit extends Cubit<AssignmentState> {
       final assignments = await repository.getAssignments();
 
       final sortedAssignments = List<Assignment>.from(assignments)
-        ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+        ..sort(
+          (a, b) => a.dueDate.compareTo(
+            b.dueDate,
+          ),
+        );
 
       final upcoming = sortedAssignments
-          .where((assignment) => !assignment.isOverdue)
+          .where(
+            (assignment) => !assignment.isOverdue,
+          )
           .take(5)
           .toList();
 
@@ -30,20 +43,32 @@ class AssignmentCubit extends Cubit<AssignmentState> {
         ),
       );
     } catch (e) {
-      emit(AssignmentError(e.toString()));
+      emit(
+        AssignmentError(
+          e.toString(),
+        ),
+      );
     }
   }
+
+  // ============================================================
+  // REFRESH
+  // ============================================================
 
   void refreshAssignments() {
     loadAssignments();
   }
 
-  // ================= ADD =================
+  // ============================================================
+  // ADD ASSIGNMENT
+  // ============================================================
 
   Future<void> addAssignment({
     required String title,
     required String body,
     required String dueDate,
+
+    // رقم المادة
     required int subjectId,
     String? filePath,
   }) async {
@@ -60,15 +85,27 @@ class AssignmentCubit extends Cubit<AssignmentState> {
 
       await loadAssignments();
     } catch (e) {
-      print('⚠️ Add Assignment Error (Check if it was actually saved): $e');
+      print(
+        '❌ Add Assignment Error: $e',
+      );
 
-      await loadAssignments();
+      emit(
+        AssignmentError(
+          e.toString(),
+        ),
+      );
     }
   }
-  // ================= UPDATE =================
+
+  // ============================================================
+  // UPDATE ASSIGNMENT
+  // ============================================================
 
   Future<void> updateAssignment({
     required int id,
+
+    // رقم المادة
+    int? subjectId,
     String? title,
     String? body,
     String? dueDate,
@@ -76,14 +113,19 @@ class AssignmentCubit extends Cubit<AssignmentState> {
     try {
       emit(AssignmentLoading());
 
-      print('📤 Cubit - Updating assignment:');
+      print(
+        '📤 Cubit - Updating assignment',
+      );
+
       print('   id: $id');
+      print('   subjectId: $subjectId');
       print('   title: $title');
       print('   body: $body');
       print('   dueDate: $dueDate');
 
       await repository.updateAssignment(
         id: id,
+        subjectId: subjectId,
         title: title,
         body: body,
         dueDate: dueDate,
@@ -91,22 +133,39 @@ class AssignmentCubit extends Cubit<AssignmentState> {
 
       await loadAssignments();
     } catch (e) {
-      print('❌ Update error: $e');
-      emit(AssignmentError(e.toString()));
+      print(
+        '❌ Update error: $e',
+      );
+
+      emit(
+        AssignmentError(
+          e.toString(),
+        ),
+      );
     }
   }
 
-  // ================= DELETE =================
+  // ============================================================
+  // DELETE ASSIGNMENT
+  // ============================================================
 
-  Future<void> deleteAssignment(int id) async {
+  Future<void> deleteAssignment(
+    int id,
+  ) async {
     try {
       emit(AssignmentLoading());
 
-      await repository.deleteAssignment(id);
+      await repository.deleteAssignment(
+        id,
+      );
 
       await loadAssignments();
     } catch (e) {
-      emit(AssignmentError(e.toString()));
+      emit(
+        AssignmentError(
+          e.toString(),
+        ),
+      );
     }
   }
 }

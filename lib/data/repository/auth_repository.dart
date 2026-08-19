@@ -1,5 +1,7 @@
 // lib/data/repository/auth_repository.dart
 
+import 'package:school_management/data/model/profile_model.dart';
+
 import '../model/login_response.dart';
 import '../services/auth_service.dart';
 
@@ -29,6 +31,21 @@ class AuthRepository {
       }
     } catch (e) {
       throw Exception('Login error: $e');
+    }
+  }
+
+  Future<ProfileModel> getProfile() async {
+    try {
+      final response = await authService.getProfile();
+
+      if (response.statusCode == 200) {
+        final data = response.data['data'];
+        return ProfileModel.fromJson(data);
+      } else {
+        throw Exception('Failed to get profile: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Get profile error: $e');
     }
   }
 

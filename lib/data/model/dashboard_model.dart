@@ -158,9 +158,9 @@ class StaffStats {
 
   factory StaffStats.fromJson(Map<String, dynamic> json) {
     return StaffStats(
-      total: json['total'],
-      teachers: json['teachers'],
-      staffWithoutTeachers: json['staff without teachers'],
+      total: json['total'] ?? 0,
+      teachers: json['teachers'] ?? 0,
+      staffWithoutTeachers: json['staff without teachers'] ?? 0,
     );
   }
 }
@@ -182,7 +182,7 @@ class DashboardApiStats {
   final int students;
   final int teachers;
   final int employees;
-  final int books; // مؤقتاً 0 حتى يتوفر API
+  final int books;
 
   DashboardApiStats({
     required this.students,
@@ -190,4 +190,121 @@ class DashboardApiStats {
     required this.employees,
     this.books = 0,
   });
+}
+
+// ============================================================
+// نماذج الحضور الأسبوعي (من API /attendance/weekly)
+// ============================================================
+
+class WeeklyAttendanceResponse {
+  final WeekRange week;
+  final AttendanceGroups groups;
+  final List<DayAttendance> days;
+
+  WeeklyAttendanceResponse({
+    required this.week,
+    required this.groups,
+    required this.days,
+  });
+
+  factory WeeklyAttendanceResponse.fromJson(Map<String, dynamic> json) {
+    final data = json['data'];
+    return WeeklyAttendanceResponse(
+      week: WeekRange.fromJson(data['week']),
+      groups: AttendanceGroups.fromJson(data['groups']),
+      days:
+          (data['days'] as List).map((e) => DayAttendance.fromJson(e)).toList(),
+    );
+  }
+}
+
+class WeekRange {
+  final String start;
+  final String end;
+
+  WeekRange({required this.start, required this.end});
+
+  factory WeekRange.fromJson(Map<String, dynamic> json) {
+    return WeekRange(start: json['start'], end: json['end']);
+  }
+}
+
+class AttendanceGroups {
+  final AttendanceSummary students;
+  final AttendanceSummary teachers;
+  final AttendanceSummary staffWithoutTeachers;
+
+  AttendanceGroups({
+    required this.students,
+    required this.teachers,
+    required this.staffWithoutTeachers,
+  });
+
+  factory AttendanceGroups.fromJson(Map<String, dynamic> json) {
+    return AttendanceGroups(
+      students: AttendanceSummary.fromJson(json['students']),
+      teachers: AttendanceSummary.fromJson(json['teachers']),
+      staffWithoutTeachers:
+          AttendanceSummary.fromJson(json['staff_without_teachers']),
+    );
+  }
+}
+
+class AttendanceSummary {
+  final int totalPeople;
+  final int total;
+  final int present;
+  final int absent;
+  final int late;
+  final int excused;
+  final double percentage;
+
+  AttendanceSummary({
+    required this.totalPeople,
+    required this.total,
+    required this.present,
+    required this.absent,
+    required this.late,
+    required this.excused,
+    required this.percentage,
+  });
+
+  factory AttendanceSummary.fromJson(Map<String, dynamic> json) {
+    return AttendanceSummary(
+      totalPeople: json['total_people'] ?? 0,
+      total: json['total'] ?? 0,
+      present: json['present'] ?? 0,
+      absent: json['absent'] ?? 0,
+      late: json['late'] ?? 0,
+      excused: json['excused'] ?? 0,
+      percentage: (json['percentage'] ?? 0).toDouble(),
+    );
+  }
+}
+
+class DayAttendance {
+  final String date;
+  final String dayName;
+  final AttendanceSummary students;
+  final AttendanceSummary teachers;
+  final AttendanceSummary staffWithoutTeachers;
+
+  DayAttendance({
+    required this.date,
+    required this.dayName,
+    required this.students,
+    required this.teachers,
+    required this.staffWithoutTeachers,
+  });
+
+  factory DayAttendance.fromJson(Map<String, dynamic> json) {
+    return DayAttendance(
+      date: json['date'],
+      dayName: json['day_name'],
+      students: AttendanceSummary.fromJson(json['students']),
+      teachers: AttendanceSummary.fromJson(json['teachers']),
+      staffWithoutTeachers:
+          AttendanceSummary.fromJson(json['staff_without_teachers']),
+    );
+  }
 }

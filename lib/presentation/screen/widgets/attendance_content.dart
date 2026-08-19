@@ -137,53 +137,110 @@ class _AttendanceContentState extends State<AttendanceContent> {
     }
   }
 
+  // lib/presentation/screen/widgets/attendance_content.dart
+
   Future<void> _loadClasses() async {
     setState(() {
       isLoadingClasses = true;
     });
 
     try {
+      final userRole = await SharedPrefsHelper.getRole();
+      final isSupervisor = userRole?.toLowerCase() == 'supervisor';
+
+      if (isSupervisor) {
+        // ✅ المشرف: جلب صفوفه مباشرة من /supervisor/classes
+        // ⚠️ ملاحظة: endpoint /class مقيّد بـ role:manager فقط، فلا يجوز
+        // للمشرف مناداته. الـ response تبع /supervisor/classes يعطينا
+        // id و name وهذا كافٍ لعرض الصف بالـ dropdown مباشرة.
+        final response = await DioClient.dio.get('/supervisor/classes');
+
+        if (response.statusCode == 200) {
+          final data = response.data['data'] as List? ?? [];
+
+          print('📥 Supervisor classes response data: $data');
+
+          if (data.isNotEmpty) {
+            final loadedClasses = data.map<Map<String, dynamic>>((item) {
+              return {
+                'id': item['id'],
+                'display': item['name'] ?? 'Class ${item['id']}',
+              };
+            }).toList();
+
+            if (!mounted) return;
+
+            setState(() {
+              classList = loadedClasses;
+              selectedClassId = widget.initialClassId ?? loadedClasses[0]['id'];
+              isLoadingClasses = false;
+            });
+
+            if (selectedClassId != null) {
+              await _loadStudents(selectedClassId!);
+            }
+            return;
+          }
+        }
+
+        // ✅ إذا لم يجد أي صف
+        if (!mounted) return;
+        setState(() {
+          isLoadingClasses = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No class assigned to you as supervisor'),
+            backgroundColor: AppColors.warning,
+          ),
+        );
+        return;
+      }
+
+      // ✅ المدير والمعلم: يرى كل الصفوف
       final response = await DioClient.dio.get('/class/all');
 
       if (response.statusCode == 200) {
+        // ⚠️ ملاحظة: /class/all بيرجع List مباشرة (مو {data: [...]})
         final data = response.data as List? ?? [];
-        final List<Map<String, dynamic>> loadedClasses = [];
 
-        for (var item in data) {
-          loadedClasses.add({
+        print('📥 Class/all response data: $data');
+
+        final loadedClasses = data.map<Map<String, dynamic>>((item) {
+          return {
             'id': item['id'],
             'year': item['year'],
             'number': item['number'],
             'display': 'Grade ${item['year']} - Section ${item['number']}',
-          });
-        }
+          };
+        }).toList();
 
-        int? firstClassId;
-
-        if (loadedClasses.isNotEmpty) {
-          firstClassId = loadedClasses[0]['id'] as int;
-        }
+        if (!mounted) return;
 
         setState(() {
           classList = loadedClasses;
-          selectedClassId = firstClassId;
+          // إذا انمرر initialClassId من بره، استخدمه، وإلا خُد أول صف بالقائمة
+          selectedClassId = widget.initialClassId ??
+              (loadedClasses.isNotEmpty
+                  ? loadedClasses[0]['id'] as int?
+                  : null);
           isLoadingClasses = false;
         });
 
-        // تحميل الطلاب بعد انتهاء setState
-        if (firstClassId != null) {
-          await _loadStudents(firstClassId);
+        if (selectedClassId != null) {
+          await _loadStudents(selectedClassId!);
         }
       } else {
-        throw Exception(
-          'Failed to load classes: ${response.statusCode}',
-        );
+        print('❌ Failed to load classes: ${response.statusCode}');
+        if (!mounted) return;
+        setState(() {
+          isLoadingClasses = false;
+        });
       }
     } catch (e) {
       print('❌ Error loading classes: $e');
-
       if (!mounted) return;
-
       setState(() {
         isLoadingClasses = false;
       });
@@ -305,8 +362,15 @@ class _AttendanceContentState extends State<AttendanceContent> {
       return;
     }
 
+    // ✅ تنسيق التاريخ المطلوب من الـ Backend (yyyy-MM-dd)
+    final formattedDate =
+        '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}';
+
     try {
-      await _attendanceService.markStaffAttendanceBulk(statuses);
+      await _attendanceService.markStaffAttendanceBulk(
+        statuses,
+        date: formattedDate,
+      );
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -409,8 +473,8 @@ class _AttendanceContentState extends State<AttendanceContent> {
               onClassChanged: (value) {
                 setState(() {
                   selectedClassId = value;
-                  _loadStudents(value);
                 });
+                _loadStudents(value);
               },
               onSave: _saveAttendance,
             ),

@@ -16,20 +16,19 @@ class LibraryContent extends StatefulWidget {
 class _LibraryContentState extends State<LibraryContent> {
   int selectedTab = 0;
 
-  String selectedCategory = 'All';
+  // ❌ حذفنا selectedCategory (كان جزء من فلتر التصنيفات الوهمي)
   String selectedStatus = 'All';
   String searchQuery = '';
 
   late Future<List<Lending>> _lendingsFuture;
 
-  final List<String> categories = [
-    'All',
-    'Programming',
-    'Mathematics',
-    'Science',
-    'Languages',
-    'History',
-  ];
+  // ✅ جديد: نسخة محفوظة (Cache) من آخر نتيجة استعارات وصلت، حتى
+  // نقدر نستخدمها بشكل متزامن (synchronous) داخل _isBookLate — لأنه
+  // الفلتر بيحتاج يتحقق فوراً وقت البناء، مش ينتظر Future من جديد.
+  List<Lending> _cachedLendings = [];
+
+  // ❌ حذفنا قائمة categories بالكامل (Programming/Mathematics/...) لأنها
+  // كانت قيم ثابتة يدوياً مش جاية من أي API حقيقي.
 
   final List<String> statusList = [
     'All',
@@ -42,16 +41,42 @@ class _LibraryContentState extends State<LibraryContent> {
   void initState() {
     super.initState();
 
+    // ✅ معدّل: نعيد جلب قائمة الكتب من جديد كل مرة تنفتح الصفحة (مش
+    // بس الاستعارات) — لأنه لو صارت استعارة/إرجاع من مكان تاني برّا
+    // التطبيق (Postman مثلاً، أو جهاز تاني)، الـ BookCubit عندنا كان
+    // محتفظ بنسخة قديمة (Cache) من قبل هيك، وما كانت بتتحدث لحالها.
+    context.read<BookCubit>().refreshBooks();
+
     // جلب استعارات الطالب مرة واحدة عند فتح الصفحة
-    _lendingsFuture = context.read<BookCubit>().getLendings();
+    _loadLendings();
   }
 
   // ==================== Refresh ====================
 
-  void _refreshLendings() {
+  // ✅ معدّل: صارت تجيب الاستعارات وتحدّث الـ cache سوا، بدل ما تكتفي
+  // بس بتحديث الـ Future (يلي كان يخلي _isBookLate عاجز يشوف نتيجة
+  // جديدة بشكل متزامن).
+  void _loadLendings() {
+    final future = context.read<BookCubit>().getLendings();
+
     setState(() {
-      _lendingsFuture = context.read<BookCubit>().getLendings();
+      _lendingsFuture = future;
     });
+
+    future.then((data) {
+      if (mounted) {
+        setState(() {
+          _cachedLendings = data;
+        });
+      }
+    }).catchError((_) {
+      // إذا فشل الجلب، منسيب الـ cache القديمة متل ما هي بدل ما نكسر
+      // الفلترة بالكامل.
+    });
+  }
+
+  void _refreshLendings() {
+    _loadLendings();
   }
 
   // ==================== Dialogs ====================
@@ -584,18 +609,13 @@ class _LibraryContentState extends State<LibraryContent> {
             const SizedBox(height: 16),
 
             // ==================== FILTERS ====================
+            // ✅ صار الفلتر بس على Status (Available/Borrowed/Late)
+            // حذفنا فلتر Category بالكامل لأنه مش مبني على API حقيقي.
 
             if (selectedTab == 0)
               _FilterRow(
-                selectedCategory: selectedCategory,
                 selectedStatus: selectedStatus,
-                categories: categories,
                 statusList: statusList,
-                onCategoryChanged: (value) {
-                  setState(() {
-                    selectedCategory = value;
-                  });
-                },
                 onStatusChanged: (value) {
                   setState(() {
                     selectedStatus = value;
@@ -690,19 +710,17 @@ class _LibraryContentState extends State<LibraryContent> {
   // ==================== Books Tab ====================
 
   Widget _buildBooksTab(List<Book> books) {
+    // ✅ حذفنا matchesCategory من منطق الفلترة
     final filteredBooks = books.where((book) {
       final matchesSearch = searchQuery.isEmpty ||
           book.title.toLowerCase().contains(searchQuery.toLowerCase());
-
-      final matchesCategory =
-          selectedCategory == 'All' || book.category == selectedCategory;
 
       final matchesStatus = selectedStatus == 'All' ||
           (selectedStatus == 'Available' && book.isAvailable) ||
           (selectedStatus == 'Borrowed' && !book.isAvailable) ||
           (selectedStatus == 'Late' && _isBookLate(book));
 
-      return matchesSearch && matchesCategory && matchesStatus;
+      return matchesSearch && matchesStatus;
     }).toList();
 
     if (filteredBooks.isEmpty) {
@@ -839,14 +857,18 @@ class _LibraryContentState extends State<LibraryContent> {
 
   // ==================== Helpers ====================
 
+  // ✅ معدّل بالكامل: هلق فعلياً بيتحقق من الـ lending المرتبطة بالكتاب
   bool _isBookLate(Book book) {
     // الكتاب المتاح لا يمكن أن يكون متأخرًا
     if (book.isAvailable) {
       return false;
     }
 
-    // نعتمد على lending API لمعرفة التأخير
-    return false;
+    // نفحص هل في استعارة نشطة (غير مُرجعة) لهاد الكتاب وهي متأخرة
+    return _cachedLendings.any(
+      (lending) =>
+          lending.book.id == book.id && !lending.isReturned && lending.isLate,
+    );
   }
 }
 
@@ -1179,23 +1201,16 @@ class _TabBar extends StatelessWidget {
 // ============================================================
 // FILTER ROW
 // ============================================================
+// ✅ معدّل بالكامل: صار فيه بس فلتر Status، وحذفنا Category نهائياً.
 
 class _FilterRow extends StatelessWidget {
-  final String selectedCategory;
   final String selectedStatus;
-
-  final List<String> categories;
   final List<String> statusList;
-
-  final Function(String) onCategoryChanged;
   final Function(String) onStatusChanged;
 
   const _FilterRow({
-    required this.selectedCategory,
     required this.selectedStatus,
-    required this.categories,
     required this.statusList,
-    required this.onCategoryChanged,
     required this.onStatusChanged,
   });
 
@@ -1205,48 +1220,6 @@ class _FilterRow extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          const Text(
-            'Category:',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(width: 8),
-          ...categories.map(
-            (category) => Padding(
-              padding: const EdgeInsets.only(
-                right: 8,
-              ),
-              child: FilterChip(
-                label: Text(
-                  category,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: selectedCategory == category
-                        ? Colors.white
-                        : AppColors.textSecondary,
-                  ),
-                ),
-                selected: selectedCategory == category,
-                onSelected: (_) => onCategoryChanged(
-                  category,
-                ),
-                backgroundColor: Colors.transparent,
-                selectedColor: AppColors.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(
-                    20,
-                  ),
-                  side: BorderSide(
-                    color: AppColors.cardBorder.withOpacity(0.5),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
           const Text(
             'Status:',
             style: TextStyle(
@@ -1701,12 +1674,31 @@ class _LendingRow extends StatelessWidget {
 
           Expanded(
             flex: 1,
-            child: Text(
-              lending.book.dueDate,
-              style: TextStyle(
-                fontSize: 12,
-                color: isLate ? AppColors.error : AppColors.textSecondary,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  lending.book.dueDate,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isLate ? AppColors.error : AppColors.textSecondary,
+                  ),
+                ),
+                // ✅ جديد: مؤشر باقي كم يوم / متأخر كم يوم
+                if (_computeDueStatus(lending) != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      _computeDueStatus(lending)!.label,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: _computeDueStatus(lending)!.color,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
 
@@ -1755,8 +1747,45 @@ class _LendingRow extends StatelessWidget {
 }
 
 // ============================================================
-// SHADOWS
+// ✅ جديد: حساب "باقي كم يوم / متأخر كم يوم" لأي استعارة نشطة
 // ============================================================
+// منحسبها محلياً من due_date مقارنة بتاريخ اليوم، بدل الاعتماد على
+// days_overdue من الـ API (لأنها موجودة بس بالحالات المتأخرة).
+class _DueStatus {
+  final String label;
+  final Color color;
+
+  const _DueStatus(this.label, this.color);
+}
+
+_DueStatus? _computeDueStatus(Lending lending) {
+  // ما منعرض شي للسجلات يلي خلصت (مُرجعة) — مالها معنى "باقي كم يوم"
+  if (lending.isReturned) return null;
+
+  final dueDate = DateTime.tryParse(lending.book.dueDate);
+  if (dueDate == null) return null;
+
+  final today = DateTime.now();
+  final todayDateOnly = DateTime(today.year, today.month, today.day);
+  final dueDateOnly = DateTime(dueDate.year, dueDate.month, dueDate.day);
+
+  final diffDays = dueDateOnly.difference(todayDateOnly).inDays;
+
+  if (diffDays < 0) {
+    final overdueBy = -diffDays;
+    return _DueStatus(
+      'Overdue by $overdueBy day${overdueBy == 1 ? '' : 's'}',
+      AppColors.error,
+    );
+  } else if (diffDays == 0) {
+    return const _DueStatus('Due today', AppColors.warning);
+  } else {
+    return _DueStatus(
+      '$diffDays day${diffDays == 1 ? '' : 's'} left',
+      diffDays <= 2 ? AppColors.warning : AppColors.cardGreen,
+    );
+  }
+}
 
 class AppShadows {
   static final List<BoxShadow> cardShadow = [

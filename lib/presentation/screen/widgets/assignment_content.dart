@@ -1,3 +1,5 @@
+// lib/presentation/screen/widgets/assignment_content.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -5,15 +7,20 @@ import '../../../constants/app_colors.dart';
 import '../../../cubit/assignment/assignment_cubit.dart';
 import '../../../cubit/assignment/assignment_state.dart';
 import '../../../data/model/assignment_model.dart';
+import '../../../data/model/subject_model.dart';
+import '../../../data/repository/subject_repository.dart';
+import '../../../data/services/subject_service.dart';
 
 class AssignmentContent extends StatefulWidget {
   final bool showOnlyUpcoming;
   final int? limit;
+  final String userRole; // ✅ استقبال الدور من الأب
 
   const AssignmentContent({
     super.key,
     this.showOnlyUpcoming = false,
     this.limit,
+    required this.userRole, // ✅ جعلته مطلوباً
   });
 
   @override
@@ -21,22 +28,20 @@ class AssignmentContent extends StatefulWidget {
 }
 
 class _AssignmentContentState extends State<AssignmentContent> {
-  // متغير للتحقق مما إذا تم تحميل البيانات لأول مرة لتجنب التحميل المكرر
   bool _isFirstLoad = true;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // التحقق: إذا كانت هذه هي المرة الأولى لفتح الصفحة، نقوم بتحميل البيانات
     if (_isFirstLoad) {
       final state = context.read<AssignmentCubit>().state;
-      // إذا كانت الحالة أولية (لم يتم تحميلها بعد)، نقوم بالجلب
+
       if (state is AssignmentInitial) {
         context.read<AssignmentCubit>().loadAssignments();
       }
-      _isFirstLoad =
-          false; // نغير القيمة لكي لا يتم التحميل مرة أخرى إذا عدنا للصفحة
+
+      _isFirstLoad = false;
     }
   }
 
@@ -79,12 +84,11 @@ class _AssignmentContentState extends State<AssignmentContent> {
             return RefreshIndicator(
               color: AppColors.primary,
               onRefresh: () async {
-                context.read<AssignmentCubit>().refreshAssignments();
+                await context.read<AssignmentCubit>().loadAssignments();
               },
               child: ListView(
                 padding: const EdgeInsets.all(24),
                 children: [
-                  /// Header
                   const Text(
                     "Assignments",
                     style: TextStyle(
@@ -93,9 +97,7 @@ class _AssignmentContentState extends State<AssignmentContent> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 6),
-
                   const Text(
                     "Manage school assignments and homework",
                     style: TextStyle(
@@ -103,10 +105,9 @@ class _AssignmentContentState extends State<AssignmentContent> {
                       fontSize: 14,
                     ),
                   ),
-
                   const SizedBox(height: 24),
 
-                  /// Statistics
+                  // STATISTICS
                   Row(
                     children: [
                       Expanded(
@@ -143,9 +144,7 @@ class _AssignmentContentState extends State<AssignmentContent> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 30),
-
                   const Text(
                     "All Assignments",
                     style: TextStyle(
@@ -154,14 +153,14 @@ class _AssignmentContentState extends State<AssignmentContent> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-
                   const SizedBox(height: 18),
-
                   ...displayAssignments.map(
                     (assignment) => Padding(
                       padding: const EdgeInsets.only(bottom: 18),
+                      // ✅ تمرير الـ userRole إلى الـ Card
                       child: _AssignmentCard(
                         assignment: assignment,
+                        userRole: widget.userRole,
                       ),
                     ),
                   ),
@@ -177,9 +176,9 @@ class _AssignmentContentState extends State<AssignmentContent> {
   }
 }
 
-//══════════════════════════════════════════════════════
-// Top Statistics Card
-//══════════════════════════════════════════════════════
+// ============================================================
+// TOP CARD
+// ============================================================
 
 class _TopCard extends StatelessWidget {
   final String title;
@@ -201,9 +200,7 @@ class _TopCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppGradients.cardGradient,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: AppColors.cardBorder,
-        ),
+        border: Border.all(color: AppColors.cardBorder),
         boxShadow: AppShadows.cardShadow,
       ),
       child: Column(
@@ -211,11 +208,7 @@ class _TopCard extends StatelessWidget {
           CircleAvatar(
             radius: 22,
             backgroundColor: color.withOpacity(.15),
-            child: Icon(
-              icon,
-              color: color,
-              size: 22,
-            ),
+            child: Icon(icon, color: color, size: 22),
           ),
           const SizedBox(height: 12),
           Text(
@@ -240,15 +233,17 @@ class _TopCard extends StatelessWidget {
   }
 }
 
-//══════════════════════════════════════════════════════
-// Assignment Card
-//══════════════════════════════════════════════════════
+// ============================================================
+// ASSIGNMENT CARD
+// ============================================================
 
 class _AssignmentCard extends StatelessWidget {
   final Assignment assignment;
+  final String userRole; // ✅ استقبال الدور
 
   const _AssignmentCard({
     required this.assignment,
+    required this.userRole,
   });
 
   @override
@@ -258,19 +253,14 @@ class _AssignmentCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppGradients.cardGradient,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.cardBorder,
-        ),
+        border: Border.all(color: AppColors.cardBorder),
         boxShadow: AppShadows.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          //──────────────────────────
-          // Header
-          //──────────────────────────
-
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 height: 52,
@@ -303,12 +293,22 @@ class _AssignmentCard extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 6),
                     Text(
-                      assignment.subjectName,
+                      assignment.subjectName.isNotEmpty
+                          ? assignment.subjectName
+                          : "Unknown Subject",
                       style: const TextStyle(
                         color: AppColors.primaryLight,
                         fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Subject ID: ${assignment.subjectId}",
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -317,48 +317,36 @@ class _AssignmentCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  _StatusBadge(
-                    assignment: assignment,
-                  ),
-                  const SizedBox(height: 10),
+                  _StatusBadge(assignment: assignment),
+                  const SizedBox(height: 8),
+
+                  // ✅ التعديل هنا: أزرار التعديل والحذف تظهر للمعلم فقط
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      IconButton(
-                        tooltip: "Edit",
-                        icon: const Icon(
-                          Icons.edit,
-                          color: Colors.blue,
+                      if (userRole == 'teacher') ...[
+                        IconButton(
+                          tooltip: "Edit",
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () {
+                            _showEditAssignmentDialog(context, assignment);
+                          },
                         ),
-                        onPressed: () {
-                          _showEditAssignmentDialog(
-                            context,
-                            assignment,
-                          );
-                        },
-                      ),
-                      IconButton(
-                        tooltip: "Delete",
-                        icon: const Icon(
-                          Icons.delete,
-                          color: Colors.red,
+                        IconButton(
+                          tooltip: "Delete",
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            _showDeleteDialog(context, assignment.id);
+                          },
                         ),
-                        onPressed: () {
-                          _showDeleteDialog(
-                            context,
-                            assignment.id,
-                          );
-                        },
-                      ),
+                      ],
                     ],
                   ),
                 ],
               ),
             ],
           ),
-
           const SizedBox(height: 18),
-
           Text(
             assignment.body,
             style: const TextStyle(
@@ -366,35 +354,21 @@ class _AssignmentCard extends StatelessWidget {
               height: 1.5,
             ),
           ),
-
           const SizedBox(height: 20),
-
-          Divider(
-            color: AppColors.cardBorder.withOpacity(.6),
-          ),
-
+          Divider(color: AppColors.cardBorder.withOpacity(.6)),
           const SizedBox(height: 15),
-
           Row(
             children: [
-              const Icon(
-                Icons.calendar_today_rounded,
-                size: 18,
-                color: AppColors.primary,
-              ),
+              const Icon(Icons.calendar_today_rounded,
+                  size: 18, color: AppColors.primary),
               const SizedBox(width: 8),
               Text(
                 assignment.dueDate,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                ),
+                style: const TextStyle(color: AppColors.textPrimary),
               ),
               const Spacer(),
-              const Icon(
-                Icons.timer_outlined,
-                color: AppColors.warning,
-                size: 18,
-              ),
+              const Icon(Icons.timer_outlined,
+                  color: AppColors.warning, size: 18),
               const SizedBox(width: 6),
               Text(
                 assignment.isOverdue
@@ -409,25 +383,19 @@ class _AssignmentCard extends StatelessWidget {
               ),
             ],
           ),
-
           if (assignment.hasFile)
             Padding(
               padding: const EdgeInsets.only(top: 16),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withOpacity(.08),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.attach_file,
-                      color: AppColors.primary,
-                    ),
+                    const Icon(Icons.attach_file, color: AppColors.primary),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -439,11 +407,8 @@ class _AssignmentCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const Icon(
-                      Icons.open_in_new,
-                      color: AppColors.primary,
-                      size: 18,
-                    ),
+                    const Icon(Icons.open_in_new,
+                        color: AppColors.primary, size: 18),
                   ],
                 ),
               ),
@@ -453,146 +418,194 @@ class _AssignmentCard extends StatelessWidget {
     );
   }
 
-  void _showEditAssignmentDialog(BuildContext context, Assignment assignment) {
+  // ============================================================
+  // EDIT DIALOG
+  // ============================================================
+
+  void _showEditAssignmentDialog(
+    BuildContext context,
+    Assignment assignment,
+  ) {
     final titleController = TextEditingController(text: assignment.title);
     final bodyController = TextEditingController(text: assignment.body);
     final dueDateController = TextEditingController(text: assignment.dueDate);
 
+    final subjectRepository = SubjectRepository(SubjectService());
+
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppColors.cardBg,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Text(
-          "Edit Assignment",
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleController,
-                style: const TextStyle(color: Colors.white),
-                decoration: _decoration("Title"),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: bodyController,
-                maxLines: 3,
-                style: const TextStyle(color: Colors.white),
-                decoration: _decoration("Body"),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: dueDateController,
-                style: const TextStyle(color: Colors.white),
-                readOnly: true,
-                decoration: _decoration("Due Date").copyWith(
-                  suffixIcon: const Icon(
-                    Icons.calendar_month,
-                    color: Colors.white70,
-                  ),
-                ),
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime(2035),
-                  );
-                  if (picked != null) {
-                    dueDateController.text =
-                        "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-                  }
-                },
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final title = titleController.text.trim();
-              final body = bodyController.text.trim();
-              final dueDate = dueDateController.text.trim();
-
-              // ✅ التحقق من وجود بيانات للتحديث
-              if (title.isEmpty && body.isEmpty && dueDate.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please enter at least one field to update'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
-              }
-
-              print('📤 Updating assignment:');
-              print('   id: ${assignment.id}');
-              print('   title: $title');
-              print('   body: $body');
-              print('   dueDate: $dueDate');
-
-              // ✅ إرسال التحديث
-              await context.read<AssignmentCubit>().updateAssignment(
-                    id: assignment.id,
-                    title: title.isNotEmpty ? title : null,
-                    body: body.isNotEmpty ? body : null,
-                    dueDate: dueDate.isNotEmpty ? dueDate : null,
-                  );
-
-              // ✅ إغلاق النافذة بعد نجاح التحديث
-              Navigator.pop(context);
-
-              // ✅ عرض رسالة نجاح
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Assignment updated successfully"),
-                  backgroundColor: Colors.green,
+      builder: (dialogContext) {
+        return FutureBuilder<List<SubjectModel>>(
+          future: subjectRepository.getSubjects(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const AlertDialog(
+                backgroundColor: AppColors.cardBg,
+                content: SizedBox(
+                  height: 100,
+                  child: Center(
+                      child:
+                          CircularProgressIndicator(color: AppColors.primary)),
                 ),
               );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-            ),
-            child: const Text("Save"),
-          ),
-        ],
-      ),
+            }
+
+            final subjects = snapshot.data ?? [];
+            SubjectModel? selectedSubject;
+            for (final subject in subjects) {
+              if (subject.id == assignment.subjectId) {
+                selectedSubject = subject;
+                break;
+              }
+            }
+
+            return StatefulBuilder(
+              builder: (context, setStateDialog) {
+                return AlertDialog(
+                  backgroundColor: AppColors.cardBg,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                  title: const Text(
+                    "Edit Assignment",
+                    style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextField(
+                          controller: titleController,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: _decoration("Title"),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: bodyController,
+                          maxLines: 3,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: _decoration("Description"),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: dueDateController,
+                          style: const TextStyle(color: Colors.white),
+                          readOnly: true,
+                          decoration: _decoration("Due Date").copyWith(
+                            suffixIcon: const Icon(Icons.calendar_month,
+                                color: Colors.white70),
+                          ),
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime.now(),
+                              lastDate: DateTime(2035),
+                            );
+                            if (picked != null) {
+                              dueDateController.text =
+                                  "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<SubjectModel>(
+                          value: selectedSubject,
+                          dropdownColor: AppColors.cardBg,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: _decoration("Subject"),
+                          items: subjects.map((subject) {
+                            return DropdownMenuItem<SubjectModel>(
+                              value: subject,
+                              child: Text("${subject.name} (${subject.id})"),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setStateDialog(() {
+                              selectedSubject = value;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogContext),
+                      child: const Text("Cancel"),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        final title = titleController.text.trim();
+                        final body = bodyController.text.trim();
+                        final dueDate = dueDateController.text.trim();
+
+                        if (title.isEmpty &&
+                            body.isEmpty &&
+                            dueDate.isEmpty &&
+                            selectedSubject == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Please change at least one field"),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
+
+                        await context.read<AssignmentCubit>().updateAssignment(
+                              id: assignment.id,
+                              subjectId: selectedSubject?.id,
+                              title: title.isNotEmpty ? title : null,
+                              body: body.isNotEmpty ? body : null,
+                              dueDate: dueDate.isNotEmpty ? dueDate : null,
+                            );
+
+                        if (!context.mounted) return;
+                        Navigator.pop(dialogContext);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Assignment updated successfully"),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary),
+                      child: const Text("Save"),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 
-  // ── ✅ نافذة الحذف ──
-  void _showDeleteDialog(BuildContext context, int assignmentId) {
+  // ============================================================
+  // DELETE
+  // ============================================================
+
+  void _showDeleteDialog(
+    BuildContext context,
+    int assignmentId,
+  ) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppColors.cardBg,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           "Delete Assignment",
           style: TextStyle(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
+              color: AppColors.textPrimary, fontWeight: FontWeight.bold),
         ),
         content: const Text(
           "Are you sure you want to delete this assignment? This action cannot be undone.",
-          style: TextStyle(
-            color: AppColors.textSecondary,
-          ),
+          style: TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -602,10 +615,10 @@ class _AssignmentCard extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              // ✅ حذف المهمة
               await context
                   .read<AssignmentCubit>()
                   .deleteAssignment(assignmentId);
+              if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text("Assignment deleted successfully"),
@@ -613,9 +626,7 @@ class _AssignmentCard extends StatelessWidget {
                 ),
               );
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text("Delete"),
           ),
         ],
@@ -623,43 +634,33 @@ class _AssignmentCard extends StatelessWidget {
     );
   }
 
-  // ── ✅ دالة مساعدة للـ InputDecoration ──
   InputDecoration _decoration(String label) {
     return InputDecoration(
       labelText: label,
       labelStyle: const TextStyle(color: Colors.white70),
       filled: true,
       fillColor: AppColors.cardElement,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: AppColors.cardBorder,
-        ),
+        borderSide: const BorderSide(color: AppColors.cardBorder),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: AppColors.primary,
-          width: 2,
-        ),
+        borderSide: const BorderSide(color: AppColors.primary, width: 2),
       ),
     );
   }
 }
 
-//══════════════════════════════════════════════════════
-// Status Badge
-//══════════════════════════════════════════════════════
+// ============================================================
+// STATUS BADGE
+// ============================================================
 
 class _StatusBadge extends StatelessWidget {
   final Assignment assignment;
 
-  const _StatusBadge({
-    required this.assignment,
-  });
+  const _StatusBadge({required this.assignment});
 
   @override
   Widget build(BuildContext context) {
@@ -678,16 +679,11 @@ class _StatusBadge extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 8,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: color.withOpacity(.15),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: color.withOpacity(.4),
-        ),
+        border: Border.all(color: color.withOpacity(.4)),
       ),
       child: Text(
         text,
@@ -701,9 +697,9 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
-//══════════════════════════════════════════════════════
-// Empty Widget
-//══════════════════════════════════════════════════════
+// ============================================================
+// EMPTY
+// ============================================================
 
 class _EmptyAssignments extends StatelessWidget {
   const _EmptyAssignments();
@@ -732,7 +728,7 @@ class _EmptyAssignments extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             const Text(
-              "There are no assignments available.\nTap the + button to create one.",
+              "There are no assignments available.",
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.textSecondary,
@@ -746,16 +742,14 @@ class _EmptyAssignments extends StatelessWidget {
   }
 }
 
-//══════════════════════════════════════════════════════
-// Error Widget
-//══════════════════════════════════════════════════════
+// ============================================================
+// ERROR
+// ============================================================
 
 class _ErrorWidget extends StatelessWidget {
   final String message;
 
-  const _ErrorWidget({
-    required this.message,
-  });
+  const _ErrorWidget({required this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -765,27 +759,21 @@ class _ErrorWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.error_outline_rounded,
-              color: AppColors.error,
-              size: 72,
-            ),
+            const Icon(Icons.error_outline_rounded,
+                color: AppColors.error, size: 72),
             const SizedBox(height: 18),
             const Text(
               "Something went wrong",
               style: TextStyle(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-              ),
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22),
             ),
             const SizedBox(height: 12),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-              ),
+              style: const TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 25),
             ElevatedButton.icon(
@@ -797,13 +785,10 @@ class _ErrorWidget extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 14,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
+                    borderRadius: BorderRadius.circular(14)),
               ),
             ),
           ],
