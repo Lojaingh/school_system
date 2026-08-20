@@ -5,15 +5,17 @@ class StaffRegisterInitial extends StaffRegisterState {}
 class StaffRegisterLoading extends StaffRegisterState {}
 
 class StaffRegisterSuccess extends StaffRegisterState {
-  final String message;
-
-  StaffRegisterSuccess(this.message);
+  final String username;
+  final String password;
+  StaffRegisterSuccess({
+    required this.username,
+    required this.password,
+  });
 }
 
 class TeacherRegisterSuccess extends StaffRegisterState {
   final String username;
   final String password;
-
   TeacherRegisterSuccess({
     required this.username,
     required this.password,
@@ -22,6 +24,5 @@ class TeacherRegisterSuccess extends StaffRegisterState {
 
 class StaffRegisterError extends StaffRegisterState {
   final String message;
-
   StaffRegisterError(this.message);
 }

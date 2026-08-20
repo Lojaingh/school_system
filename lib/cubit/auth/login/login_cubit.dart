@@ -1,5 +1,3 @@
-// lib/cubit/auth/login/login_cubit.dart
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/data/repository/auth_repository.dart';
 import 'package:school_management/utils/shared_prefs_helper.dart';
@@ -10,49 +8,81 @@ class LoginCubit extends Cubit<LoginState> {
 
   LoginCubit(this.repository) : super(LoginInitial());
 
-  Future<void> login(String userName, String password) async {
+  Future<void> login(
+    String userName,
+    String password,
+  ) async {
     try {
       emit(LoginLoading());
 
-      // ✅ 1. تسجيل الدخول
-      final response = await repository.login(userName, password);
+      // 1. تسجيل الدخول
+      final response = await repository.login(
+        userName,
+        password,
+      );
 
-      // ✅ 2. حفظ التوكن
-      await SharedPrefsHelper.saveToken(response.token);
+      // 2. حفظ التوكن
+      await SharedPrefsHelper.saveToken(
+        response.token,
+      );
 
-      // ✅ 3. جلب الـ Profile (لأخذ الأدوار)
-      final profile = await repository.getProfile();
+      // 3. أخذ الدور مباشرة من Login Response
+      // الـ Backend يرجع role داخل /login
+      final role = response.roleTitle ?? 'unknown';
 
-      // ✅ 4. استخراج الدور
-      final role =
-          profile.roles.isNotEmpty ? profile.roles.first.title : 'unknown';
-
-      // ✅ 5. حفظ البيانات
+      // 4. حفظ الدور
+      await SharedPrefsHelper.saveRole(
+        role,
+      );
       await SharedPrefsHelper.saveRole(role);
-      await SharedPrefsHelper.saveUserId(profile.userId);
 
-      print('🔵 Login successful - Role: $role');
+      print(
+        '🔵 Login successful - Role: $role',
+      );
 
-      emit(LoginSuccess(response.token, role));
+      // 5. نجاح تسجيل الدخول
+      emit(
+        LoginSuccess(
+          response.token,
+          role,
+        ),
+      );
     } catch (e) {
-      print('❌ Login error: $e');
-      emit(LoginError(e.toString()));
+      print(
+        '❌ Login error: $e',
+      );
+
+      emit(
+        LoginError(
+          e.toString(),
+        ),
+      );
     }
   }
 
   Future<void> logout() async {
     try {
       await repository.logout();
+
       await SharedPrefsHelper.clearToken();
       await SharedPrefsHelper.clearRole();
       await SharedPrefsHelper.clearUserId();
-      emit(LogoutSuccess());
+
+      emit(
+        LogoutSuccess(),
+      );
     } catch (e) {
       await SharedPrefsHelper.clearToken();
       await SharedPrefsHelper.clearRole();
       await SharedPrefsHelper.clearUserId();
-      emit(LogoutSuccess());
-      print('⚠️ Logout error (ignored): $e');
+
+      emit(
+        LogoutSuccess(),
+      );
+
+      print(
+        '⚠️ Logout error (ignored): $e',
+      );
     }
   }
 }

@@ -6,21 +6,44 @@ class StaffRepository {
   final StaffService service;
 
   StaffRepository(this.service);
-  Future<String> registerStaff(StaffModel staff) async {
+
+  Future<Map<String, String>> registerStaff(
+    StaffModel staff,
+  ) async {
     try {
       final response = await service.registerStaff(staff);
 
       print('STAFF STATUS: ${response.statusCode}');
       print('STAFF DATA: ${response.data}');
 
-      if (response.data is Map<String, dynamic>) {
-        return response.data['message'] ?? 'Success';
-      } else {
+      final responseData = response.data;
+
+      if (responseData is! Map) {
         throw Exception('Invalid response format');
       }
+
+      final data = responseData['data'];
+
+      final username = data is Map ? data['username']?.toString() : null;
+
+      final password = responseData['plain_password']?.toString();
+
+      if (username == null ||
+          username.isEmpty ||
+          password == null ||
+          password.isEmpty) {
+        throw Exception(
+          'Username or password was not returned by the server',
+        );
+      }
+
+      return {
+        'username': username,
+        'password': password,
+      };
     } on DioException catch (e) {
-      print('DIO ERROR STATUS: ${e.response?.statusCode}');
-      print('DIO ERROR DATA: ${e.response?.data}');
+      print('STAFF ERROR STATUS: ${e.response?.statusCode}');
+      print('STAFF ERROR DATA: ${e.response?.data}');
 
       throw Exception(
         'Failed to register staff: ${e.response?.data}',
@@ -52,6 +75,7 @@ class StaffRepository {
       );
     }
   }
+
   Future<List<Map<String, dynamic>>> getSubjects() async {
     try {
       final response = await service.getSubjects();

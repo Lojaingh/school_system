@@ -5,16 +5,15 @@ import '../network/dio_client.dart';
 
 class ExternalService {
   final Dio dio = DioClient.dio;
+
   Future<Response> getExternals() async {
-    return await dio.get(
-      "/externals",
-    );
+    return await dio.get("/externals");
   }
+
   Future<Response> getExternal(int id) async {
-    return await dio.get(
-      "/externals/$id",
-    );
+    return await dio.get("/externals/$id");
   }
+
   Future<Response> addExternal({
     required int schoolClassId,
     required PlatformFile file,
@@ -40,6 +39,7 @@ class ExternalService {
       data: formData,
     );
   }
+
   Future<Response> updateExternal({
     required int id,
     int? schoolClassId,
@@ -72,23 +72,24 @@ class ExternalService {
       data: formData,
     );
   }
+
   Future<Response> deleteExternal(int id) async {
     return await dio.delete(
       "/externals/$id",
     );
   }
+
+  // Teacher
   Future<Response> getTeacherClasses() async {
     return await dio.get(
       "/teacher/classes",
     );
   }
 
-  Future<Response> getGradeClasses(int year) async {
+  // Manager
+  Future<Response> getAllClasses() async {
     return await dio.get(
-      "/class/grade",
-      queryParameters: {
-        "year": year,
-      },
+      "/class/all",
     );
   }
 }

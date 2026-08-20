@@ -1,13 +1,13 @@
-// lib/utils/shared_prefs_helper.dart
-
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPrefsHelper {
   static const String _tokenKey = 'auth_token';
   static const String _roleKey = 'user_role';
   static const String _userIdKey = 'user_id';
+  static const String _languageKey = 'language';
 
   // ── Token ──
+
   static Future<void> saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
@@ -24,6 +24,7 @@ class SharedPrefsHelper {
   }
 
   // ── Role ──
+
   static Future<void> saveRole(String role) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_roleKey, role);
@@ -40,6 +41,7 @@ class SharedPrefsHelper {
   }
 
   // ── User ID ──
+
   static Future<void> saveUserId(int userId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_userIdKey, userId);
@@ -54,6 +56,25 @@ class SharedPrefsHelper {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_userIdKey);
   }
+
+  // ── Language ──
+
+  static Future<void> saveLanguage(String language) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_languageKey, language);
+  }
+
+  static Future<String?> getLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_languageKey);
+  }
+
+  static Future<void> clearLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_languageKey);
+  }
+
+  // ── Clear All ──
 
   static Future<void> clearAll() async {
     final prefs = await SharedPreferences.getInstance();

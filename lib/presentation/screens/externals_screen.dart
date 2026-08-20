@@ -7,46 +7,68 @@ import 'package:school_management/cubit/external/external_state.dart';
 import 'package:school_management/data/model/external_model.dart';
 import 'package:school_management/presentation/screen/widgets/external_card.dart';
 import 'package:school_management/presentation/screen/widgets/external_form_widget.dart';
+import 'package:school_management/utils/shared_prefs_helper.dart';
 
 class ExternalsScreen extends StatefulWidget {
-  const ExternalsScreen({
-    super.key,
-  });
+  const ExternalsScreen({super.key});
 
   @override
   State<ExternalsScreen> createState() => _ExternalsScreenState();
 }
 
 class _ExternalsScreenState extends State<ExternalsScreen> {
+  bool canManage = false;
+  bool isTeacher = false;
+  bool isManager = false;
+
   @override
   void initState() {
     super.initState();
 
+    _loadPermission();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       context.read<ExternalCubit>().getExternals();
     });
   }
 
-  // ============================================================
-  // ADD
-  // ============================================================
+  Future<void> _loadPermission() async {
+    final role = await SharedPrefsHelper.getRole();
+
+    if (!mounted) return;
+
+    final normalizedRole = role?.trim().toLowerCase();
+
+    print("🟡 EXTERNAL SCREEN ROLE: $normalizedRole");
+
+    setState(() {
+      isTeacher = normalizedRole == 'teacher';
+      isManager = normalizedRole == 'manager';
+      canManage = isTeacher || isManager;
+    });
+
+    print("🟡 isTeacher: $isTeacher");
+    print("🟡 isManager: $isManager");
+    print("🟡 canManage: $canManage");
+  }
 
   void _openAddDialog() {
     showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) {
-          return Dialog(
-            backgroundColor: Colors.transparent,
-            insetPadding: const EdgeInsets.all(20),
-            child: ExternalFormWidget(),
-          );
-        });
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(20),
+          child: ExternalFormWidget(
+            isTeacher: isTeacher,
+            isManager: isManager,
+          ),
+        );
+      },
+    );
   }
-
-  // ============================================================
-  // EDIT
-  // ============================================================
 
   void _openEditDialog(ExternalModel external) {
     showDialog(
@@ -58,15 +80,13 @@ class _ExternalsScreenState extends State<ExternalsScreen> {
           insetPadding: const EdgeInsets.all(20),
           child: ExternalFormWidget(
             external: external,
+            isTeacher: isTeacher,
+            isManager: isManager,
           ),
         );
       },
     );
   }
-
-  // ============================================================
-  // DELETE
-  // ============================================================
 
   void _deleteExternal(ExternalModel external) {
     showDialog(
@@ -91,9 +111,7 @@ class _ExternalsScreenState extends State<ExternalsScreen> {
               onPressed: () {
                 Navigator.pop(dialogContext);
               },
-              child: const Text(
-                "Cancel",
-              ),
+              child: const Text("Cancel"),
             ),
             ElevatedButton(
               onPressed: () {
@@ -107,9 +125,7 @@ class _ExternalsScreenState extends State<ExternalsScreen> {
                 backgroundColor: Colors.redAccent,
                 foregroundColor: Colors.white,
               ),
-              child: const Text(
-                "Delete",
-              ),
+              child: const Text("Delete"),
             ),
           ],
         );
@@ -126,11 +142,9 @@ class _ExternalsScreenState extends State<ExternalsScreen> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: BlocConsumer<ExternalCubit, ExternalState>(
-          // ============================================================
-          // LISTENER
-          // ============================================================
-
           listener: (context, state) {
+            print("🟣 EXTERNAL SCREEN STATE: ${state.runtimeType}");
+
             if (state is ExternalDeleteSuccess) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -171,16 +185,7 @@ class _ExternalsScreenState extends State<ExternalsScreen> {
               );
             }
           },
-
-          // ============================================================
-          // BUILDER
-          // ============================================================
-
           builder: (context, state) {
-            // ----------------------------------------------------------
-            // INITIAL LOADING
-            // ----------------------------------------------------------
-
             if (state is ExternalLoading) {
               return const Center(
                 child: CircularProgressIndicator(
@@ -189,36 +194,19 @@ class _ExternalsScreenState extends State<ExternalsScreen> {
               );
             }
 
-            // ----------------------------------------------------------
-            // ERROR
-            // ----------------------------------------------------------
-
             if (state is ExternalError) {
               return Center(
                 child: ElevatedButton.icon(
                   onPressed: () {
                     context.read<ExternalCubit>().getExternals();
                   },
-                  icon: const Icon(
-                    Icons.refresh_rounded,
-                  ),
-                  label: const Text(
-                    "Try Again",
-                  ),
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text("Try Again"),
                 ),
               );
             }
 
-            // ----------------------------------------------------------
-            // EXTERNALS LIST
-            // ----------------------------------------------------------
-            //
-            // مهم:
-            // بعد UPDATE أو DELETE نستخدم القائمة الموجودة
-            // داخل الـ Success State حتى لا تختفي البطاقات.
-            // ----------------------------------------------------------
-
-            final List<ExternalModel> externals;
+            List<ExternalModel> externals = [];
 
             if (state is ExternalLoaded) {
               externals = state.externals;
@@ -226,16 +214,10 @@ class _ExternalsScreenState extends State<ExternalsScreen> {
               externals = state.externals;
             } else if (state is ExternalDeleteSuccess) {
               externals = state.externals;
-            } else {
-              externals = [];
             }
 
             return Column(
               children: [
-                // ========================================================
-                // HEADER
-                // ========================================================
-
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
@@ -256,9 +238,7 @@ class _ExternalsScreenState extends State<ExternalsScreen> {
                           size: 25,
                         ),
                       ),
-
                       const SizedBox(width: 14),
-
                       const Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -282,39 +262,26 @@ class _ExternalsScreenState extends State<ExternalsScreen> {
                           ],
                         ),
                       ),
-
-                      // --------------------------------------------------
-                      // ADD BUTTON
-                      // --------------------------------------------------
-
-                      ElevatedButton.icon(
-                        onPressed: _openAddDialog,
-                        icon: const Icon(
-                          Icons.add_rounded,
-                        ),
-                        label: const Text(
-                          "Add External",
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 14,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      if (canManage)
+                        ElevatedButton.icon(
+                          onPressed: _openAddDialog,
+                          icon: const Icon(Icons.add_rounded),
+                          label: const Text("Add External"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 14,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
-
-                // ========================================================
-                // GRID
-                // ========================================================
-
                 Expanded(
                   child: externals.isEmpty
                       ? const Center(
@@ -336,11 +303,7 @@ class _ExternalsScreenState extends State<ExternalsScreen> {
                             gridDelegate:
                                 const SliverGridDelegateWithMaxCrossAxisExtent(
                               maxCrossAxisExtent: 400,
-
-                              // ارتفاع البطاقة
-                              // مناسب للملاحظات والأزرار
                               mainAxisExtent: 385,
-
                               crossAxisSpacing: 18,
                               mainAxisSpacing: 18,
                             ),
@@ -350,22 +313,17 @@ class _ExternalsScreenState extends State<ExternalsScreen> {
 
                               return ExternalCard(
                                 external: external,
-
-                                // ------------------------------------------------
-                                // EDIT
-                                // ------------------------------------------------
-
-                                onEdit: () {
-                                  _openEditDialog(external);
-                                },
-
-                                // ------------------------------------------------
-                                // DELETE
-                                // ------------------------------------------------
-
-                                onDelete: () {
-                                  _deleteExternal(external);
-                                },
+                                canManage: canManage,
+                                onEdit: canManage
+                                    ? () {
+                                        _openEditDialog(external);
+                                      }
+                                    : null,
+                                onDelete: canManage
+                                    ? () {
+                                        _deleteExternal(external);
+                                      }
+                                    : null,
                               );
                             },
                           ),

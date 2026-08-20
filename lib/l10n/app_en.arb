@@ -1,0 +1,21 @@
+{
+  "@@locale": "en",
+  "login": "Login",
+  "createAccount": "Create Account",
+  "assignments": "Assignments",
+  "students": "Students",
+  "staff": "Staff",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "cancel": "Cancel",
+  "search": "Search",
+  "refresh": "Refresh",
+  "dashboard": "Dashboard",
+  "schoolManagementSystem": "School Management System",
+  "welcomeBack": "Welcome Back!",
+  "loginToYourAccount": "Login to your account",
+  "username": "Username",
+  "password": "Password",
+  "pleaseFillAllFields": "Please fill all fields"
+}

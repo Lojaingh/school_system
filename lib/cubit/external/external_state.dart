@@ -5,6 +5,10 @@ abstract class ExternalState {}
 
 class ExternalInitial extends ExternalState {}
 
+// =========================
+// EXTERNALS
+// =========================
+
 class ExternalLoading extends ExternalState {}
 
 class ExternalLoaded extends ExternalState {
@@ -21,6 +25,10 @@ class ExternalDetailsLoaded extends ExternalState {
   ExternalDetailsLoaded(this.external);
 }
 
+// =========================
+// ADD
+// =========================
+
 class ExternalAddLoading extends ExternalState {}
 
 class ExternalAddSuccess extends ExternalState {
@@ -28,6 +36,10 @@ class ExternalAddSuccess extends ExternalState {
 
   ExternalAddSuccess(this.message);
 }
+
+// =========================
+// UPDATE
+// =========================
 
 class ExternalUpdateLoading extends ExternalState {}
 
@@ -41,6 +53,10 @@ class ExternalUpdateSuccess extends ExternalState {
   });
 }
 
+// =========================
+// DELETE
+// =========================
+
 class ExternalDeleteLoading extends ExternalState {}
 
 class ExternalDeleteSuccess extends ExternalState {
@@ -53,6 +69,10 @@ class ExternalDeleteSuccess extends ExternalState {
   });
 }
 
+// =========================
+// TEACHER CLASSES
+// =========================
+
 class TeacherClassesLoading extends ExternalState {}
 
 class TeacherClassesLoaded extends ExternalState {
@@ -61,6 +81,22 @@ class TeacherClassesLoaded extends ExternalState {
   TeacherClassesLoaded(this.classes);
 }
 
+// =========================
+// MANAGER - ALL CLASSES
+// =========================
+
+class AllClassesLoading extends ExternalState {}
+
+class AllClassesLoaded extends ExternalState {
+  final List<SchoolClassModel> classes;
+
+  AllClassesLoaded(this.classes);
+}
+
+// =========================
+// GRADE CLASSES
+// =========================
+
 class GradeClassesLoading extends ExternalState {}
 
 class GradeClassesLoaded extends ExternalState {
@@ -68,6 +104,10 @@ class GradeClassesLoaded extends ExternalState {
 
   GradeClassesLoaded(this.classes);
 }
+
+// =========================
+// ERROR
+// =========================
 
 class ExternalError extends ExternalState {
   final String message;

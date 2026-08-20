@@ -20,15 +20,52 @@ class SchoolClassModel {
   });
 
   factory SchoolClassModel.fromJson(Map<String, dynamic> json) {
+    int parseInt(dynamic value) {
+      if (value == null) return 0;
+
+      if (value is int) {
+        return value;
+      }
+
+      if (value is num) {
+        return value.toInt();
+      }
+
+      return int.tryParse(value.toString()) ?? 0;
+    }
+
+    int? parseNullableInt(dynamic value) {
+      if (value == null) return null;
+
+      if (value is int) {
+        return value;
+      }
+
+      if (value is num) {
+        return value.toInt();
+      }
+
+      return int.tryParse(value.toString());
+    }
+
+    final id = parseInt(json['id']);
+    final academicId = parseInt(json['academic_id']);
+    final supervisorId = parseNullableInt(json['supervisor_id']);
+    final year = parseInt(json['year']);
+    final number = parseInt(json['number']);
+
     return SchoolClassModel(
-      id: json["id"] ?? 0,
-      academicId: json["academic_id"] ?? 0,
-      supervisorId: json["supervisor_id"],
-      year: json["year"] ?? 0,
-      number: json["number"] ?? 0,
-      label: json["label"],
-      createdAt: json["created_at"],
-      updatedAt: json["updated_at"],
+      id: id,
+      academicId: academicId,
+      supervisorId: supervisorId,
+      year: year,
+      number: number,
+
+      // إذا الـ API ما رجّع label منولده هون
+      label: json['label']?.toString() ?? 'Grade $year - $number',
+
+      createdAt: json['created_at']?.toString(),
+      updatedAt: json['updated_at']?.toString(),
     );
   }
 }

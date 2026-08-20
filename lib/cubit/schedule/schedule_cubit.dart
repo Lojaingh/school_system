@@ -2,10 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/model/schedule_model.dart';
 import '../../data/network/dio_client.dart';
-
-// ==========================================
-// States
-// ==========================================
+import '../../utils/shared_prefs_helper.dart';
 
 abstract class ScheduleState {}
 
@@ -29,12 +26,9 @@ class ScheduleLoaded extends ScheduleState {
 
 class ScheduleError extends ScheduleState {
   final String message;
+
   ScheduleError(this.message);
 }
-
-// ==========================================
-// Cubit
-// ==========================================
 
 class ScheduleCubit extends Cubit<ScheduleState> {
   ScheduleCubit() : super(ScheduleInitial());
@@ -47,22 +41,25 @@ class ScheduleCubit extends Cubit<ScheduleState> {
   List<ScheduleSlot> get slots => _slots;
   List<ClassItem> get classes => _classes;
   List<SubjectItem> get subjects => _subjects;
+
   List<StaffMember> get teachers =>
       _allStaff.where((s) => s.isTeacher).toList();
 
-  /// حل مؤقت لحد ما نتأكد من مكان subject_id الحقيقي بالـ API (GET /staff/{id}):
-  /// بيرجع الأساتذة يلي سبق ودرّسوا هالمادة (حسب الجدول الحالي).
-  /// إذا ما في ولا أستاذ درّسها لسا، بيرجع كل الأساتذة (منشان ما نعلّق الإضافة).
   List<StaffMember> teachersForSubject(int? subjectId) {
     final allTeachers = teachers;
-    if (subjectId == null) return allTeachers;
+
+    if (subjectId == null) {
+      return allTeachers;
+    }
 
     final teacherIdsForSubject = _slots
         .where((s) => s.subjectId == subjectId)
         .map((s) => s.teacherId)
         .toSet();
 
-    if (teacherIdsForSubject.isEmpty) return allTeachers;
+    if (teacherIdsForSubject.isEmpty) {
+      return allTeachers;
+    }
 
     final filtered =
         allTeachers.where((t) => teacherIdsForSubject.contains(t.id)).toList();
@@ -70,48 +67,161 @@ class ScheduleCubit extends Cubit<ScheduleState> {
     return filtered.isEmpty ? allTeachers : filtered;
   }
 
-  /// يجيب كل شي: الحصص + الصفوف + المواد + الموظفين (تستعمل بصفحة الجدول الكاملة)
   Future<void> loadAll() async {
+    if (isClosed) return;
+
     try {
       emit(ScheduleLoading());
-      final results = await Future.wait([
-        DioClient.dio.get('/schedules'),
-        DioClient.dio.get('/class/all'),
-        DioClient.dio.get('/subjects'),
-        DioClient.dio.get('/staff/all'),
-      ]);
-      _classes = ClassItem.listFromResponse(results[1].data);
-      _subjects = SubjectItem.listFromResponse(results[2].data);
-      _allStaff = StaffMember.listFromResponse(results[3].data);
-      _slots =
-          _attachTeacherNames(ScheduleSlot.listFromResponse(results[0].data));
-      emit(ScheduleLoaded(_slots, _classes, _subjects, teachers));
+
+      final role = await SharedPrefsHelper.getRole();
+
+      if (isClosed) return;
+
+      final normalizedRole = role?.trim().toLowerCase() ?? '';
+
+      late final Response schedulesResponse;
+      late final Response classesResponse;
+      late final Response subjectsResponse;
+      Response? staffResponse;
+
+      schedulesResponse = await DioClient.dio.get('/schedules');
+
+      if (isClosed) return;
+
+      if (normalizedRole == 'supervisor') {
+        classesResponse = await DioClient.dio.get('/supervisor/classes');
+      } else {
+        classesResponse = await DioClient.dio.get('/class/all');
+      }
+
+      if (isClosed) return;
+
+      subjectsResponse = await DioClient.dio.get('/subjects');
+
+      if (isClosed) return;
+
+      // /staff/all مسموح للمدير فقط حسب الـBackend
+      // لذلك لا نطلبه للـSupervisor.
+      if (normalizedRole == 'manager') {
+        staffResponse = await DioClient.dio.get('/staff/all');
+      }
+
+      if (isClosed) return;
+
+      _classes = ClassItem.listFromResponse(
+        classesResponse.data,
+      );
+
+      _subjects = SubjectItem.listFromResponse(
+        subjectsResponse.data,
+      );
+
+      if (staffResponse != null) {
+        _allStaff = StaffMember.listFromResponse(
+          staffResponse.data,
+        );
+      } else {
+        // للمشرف لا نملك staff/all،
+        // لذلك نحافظ على القائمة الحالية إن وجدت.
+        _allStaff = List<StaffMember>.from(
+          _allStaff,
+        );
+      }
+
+      _slots = _attachTeacherNames(
+        ScheduleSlot.listFromResponse(
+          schedulesResponse.data,
+        ),
+      );
+
+      if (isClosed) return;
+
+      emit(
+        ScheduleLoaded(
+          _slots,
+          _classes,
+          _subjects,
+          teachers,
+        ),
+      );
     } catch (e) {
-      emit(ScheduleError(_errorMessage(e)));
+      if (isClosed) return;
+
+      emit(
+        ScheduleError(
+          _errorMessage(e),
+        ),
+      );
     }
   }
 
-  /// يجيب الحصص + الموظفين بس (تستعمل بالبطاقة المصغّرة بالداشبورد - أخف)
   Future<void> loadSchedulesOnly() async {
+    if (isClosed) return;
+
     try {
       emit(ScheduleLoading());
-      final results = await Future.wait([
-        DioClient.dio.get('/schedules'),
-        DioClient.dio.get('/staff/all'),
-      ]);
-      _allStaff = StaffMember.listFromResponse(results[1].data);
-      _slots =
-          _attachTeacherNames(ScheduleSlot.listFromResponse(results[0].data));
-      emit(ScheduleLoaded(_slots, _classes, _subjects, teachers));
+
+      final role = await SharedPrefsHelper.getRole();
+
+      if (isClosed) return;
+
+      final normalizedRole = role?.trim().toLowerCase() ?? '';
+
+      final schedulesResponse = await DioClient.dio.get('/schedules');
+
+      if (isClosed) return;
+
+      // المدير فقط يستطيع staff/all
+      if (normalizedRole == 'manager') {
+        final staffResponse = await DioClient.dio.get('/staff/all');
+
+        if (isClosed) return;
+
+        _allStaff = StaffMember.listFromResponse(
+          staffResponse.data,
+        );
+      }
+
+      _slots = _attachTeacherNames(
+        ScheduleSlot.listFromResponse(
+          schedulesResponse.data,
+        ),
+      );
+
+      if (isClosed) return;
+
+      emit(
+        ScheduleLoaded(
+          _slots,
+          _classes,
+          _subjects,
+          teachers,
+        ),
+      );
     } catch (e) {
-      emit(ScheduleError(_errorMessage(e)));
+      if (isClosed) return;
+
+      emit(
+        ScheduleError(
+          _errorMessage(e),
+        ),
+      );
     }
   }
 
-  List<ScheduleSlot> _attachTeacherNames(List<ScheduleSlot> rawSlots) {
-    final nameMap = {for (final s in _allStaff) s.id: s.name};
+  List<ScheduleSlot> _attachTeacherNames(
+    List<ScheduleSlot> rawSlots,
+  ) {
+    final nameMap = {
+      for (final s in _allStaff) s.id: s.name,
+    };
+
     return rawSlots
-        .map((s) => s.withTeacherName(nameMap[s.teacherId]))
+        .map(
+          (s) => s.withTeacherName(
+            nameMap[s.teacherId],
+          ),
+        )
         .toList();
   }
 
@@ -123,6 +233,8 @@ class ScheduleCubit extends Cubit<ScheduleState> {
     required int dayOfWeek,
     required int periodNumber,
   }) async {
+    if (isClosed) return false;
+
     try {
       await DioClient.dio.post(
         '/schedules',
@@ -135,10 +247,21 @@ class ScheduleCubit extends Cubit<ScheduleState> {
           'period_number': periodNumber.toString(),
         }),
       );
+
+      if (isClosed) return false;
+
       await loadSchedulesOnly();
-      return true;
+
+      return !isClosed;
     } catch (e) {
-      emit(ScheduleError(_errorMessage(e)));
+      if (isClosed) return false;
+
+      emit(
+        ScheduleError(
+          _errorMessage(e),
+        ),
+      );
+
       return false;
     }
   }
@@ -150,32 +273,72 @@ class ScheduleCubit extends Cubit<ScheduleState> {
     int? subjectId,
     int? teacherId,
   }) async {
+    if (isClosed) return false;
+
     try {
       final map = <String, String>{};
-      if (dayOfWeek != null) map['day_of_week'] = dayOfWeek.toString();
-      if (periodNumber != null) map['period_number'] = periodNumber.toString();
-      if (subjectId != null) map['subject_id'] = subjectId.toString();
-      if (teacherId != null) map['teacher_id'] = teacherId.toString();
+
+      if (dayOfWeek != null) {
+        map['day_of_week'] = dayOfWeek.toString();
+      }
+
+      if (periodNumber != null) {
+        map['period_number'] = periodNumber.toString();
+      }
+
+      if (subjectId != null) {
+        map['subject_id'] = subjectId.toString();
+      }
+
+      if (teacherId != null) {
+        map['teacher_id'] = teacherId.toString();
+      }
 
       await DioClient.dio.put(
         '/schedules/$id',
         data: FormData.fromMap(map),
       );
+
+      if (isClosed) return false;
+
       await loadSchedulesOnly();
-      return true;
+
+      return !isClosed;
     } catch (e) {
-      emit(ScheduleError(_errorMessage(e)));
+      if (isClosed) return false;
+
+      emit(
+        ScheduleError(
+          _errorMessage(e),
+        ),
+      );
+
       return false;
     }
   }
 
   Future<bool> deleteSchedule(int id) async {
+    if (isClosed) return false;
+
     try {
-      await DioClient.dio.delete('/schedules/$id');
+      await DioClient.dio.delete(
+        '/schedules/$id',
+      );
+
+      if (isClosed) return false;
+
       await loadSchedulesOnly();
-      return true;
+
+      return !isClosed;
     } catch (e) {
-      emit(ScheduleError(_errorMessage(e)));
+      if (isClosed) return false;
+
+      emit(
+        ScheduleError(
+          _errorMessage(e),
+        ),
+      );
+
       return false;
     }
   }
@@ -183,11 +346,14 @@ class ScheduleCubit extends Cubit<ScheduleState> {
   String _errorMessage(Object e) {
     if (e is DioException) {
       final data = e.response?.data;
+
       if (data is Map && data['message'] != null) {
         return data['message'].toString();
       }
+
       return e.message ?? 'Connection error';
     }
+
     return e.toString();
   }
 }

@@ -1,5 +1,3 @@
-// lib/data/repository/assignment_repository.dart
-
 import 'package:dio/dio.dart';
 import 'package:school_management/data/model/assignment_model.dart';
 import '../network/dio_client.dart';
@@ -8,7 +6,7 @@ class AssignmentRepository {
   AssignmentRepository();
 
   // ============================================================
-  // GET ALL ASSIGNMENTS
+  // GET ASSIGNMENTS
   // ============================================================
 
   Future<List<Assignment>> getAssignments() async {
@@ -16,21 +14,12 @@ class AssignmentRepository {
       final response = await DioClient.dio.get('/assignments');
 
       print(
-        '📥 Assignments response status: '
-        '${response.statusCode}',
+        '📥 Assignments response status: ${response.statusCode}',
       );
 
       print(
-        '📥 Assignments response data: '
-        '${response.data}',
+        '📥 Assignments response data: ${response.data}',
       );
-
-      if (response.statusCode != 200 && response.statusCode != 201) {
-        throw Exception(
-          'Failed to load assignments: '
-          '${response.statusCode}',
-        );
-      }
 
       final responseData = response.data;
 
@@ -40,28 +29,11 @@ class AssignmentRepository {
 
       List<dynamic> dataList = [];
 
-      // ----------------------------------------
-      // data = [...]
-      // ----------------------------------------
-
       if (responseData is Map && responseData['data'] is List) {
         dataList = responseData['data'];
-      }
-
-      // ----------------------------------------
-      // response = [...]
-      // ----------------------------------------
-
-      else if (responseData is List) {
+      } else if (responseData is List) {
         dataList = responseData;
-      }
-
-      // ----------------------------------------
-      // data = { data: [...] }
-      // Pagination
-      // ----------------------------------------
-
-      else if (responseData is Map &&
+      } else if (responseData is Map &&
           responseData['data'] is Map &&
           responseData['data']['data'] is List) {
         dataList = responseData['data']['data'];
@@ -82,6 +54,70 @@ class AssignmentRepository {
     } catch (e) {
       print(
         '❌ Error fetching assignments: $e',
+      );
+      rethrow;
+    }
+  }
+
+  // ============================================================
+  // GET CLASSES
+  // ============================================================
+
+  Future<List<Map<String, dynamic>>> getClasses({
+    required String role,
+  }) async {
+    try {
+      final normalizedRole = role.trim().toLowerCase();
+
+      final endpoint =
+          normalizedRole == 'teacher' ? '/teacher/classes' : '/class/all';
+
+      print('🔵 User role: $normalizedRole');
+      print('🔵 Fetching classes from: $endpoint');
+
+      final response = await DioClient.dio.get(endpoint);
+
+      print(
+        '📥 Classes response status: ${response.statusCode}',
+      );
+
+      print(
+        '📥 Classes response data: ${response.data}',
+      );
+
+      final responseData = response.data;
+
+      List<dynamic> data = [];
+
+      if (responseData is List) {
+        data = responseData;
+      } else if (responseData is Map && responseData['data'] is List) {
+        data = responseData['data'];
+      } else if (responseData is Map &&
+          responseData['data'] is Map &&
+          responseData['data']['data'] is List) {
+        data = responseData['data']['data'];
+      }
+
+      print(
+        '🟢 Classes extracted: ${data.length}',
+      );
+
+      return data
+          .whereType<Map>()
+          .map(
+            (item) => Map<String, dynamic>.from(item),
+          )
+          .toList();
+    } on DioException catch (e) {
+      print(
+        '❌ Error loading classes: ${e.response?.data}',
+      );
+
+      rethrow;
+    } catch (e) {
+      print(
+        '❌ Error loading classes: $e',
       );
 
       rethrow;
@@ -113,8 +149,7 @@ class AssignmentRepository {
       }
 
       throw Exception(
-        'Failed to load assignment: '
-        '${response.statusCode}',
+        'Failed to load assignment: ${response.statusCode}',
       );
     } catch (e) {
       print(
@@ -133,23 +168,20 @@ class AssignmentRepository {
     required String title,
     required String body,
     required String dueDate,
-
-    // رقم المادة فقط
     required int subjectId,
+    required int schoolClassId,
     String? filePath,
   }) async {
     try {
       print('📤 Creating assignment');
+      print('   school_class_id: $schoolClassId');
       print('   subject_id: $subjectId');
       print('   title: $title');
       print('   due_date: $dueDate');
 
-      // ========================================================
-      // WITH FILE
-      // ========================================================
-
       if (filePath != null && filePath.isNotEmpty) {
         final formData = FormData.fromMap({
+          'school_class_id': schoolClassId,
           'subject_id': subjectId,
           'title': title,
           'body': body,
@@ -168,8 +200,7 @@ class AssignmentRepository {
         );
 
         print(
-          '📥 Create response: '
-          '${response.data}',
+          '📥 Create response: ${response.data}',
         );
 
         if (response.statusCode == 200 || response.statusCode == 201) {
@@ -188,18 +219,14 @@ class AssignmentRepository {
         }
 
         throw Exception(
-          'Failed to create assignment: '
-          '${response.statusCode}',
+          'Failed to create assignment: ${response.statusCode}',
         );
       }
-
-      // ========================================================
-      // WITHOUT FILE
-      // ========================================================
 
       final response = await DioClient.dio.post(
         '/assignments',
         data: {
+          'school_class_id': schoolClassId,
           'subject_id': subjectId,
           'title': title,
           'body': body,
@@ -208,8 +235,7 @@ class AssignmentRepository {
       );
 
       print(
-        '📥 Create response: '
-        '${response.data}',
+        '📥 Create response: ${response.data}',
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -228,13 +254,11 @@ class AssignmentRepository {
       }
 
       throw Exception(
-        'Failed to create assignment: '
-        '${response.statusCode}',
+        'Failed to create assignment: ${response.statusCode}',
       );
     } on DioException catch (e) {
       print(
-        '❌ Create Assignment Dio Error: '
-        '${e.response?.data}',
+        '❌ Create Assignment Dio Error: ${e.response?.data}',
       );
 
       rethrow;
@@ -253,8 +277,6 @@ class AssignmentRepository {
 
   Future<Assignment> updateAssignment({
     required int id,
-
-    // المادة اختيارية بالتعديل
     int? subjectId,
     String? title,
     String? body,
@@ -263,7 +285,6 @@ class AssignmentRepository {
     try {
       final Map<String, dynamic> data = {};
 
-      // رقم المادة
       if (subjectId != null) {
         data['subject_id'] = subjectId;
       }
@@ -300,13 +321,11 @@ class AssignmentRepository {
       );
 
       print(
-        '📥 Update status: '
-        '${response.statusCode}',
+        '📥 Update status: ${response.statusCode}',
       );
 
       print(
-        '📥 Update data: '
-        '${response.data}',
+        '📥 Update data: ${response.data}',
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -325,13 +344,11 @@ class AssignmentRepository {
       }
 
       throw Exception(
-        'Failed to update assignment: '
-        '${response.statusCode}',
+        'Failed to update assignment: ${response.statusCode}',
       );
     } on DioException catch (e) {
       print(
-        '❌ Update Assignment Dio Error: '
-        '${e.response?.data}',
+        '❌ Update Assignment Dio Error: ${e.response?.data}',
       );
 
       rethrow;
@@ -357,20 +374,17 @@ class AssignmentRepository {
       );
 
       print(
-        '📥 Delete status: '
-        '${response.statusCode}',
+        '📥 Delete status: ${response.statusCode}',
       );
 
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception(
-          'Failed to delete assignment: '
-          '${response.statusCode}',
+          'Failed to delete assignment: ${response.statusCode}',
         );
       }
     } on DioException catch (e) {
       print(
-        '❌ Delete Assignment Error: '
-        '${e.response?.data}',
+        '❌ Delete Assignment Error: ${e.response?.data}',
       );
 
       rethrow;

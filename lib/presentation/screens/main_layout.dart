@@ -14,6 +14,7 @@ import 'package:school_management/data/services/staff_service.dart';
 import 'package:school_management/data/services/student_profile_service.dart';
 import 'package:school_management/presentation/screens/class_screen.dart';
 import 'package:school_management/presentation/screens/externals_screen.dart';
+import 'package:school_management/presentation/screens/marks_screen.dart';
 import 'package:school_management/presentation/screens/objection_screen.dart';
 import 'package:school_management/presentation/screens/register_screen.dart';
 import 'package:school_management/presentation/screens/staff_screen.dart';
@@ -135,6 +136,7 @@ class _MainLayoutState extends State<MainLayout> {
           const ClassScreen(),
           StudentScreen(onOpenProfile: _openStudentProfile),
           const AttendanceContent(),
+          const MarksScreen(),
           const LibraryContent(),
           const AssignmentScreen(),
           const ScheduleScreen(),
@@ -146,7 +148,7 @@ class _MainLayoutState extends State<MainLayout> {
 
       case 'supervisor':
         return [
-          const DashboardContent(),
+          //  const DashboardContent(),
           const AttendanceContent(),
           _buildObjectionScreen(),
           const AssignmentScreen(),
@@ -155,13 +157,14 @@ class _MainLayoutState extends State<MainLayout> {
 
       case 'librarian':
         return [
-          const DashboardContent(),
+          // const DashboardContent(),
           const LibraryContent(),
         ];
 
       case 'teacher':
         return [
-          const DashboardContent(),
+          // const DashboardContent(),
+          const MarksScreen(),
           const AttendanceContent(),
           const AssignmentScreen(),
         ];
@@ -221,6 +224,7 @@ class _MainLayoutState extends State<MainLayout> {
           SidebarXItem(icon: Icons.grid_view_rounded, label: 'Classes'),
           SidebarXItem(icon: Icons.person_rounded, label: 'Students'),
           SidebarXItem(icon: Icons.how_to_reg_rounded, label: 'Attendance'),
+          SidebarXItem(icon: Icons.grade_outlined, label: 'Marks'),
           SidebarXItem(icon: Icons.menu_book_rounded, label: 'Library'),
           SidebarXItem(icon: Icons.assignment_rounded, label: 'Assignments'),
           SidebarXItem(icon: Icons.calendar_month_rounded, label: 'Schedule'),
@@ -231,7 +235,7 @@ class _MainLayoutState extends State<MainLayout> {
 
       case 'supervisor':
         return const [
-          SidebarXItem(icon: Icons.dashboard_rounded, label: 'Dashboard'),
+          //   SidebarXItem(icon: Icons.dashboard_rounded, label: 'Dashboard'),
           SidebarXItem(icon: Icons.how_to_reg_rounded, label: 'Attendance'),
           SidebarXItem(icon: Icons.gavel_rounded, label: 'Objections'),
           SidebarXItem(icon: Icons.assignment_rounded, label: 'Assignments'),
@@ -240,15 +244,28 @@ class _MainLayoutState extends State<MainLayout> {
 
       case 'librarian':
         return const [
-          SidebarXItem(icon: Icons.dashboard_rounded, label: 'Dashboard'),
+          // SidebarXItem(icon: Icons.dashboard_rounded, label: 'Dashboard'),
           SidebarXItem(icon: Icons.menu_book_rounded, label: 'Library'),
         ];
 
       case 'teacher':
         return const [
-          SidebarXItem(icon: Icons.dashboard_rounded, label: 'Dashboard'),
-          SidebarXItem(icon: Icons.how_to_reg_rounded, label: 'Attendance'),
-          SidebarXItem(icon: Icons.assignment_rounded, label: 'Assignments'),
+          /* SidebarXItem(
+            icon: Icons.dashboard_rounded,
+            label: 'Dashboard',
+          ),*/
+          SidebarXItem(
+            icon: Icons.grade_outlined,
+            label: 'Marks',
+          ),
+          SidebarXItem(
+            icon: Icons.how_to_reg_rounded,
+            label: 'Attendance',
+          ),
+          SidebarXItem(
+            icon: Icons.assignment_rounded,
+            label: 'Assignments',
+          ),
         ];
 
       case 'student':

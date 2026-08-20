@@ -1,12 +1,15 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:school_management/data/repository/external_repository.dart';
+
 import 'external_state.dart';
 
 class ExternalCubit extends Cubit<ExternalState> {
   final ExternalRepository repository;
 
   ExternalCubit(this.repository) : super(ExternalInitial());
+
   Future<void> getExternals() async {
     try {
       emit(ExternalLoading());
@@ -18,12 +21,11 @@ class ExternalCubit extends Cubit<ExternalState> {
       );
     } catch (e) {
       emit(
-        ExternalError(
-          e.toString(),
-        ),
+        ExternalError(e.toString()),
       );
     }
   }
+
   Future<void> getExternal(int id) async {
     try {
       emit(ExternalDetailsLoading());
@@ -35,12 +37,11 @@ class ExternalCubit extends Cubit<ExternalState> {
       );
     } catch (e) {
       emit(
-        ExternalError(
-          e.toString(),
-        ),
+        ExternalError(e.toString()),
       );
     }
   }
+
   Future<void> addExternal({
     required int schoolClassId,
     required PlatformFile file,
@@ -54,22 +55,23 @@ class ExternalCubit extends Cubit<ExternalState> {
         file: file,
         notes: notes,
       );
+
       final data = await repository.getExternals();
 
       emit(
         ExternalAddSuccess(message),
       );
+
       emit(
         ExternalLoaded(data),
       );
     } catch (e) {
       emit(
-        ExternalError(
-          e.toString(),
-        ),
+        ExternalError(e.toString()),
       );
     }
   }
+
   Future<void> updateExternal({
     required int id,
     int? schoolClassId,
@@ -78,6 +80,7 @@ class ExternalCubit extends Cubit<ExternalState> {
   }) async {
     try {
       emit(ExternalUpdateLoading());
+
       final message = await repository.updateExternal(
         id: id,
         schoolClassId: schoolClassId,
@@ -86,6 +89,7 @@ class ExternalCubit extends Cubit<ExternalState> {
       );
 
       final data = await repository.getExternals();
+
       emit(
         ExternalUpdateSuccess(
           message: message,
@@ -94,16 +98,17 @@ class ExternalCubit extends Cubit<ExternalState> {
       );
     } catch (e) {
       emit(
-        ExternalError(
-          e.toString(),
-        ),
+        ExternalError(e.toString()),
       );
     }
   }
+
   Future<void> deleteExternal(int id) async {
     try {
       emit(ExternalDeleteLoading());
+
       final message = await repository.deleteExternal(id);
+
       final data = await repository.getExternals();
 
       emit(
@@ -114,12 +119,14 @@ class ExternalCubit extends Cubit<ExternalState> {
       );
     } catch (e) {
       emit(
-        ExternalError(
-          e.toString(),
-        ),
+        ExternalError(e.toString()),
       );
     }
   }
+
+  // =========================
+  // TEACHER
+  // =========================
 
   Future<void> getTeacherClasses() async {
     try {
@@ -132,27 +139,27 @@ class ExternalCubit extends Cubit<ExternalState> {
       );
     } catch (e) {
       emit(
-        ExternalError(
-          e.toString(),
-        ),
+        ExternalError(e.toString()),
       );
     }
   }
 
-  Future<void> getGradeClasses(int year) async {
-    try {
-      emit(GradeClassesLoading());
+  // =========================
+  // MANAGER
+  // =========================
 
-      final data = await repository.getGradeClasses(year);
+  Future<void> getAllClasses() async {
+    try {
+      emit(AllClassesLoading());
+
+      final data = await repository.getAllClasses();
 
       emit(
-        GradeClassesLoaded(data),
+        AllClassesLoaded(data),
       );
     } catch (e) {
       emit(
-        ExternalError(
-          e.toString(),
-        ),
+        ExternalError(e.toString()),
       );
     }
   }

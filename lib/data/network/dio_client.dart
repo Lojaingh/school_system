@@ -13,32 +13,57 @@ class DioClient {
       },
     ),
   );
+
   static Future<void> init() async {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           final token = await SharedPrefsHelper.getToken();
+          final language = await SharedPrefsHelper.getLanguage();
+
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
-          print('🔵 Request: ${options.method} ${options.path}');
+
+          options.headers['Accept-Language'] =
+              language == 'ar' || language == 'en' ? language : 'en';
+
+          print(
+            '🔵 Request: ${options.method} ${options.path}',
+          );
+
+          print(
+            '🌐 Language: ${options.headers['Accept-Language']}',
+          );
+
           return handler.next(options);
         },
         onResponse: (response, handler) {
           print(
-              '🟢 Response: ${response.statusCode} ${response.requestOptions.path}');
+            '🟢 Response: ${response.statusCode} ${response.requestOptions.path}',
+          );
+
           return handler.next(response);
         },
         onError: (error, handler) async {
-          print('🔴 Error: ${error.message}');
+          print(
+            '🔴 Error: ${error.message}',
+          );
+
           if (error.response != null) {
-            print('🔴 Status: ${error.response?.statusCode}');
-            print('🔴 Data: ${error.response?.data}');
+            print(
+              '🔴 Status: ${error.response?.statusCode}',
+            );
+
+            print(
+              '🔴 Data: ${error.response?.data}',
+            );
 
             if (error.response?.statusCode == 401) {
               await SharedPrefsHelper.clearToken();
             }
           }
+
           return handler.next(error);
         },
       ),

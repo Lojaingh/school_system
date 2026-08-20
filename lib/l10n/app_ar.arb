@@ -1,0 +1,21 @@
+{
+  "@@locale": "ar",
+  "login": "تسجيل الدخول",
+  "createAccount": "إنشاء حساب",
+  "assignments": "الواجبات",
+  "students": "الطلاب",
+  "staff": "الموظفون",
+  "save": "حفظ",
+  "delete": "حذف",
+  "edit": "تعديل",
+  "cancel": "إلغاء",
+  "search": "بحث",
+  "refresh": "تحديث",
+  "dashboard": "لوحة التحكم",
+  "schoolManagementSystem": "نظام إدارة المدرسة",
+  "welcomeBack": "مرحبًا بعودتك!",
+  "loginToYourAccount": "سجّل الدخول إلى حسابك",
+  "username": "اسم المستخدم",
+  "password": "كلمة المرور",
+  "pleaseFillAllFields": "يرجى ملء جميع الحقول"
+}

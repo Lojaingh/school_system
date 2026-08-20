@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'package:school_management/constants/app_colors.dart';
 import 'package:school_management/cubit/auth/register/staff_cubit.dart';
 import 'package:school_management/cubit/auth/register/staff_state.dart';
@@ -18,11 +17,9 @@ class StaffForm extends StatefulWidget {
 class _StaffFormState extends State<StaffForm> {
   String? gender;
   String? roleId;
-
   DateTime? birthDate;
   DateTime? hireDate;
 
-  // Teacher
   String? selectedSubjectId;
   List<Map<String, dynamic>> subjects = [];
   bool isLoadingSubjects = false;
@@ -49,12 +46,12 @@ class _StaffFormState extends State<StaffForm> {
   @override
   void initState() {
     super.initState();
-
-    // تحميل المواد من الـ API عند فتح الفورم
     _loadSubjects();
   }
 
   Future<void> _loadSubjects() async {
+    if (!mounted) return;
+
     setState(() {
       isLoadingSubjects = true;
     });
@@ -95,7 +92,6 @@ class _StaffFormState extends State<StaffForm> {
     salaryController.dispose();
     contactController.dispose();
     notesController.dispose();
-
     super.dispose();
   }
 
@@ -232,7 +228,6 @@ class _StaffFormState extends State<StaffForm> {
           setState(() {
             roleId = v;
 
-            // إذا لم يعد Teacher
             if (roleId != "5") {
               selectedSubjectId = null;
               notesController.clear();
@@ -341,10 +336,11 @@ class _StaffFormState extends State<StaffForm> {
     });
   }
 
-  void _showTeacherCredentials(
-    String username,
-    String password,
-  ) {
+  void _showCredentials({
+    required String username,
+    required String password,
+    required String accountType,
+  }) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -354,18 +350,18 @@ class _StaffFormState extends State<StaffForm> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: const Row(
+          title: Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.check_circle,
                 color: Colors.green,
                 size: 28,
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  "Teacher Account Created",
-                  style: TextStyle(
+                  "$accountType Account Created",
+                  style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.bold,
                   ),
@@ -377,9 +373,9 @@ class _StaffFormState extends State<StaffForm> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Please give these login credentials to the teacher.",
-                style: TextStyle(
+              Text(
+                "Please give these login credentials to the $accountType.",
+                style: const TextStyle(
                   color: AppColors.textSecondary,
                 ),
               ),
@@ -472,7 +468,6 @@ class _StaffFormState extends State<StaffForm> {
             onPressed: isLoading
                 ? null
                 : () {
-                    // التحقق من الحقول الأساسية
                     if (gender == null ||
                         birthDate == null ||
                         hireDate == null ||
@@ -486,7 +481,6 @@ class _StaffFormState extends State<StaffForm> {
                       return;
                     }
 
-                    // Teacher يحتاج Subject
                     if (isTeacher && selectedSubjectId == null) {
                       AppToast.show(
                         context,
@@ -511,19 +505,17 @@ class _StaffFormState extends State<StaffForm> {
                           ) ??
                           0,
                       contact: contactController.text.trim(),
-
-                      // Teacher only
-                      subjectId:
-                          isTeacher ? int.parse(selectedSubjectId!) : null,
-
+                      subjectId: isTeacher
+                          ? int.parse(
+                              selectedSubjectId!,
+                            )
+                          : null,
                       notes: isTeacher ? notesController.text.trim() : null,
                     );
 
                     if (isTeacher) {
-                      // Teacher API
                       context.read<StaffCubit>().registerTeacher(staff);
                     } else {
-                      // Staff API
                       context.read<StaffCubit>().registerStaff(staff);
                     }
                   },
@@ -552,31 +544,26 @@ class _StaffFormState extends State<StaffForm> {
   Widget build(BuildContext context) {
     return BlocListener<StaffCubit, StaffRegisterState>(
       listener: (context, state) {
-        // موظف عادي
         if (state is StaffRegisterSuccess) {
-          AppToast.show(
-            context,
-            message: "Staff registered successfully",
-            color: Colors.green,
-            icon: Icons.check_circle,
-          );
-
           _clearFields();
+
+          _showCredentials(
+            username: state.username,
+            password: state.password,
+            accountType: isTeacher ? "Staff" : "Staff",
+          );
         }
 
-        // أستاذ
         if (state is TeacherRegisterSuccess) {
-          // أولاً نمسح الفورم
           _clearFields();
 
-          // بعدها نعرض بيانات الدخول
-          _showTeacherCredentials(
-            state.username,
-            state.password,
+          _showCredentials(
+            username: state.username,
+            password: state.password,
+            accountType: "Teacher",
           );
         }
 
-        // خطأ
         if (state is StaffRegisterError) {
           AppToast.show(
             context,
@@ -593,23 +580,17 @@ class _StaffFormState extends State<StaffForm> {
               "First Name",
               firstNameController,
             ),
-
             const SizedBox(height: 12),
-
             _input(
               "Middle Name",
               middleNameController,
             ),
-
             const SizedBox(height: 12),
-
             _input(
               "Last Name",
               lastNameController,
             ),
-
             const SizedBox(height: 12),
-
             _dropdown(
               hint: "Gender",
               value: gender,
@@ -620,9 +601,7 @@ class _StaffFormState extends State<StaffForm> {
                 });
               },
             ),
-
             const SizedBox(height: 12),
-
             AppDatePicker(
               label: "Date of Birth",
               date: birthDate,
@@ -632,19 +611,13 @@ class _StaffFormState extends State<StaffForm> {
                 });
               },
             ),
-
             const SizedBox(height: 12),
-
             _input(
               "Address",
               addressController,
             ),
-
             const SizedBox(height: 12),
-
             _roleDropdown(),
-
-            // يظهر فقط للأستاذ
             if (isTeacher) ...[
               const SizedBox(height: 12),
               _subjectDropdown(),
@@ -655,9 +628,7 @@ class _StaffFormState extends State<StaffForm> {
                 maxLines: 3,
               ),
             ],
-
             const SizedBox(height: 12),
-
             AppDatePicker(
               label: "Hire Date",
               date: hireDate,
@@ -667,25 +638,19 @@ class _StaffFormState extends State<StaffForm> {
                 });
               },
             ),
-
             const SizedBox(height: 12),
-
             _input(
               "Salary",
               salaryController,
               type: TextInputType.number,
             ),
-
             const SizedBox(height: 12),
-
             _input(
               "Contact",
               contactController,
               type: TextInputType.phone,
             ),
-
             const SizedBox(height: 20),
-
             _button(),
           ],
         ),

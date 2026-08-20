@@ -1,17 +1,12 @@
-// lib/presentation/screen/assignment_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'package:school_management/constants/app_colors.dart';
-
 import 'package:school_management/cubit/assignment/assignment_cubit.dart';
-
 import 'package:school_management/data/model/subject_model.dart';
+import 'package:school_management/data/repository/assignment_repository.dart';
 import 'package:school_management/data/repository/subject_repository.dart';
 import 'package:school_management/data/services/subject_service.dart';
-import 'package:school_management/utils/shared_prefs_helper.dart'; // ✅ استيراد الـ SharedPrefs
-
+import 'package:school_management/utils/shared_prefs_helper.dart';
 import '../screen/widgets/assignment_content.dart';
 
 class AssignmentScreen extends StatefulWidget {
@@ -24,30 +19,72 @@ class AssignmentScreen extends StatefulWidget {
 }
 
 class _AssignmentScreenState extends State<AssignmentScreen> {
-  final SubjectRepository repository = SubjectRepository(
+  final SubjectRepository subjectRepository = SubjectRepository(
     SubjectService(),
   );
 
+  final AssignmentRepository assignmentRepository = AssignmentRepository();
+
   List<SubjectModel> subjects = [];
-  String userRole = ''; // ✅ متغير لحفظ الدور الحالي
+
+  List<Map<String, dynamic>> classes = [];
+
+  String userRole = '';
+
+  bool isLoadingClasses = false;
 
   @override
   void initState() {
     super.initState();
-    _loadUserRole(); // ✅ جلب الدور عند فتح الصفحة
-    loadSubjects();
+    _initialize();
   }
 
-  // ✅ دالة لجلب الدور الحقيقي من الـ SharedPrefs
-  Future<void> _loadUserRole() async {
-    final role = await SharedPrefsHelper.getRole();
-    if (mounted) {
-      setState(() {
-        userRole = role ??
-            ''; // إذا كان فارغاً، اجعله فارغاً لكي لا يظهر الزر بشكل خاطئ
-      });
+  // ============================================================
+  // INITIALIZE
+  // ============================================================
+
+  Future<void> _initialize() async {
+    await _loadUserRole();
+
+    if (!mounted) return;
+
+    await loadSubjects();
+
+    if (!mounted) return;
+
+    if (_canManageAssignments) {
+      await loadClasses();
     }
   }
+
+  // ============================================================
+  // USER ROLE
+  // ============================================================
+
+  Future<void> _loadUserRole() async {
+    final role = await SharedPrefsHelper.getRole();
+
+    if (!mounted) return;
+
+    setState(() {
+      userRole = role?.trim().toLowerCase() ?? '';
+    });
+
+    print('🟣 ASSIGNMENT SCREEN ROLE: $userRole');
+    print(
+      '🟣 CAN MANAGE: $_canManageAssignments',
+    );
+  }
+
+  // ============================================================
+  // PERMISSIONS
+  // ============================================================
+
+  bool get _isTeacher => userRole.toLowerCase() == 'teacher';
+
+  bool get _isManager => userRole.toLowerCase() == 'manager';
+
+  bool get _canManageAssignments => _isTeacher || _isManager;
 
   // ============================================================
   // LOAD SUBJECTS
@@ -55,16 +92,75 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
 
   Future<void> loadSubjects() async {
     try {
-      final result = await repository.getSubjects();
+      final result = await subjectRepository.getSubjects();
 
       if (!mounted) return;
 
       setState(() {
         subjects = result;
       });
+
+      print(
+        '🟢 Subjects loaded: ${subjects.length}',
+      );
     } catch (e) {
       debugPrint(
         '❌ Error loading subjects: $e',
+      );
+    }
+  }
+
+  // ============================================================
+  // LOAD CLASSES
+  // ============================================================
+
+  Future<void> loadClasses() async {
+    if (!_canManageAssignments) return;
+
+    if (userRole.isEmpty) return;
+
+    if (!mounted) return;
+
+    setState(() {
+      isLoadingClasses = true;
+    });
+
+    print('════════════════════════════════');
+    print('🔵 LOAD ASSIGNMENT CLASSES');
+    print('🟣 ROLE: $userRole');
+
+    try {
+      final result = await assignmentRepository.getClasses(
+        role: userRole,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        classes = result;
+        isLoadingClasses = false;
+      });
+
+      print(
+        '🟢 Classes loaded: ${classes.length}',
+      );
+
+      for (final classItem in classes) {
+        print(
+          '   → ${_className(classItem)} | ID: ${_classId(classItem)}',
+        );
+      }
+
+      print('════════════════════════════════');
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        isLoadingClasses = false;
+      });
+
+      debugPrint(
+        '❌ Error loading classes: $e',
       );
     }
   }
@@ -75,8 +171,11 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final canManageAssignments = _canManageAssignments;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
+
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -109,25 +208,33 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
             ),
             onPressed: () {
               context.read<AssignmentCubit>().refreshAssignments();
+
               loadSubjects();
+
+              if (_canManageAssignments) {
+                loadClasses();
+              }
             },
           ),
           const SizedBox(width: 10),
         ],
       ),
-      // ✅ نمرر الـ userRole للـ AssignmentContent
+
       body: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: 20,
         ),
-        child: AssignmentContent(userRole: userRole),
+        child: AssignmentContent(
+          userRole: userRole,
+        ),
       ),
 
-      // ============================================================
-      // التعديل: الزر يظهر فقط إذا كان المستخدم 'teacher'
-      // (المدير 'manager' لن يرى الزر إطلاقاً)
-      // ============================================================
-      floatingActionButton: userRole == 'teacher'
+      // ========================================================
+      // ADD BUTTON
+      // TEACHER + MANAGER
+      // ========================================================
+
+      floatingActionButton: canManageAssignments
           ? FloatingActionButton.extended(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
@@ -139,29 +246,43 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
               ),
               onPressed: _showAddAssignmentDialog,
             )
-          : null, // إخفاء الزر
+          : null,
     );
   }
 
   // ============================================================
-  // ADD ASSIGNMENT DIALOG (بقية الكود كما هو تماماً دون تغيير)
+  // ADD ASSIGNMENT DIALOG
   // ============================================================
 
   void _showAddAssignmentDialog() {
+    if (!_canManageAssignments) {
+      return;
+    }
+
     final titleController = TextEditingController();
+
     final bodyController = TextEditingController();
+
     final dueDateController = TextEditingController();
+
     SubjectModel? selectedSubject;
+
+    Map<String, dynamic>? selectedClass;
 
     showDialog(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
-          builder: (context, setStateDialog) {
+          builder: (
+            context,
+            setStateDialog,
+          ) {
             return AlertDialog(
               backgroundColor: AppColors.cardBg,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(
+                  20,
+                ),
               ),
               title: const Text(
                 "Create Assignment",
@@ -175,32 +296,68 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
+                      // ==================================================
+                      // TITLE
+                      // ==================================================
+
                       TextField(
                         controller: titleController,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: _decoration("Title"),
+                        style: const TextStyle(
+                          color: Colors.white,
+                        ),
+                        decoration: _decoration(
+                          "Title",
+                        ),
                       ),
-                      const SizedBox(height: 15),
+
+                      const SizedBox(
+                        height: 15,
+                      ),
+
+                      // ==================================================
+                      // DESCRIPTION
+                      // ==================================================
+
                       TextField(
                         controller: bodyController,
                         maxLines: 4,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: _decoration("Description"),
+                        style: const TextStyle(
+                          color: Colors.white,
+                        ),
+                        decoration: _decoration(
+                          "Description",
+                        ),
                       ),
-                      const SizedBox(height: 15),
+
+                      const SizedBox(
+                        height: 15,
+                      ),
+
+                      // ==================================================
+                      // DUE DATE
+                      // ==================================================
+
                       TextField(
                         controller: dueDateController,
                         readOnly: true,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: _decoration("Due Date").copyWith(
-                          suffixIcon: const Icon(Icons.calendar_month,
-                              color: Colors.white70),
+                        style: const TextStyle(
+                          color: Colors.white,
+                        ),
+                        decoration: _decoration(
+                          "Due Date",
+                        ).copyWith(
+                          suffixIcon: const Icon(
+                            Icons.calendar_month,
+                            color: Colors.white70,
+                          ),
                         ),
                         onTap: () async {
                           final picked = await showDatePicker(
                             context: context,
                             firstDate: DateTime.now(),
-                            lastDate: DateTime(2035),
+                            lastDate: DateTime(
+                              2035,
+                            ),
                             initialDate: DateTime.now(),
                           );
 
@@ -210,25 +367,103 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                           }
                         },
                       ),
-                      const SizedBox(height: 15),
+
+                      const SizedBox(
+                        height: 15,
+                      ),
+
+                      // ==================================================
+                      // SUBJECT
+                      // ==================================================
+
                       DropdownButtonFormField<SubjectModel>(
                         value: selectedSubject,
                         dropdownColor: AppColors.cardBg,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: _decoration("Subject"),
-                        items: subjects.map((subject) {
-                          return DropdownMenuItem<SubjectModel>(
-                            value: subject,
-                            child: Text("${subject.name} (${subject.id})"),
-                          );
-                        }).toList(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                        ),
+                        decoration: _decoration(
+                          "Subject",
+                        ),
+                        items: subjects.map(
+                          (subject) {
+                            return DropdownMenuItem<SubjectModel>(
+                              value: subject,
+                              child: Text(
+                                "${subject.name} (${subject.id})",
+                              ),
+                            );
+                          },
+                        ).toList(),
                         onChanged: (value) {
-                          setStateDialog(() {
-                            selectedSubject = value;
-                          });
+                          setStateDialog(
+                            () {
+                              selectedSubject = value;
+                            },
+                          );
                         },
                       ),
-                      const SizedBox(height: 8),
+
+                      const SizedBox(
+                        height: 15,
+                      ),
+
+                      // ==================================================
+                      // CLASS
+                      // ==================================================
+
+                      if (isLoadingClasses)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(
+                            vertical: 10,
+                          ),
+                          child: CircularProgressIndicator(),
+                        )
+                      else
+                        DropdownButtonFormField<Map<String, dynamic>>(
+                          value: selectedClass,
+                          dropdownColor: AppColors.cardBg,
+                          style: const TextStyle(
+                            color: Colors.white,
+                          ),
+                          decoration: _decoration(
+                            "Class",
+                          ),
+                          hint: const Text(
+                            "Select class",
+                            style: TextStyle(
+                              color: Colors.white70,
+                            ),
+                          ),
+                          items: classes.map(
+                            (classItem) {
+                              return DropdownMenuItem<Map<String, dynamic>>(
+                                value: classItem,
+                                child: Text(
+                                  _className(
+                                    classItem,
+                                  ),
+                                ),
+                              );
+                            },
+                          ).toList(),
+                          onChanged: (value) {
+                            setStateDialog(
+                              () {
+                                selectedClass = value;
+                              },
+                            );
+                          },
+                        ),
+
+                      const SizedBox(
+                        height: 8,
+                      ),
+
+                      // ==================================================
+                      // SUBJECT ID
+                      // ==================================================
+
                       if (selectedSubject != null)
                         Align(
                           alignment: Alignment.centerLeft,
@@ -240,72 +475,158 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                             ),
                           ),
                         ),
+
+                      // ==================================================
+                      // CLASS ID
+                      // ==================================================
+
+                      if (selectedClass != null)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            "Class ID: ${_classId(selectedClass!)}",
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
               ),
               actions: [
+                // ========================================================
+                // CANCEL
+                // ========================================================
+
                 TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text("Cancel"),
+                  onPressed: () {
+                    Navigator.pop(
+                      dialogContext,
+                    );
+                  },
+                  child: const Text(
+                    "Cancel",
+                  ),
                 ),
+
+                // ========================================================
+                // CREATE
+                // ========================================================
+
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                   ),
-                  icon: const Icon(Icons.add),
-                  label: const Text("Create"),
+                  icon: const Icon(
+                    Icons.add,
+                  ),
+                  label: const Text(
+                    "Create",
+                  ),
                   onPressed: () async {
                     final title = titleController.text.trim();
+
                     final body = bodyController.text.trim();
+
                     final dueDate = dueDateController.text.trim();
 
+                    // ====================================================
+                    // VALIDATION
+                    // ====================================================
+
                     if (title.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text("Please enter a title"),
-                            backgroundColor: Colors.red),
+                      _showError(
+                        context,
+                        "Please enter a title",
                       );
                       return;
                     }
+
                     if (body.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text("Please enter a description"),
-                            backgroundColor: Colors.red),
+                      _showError(
+                        context,
+                        "Please enter a description",
                       );
                       return;
                     }
+
                     if (dueDate.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text("Please select a due date"),
-                            backgroundColor: Colors.red),
+                      _showError(
+                        context,
+                        "Please select a due date",
                       );
                       return;
                     }
+
                     if (selectedSubject == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text("Please select a subject"),
-                            backgroundColor: Colors.red),
+                      _showError(
+                        context,
+                        "Please select a subject",
                       );
                       return;
                     }
+
+                    if (selectedClass == null) {
+                      _showError(
+                        context,
+                        "Please select a class",
+                      );
+                      return;
+                    }
+
+                    final classId = _classId(
+                      selectedClass!,
+                    );
+
+                    if (classId == null) {
+                      _showError(
+                        context,
+                        "Invalid class",
+                      );
+                      return;
+                    }
+
+                    // ====================================================
+                    // CREATE
+                    // ====================================================
+
+                    print(
+                      '📤 Creating assignment as: $userRole',
+                    );
+
+                    print(
+                      '📤 Subject ID: ${selectedSubject!.id}',
+                    );
+
+                    print(
+                      '📤 Class ID: $classId',
+                    );
 
                     await context.read<AssignmentCubit>().addAssignment(
                           title: title,
                           body: body,
                           dueDate: dueDate,
                           subjectId: selectedSubject!.id,
+                          schoolClassId: classId,
                         );
 
-                    if (!context.mounted) return;
-                    Navigator.pop(dialogContext);
+                    if (!context.mounted) {
+                      return;
+                    }
+
+                    Navigator.pop(
+                      dialogContext,
+                    );
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                          content: Text("Assignment created successfully"),
-                          backgroundColor: Colors.green),
+                        content: Text(
+                          "Assignment created successfully",
+                        ),
+                        backgroundColor: Colors.green,
+                      ),
                     );
                   },
                 ),
@@ -317,20 +638,100 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     );
   }
 
-  InputDecoration _decoration(String label) {
+  // ============================================================
+  // CLASS NAME
+  // ============================================================
+
+  String _className(
+    Map<String, dynamic> item,
+  ) {
+    if (item['name'] != null) {
+      return item['name'].toString();
+    }
+
+    if (item['label'] != null) {
+      return item['label'].toString();
+    }
+
+    final year = item['year'];
+    final number = item['number'];
+
+    if (year != null && number != null) {
+      return 'Grade $year - Section $number';
+    }
+
+    return 'Class ${item['id']}';
+  }
+
+  // ============================================================
+  // CLASS ID
+  // ============================================================
+
+  int? _classId(
+    Map<String, dynamic> item,
+  ) {
+    final value = item['id'];
+
+    if (value is int) {
+      return value;
+    }
+
+    return int.tryParse(
+      value?.toString() ?? '',
+    );
+  }
+
+  // ============================================================
+  // ERROR
+  // ============================================================
+
+  void _showError(
+    BuildContext context,
+    String message,
+  ) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  // ============================================================
+  // INPUT DECORATION
+  // ============================================================
+
+  InputDecoration _decoration(
+    String label,
+  ) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.white70),
+      labelStyle: const TextStyle(
+        color: Colors.white70,
+      ),
       filled: true,
       fillColor: AppColors.cardElement,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(
+          14,
+        ),
+      ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppColors.cardBorder),
+        borderRadius: BorderRadius.circular(
+          14,
+        ),
+        borderSide: const BorderSide(
+          color: AppColors.cardBorder,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        borderRadius: BorderRadius.circular(
+          14,
+        ),
+        borderSide: const BorderSide(
+          color: AppColors.primary,
+          width: 2,
+        ),
       ),
     );
   }

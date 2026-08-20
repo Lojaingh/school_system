@@ -1,7 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/data/model/staff_model.dart';
 import 'package:school_management/data/repository/staff_repository.dart';
-
 import 'staff_state.dart';
 
 class StaffCubit extends Cubit<StaffRegisterState> {
@@ -9,31 +8,41 @@ class StaffCubit extends Cubit<StaffRegisterState> {
 
   StaffCubit(this.repository) : super(StaffRegisterInitial());
 
-  // تسجيل موظف عادي
-  Future<void> registerStaff(StaffModel staff) async {
+  Future<void> registerStaff(
+    StaffModel staff,
+  ) async {
     try {
       print('STAFF REGISTER START');
 
       emit(StaffRegisterLoading());
 
-      final message = await repository.registerStaff(staff);
+      final credentials = await repository.registerStaff(staff);
 
       print('STAFF REGISTER SUCCESS');
-      print(message);
+      print('USERNAME: ${credentials['username']}');
+      print('PASSWORD: ${credentials['password']}');
 
-      emit(StaffRegisterSuccess(message));
+      emit(
+        StaffRegisterSuccess(
+          username: credentials['username']!,
+          password: credentials['password']!,
+        ),
+      );
     } catch (e) {
       print('STAFF REGISTER ERROR');
       print(e);
 
       emit(
-        StaffRegisterError(e.toString()),
+        StaffRegisterError(
+          e.toString(),
+        ),
       );
     }
   }
 
-  // تسجيل أستاذ
-  Future<void> registerTeacher(StaffModel staff) async {
+  Future<void> registerTeacher(
+    StaffModel staff,
+  ) async {
     try {
       print('TEACHER REGISTER START');
 
@@ -56,7 +65,9 @@ class StaffCubit extends Cubit<StaffRegisterState> {
       print(e);
 
       emit(
-        StaffRegisterError(e.toString()),
+        StaffRegisterError(
+          e.toString(),
+        ),
       );
     }
   }

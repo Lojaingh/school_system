@@ -1,18 +1,26 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:school_management/constants/app_colors.dart';
 import 'package:school_management/cubit/external/external_cubit.dart';
 import 'package:school_management/cubit/external/external_state.dart';
 import 'package:school_management/data/model/external_model.dart';
 import 'package:school_management/data/model/school_class_model.dart';
+import 'package:school_management/utils/shared_prefs_helper.dart';
 
 class ExternalFormWidget extends StatefulWidget {
   final ExternalModel? external;
 
+  /// true إذا المستخدم Teacher
+  /// false إذا Manager
+  final bool isTeacher;
+
   const ExternalFormWidget({
     super.key,
     this.external,
+    this.isTeacher = false,
+    required bool isManager,
   });
 
   bool get isEdit => external != null;
@@ -30,20 +38,82 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
 
   bool _submitted = false;
 
+  List<SchoolClassModel> classes = [];
+
+  bool classesLoading = true;
+
   @override
   void initState() {
     super.initState();
 
+    // إذا تعديل، نعبّي البيانات القديمة
     if (widget.external != null) {
       schoolClassId = widget.external!.schoolClassId;
       notesController.text = widget.external!.notes ?? "";
+
+      print("🟣 EDIT EXTERNAL");
+      print("🟣 External ID: ${widget.external!.id}");
+      print("🟣 Old class ID: $schoolClassId");
+      print("🟣 Old notes: ${notesController.text}");
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      context.read<ExternalCubit>().getTeacherClasses();
+      print("🟣 EXTERNAL FORM INITIALIZED");
+      print("🟣 isTeacher: ${widget.isTeacher}");
+
+      _loadClasses();
     });
+  }
+
+  Future<void> _loadClasses() async {
+    try {
+      final role = await SharedPrefsHelper.getRole();
+
+      if (!mounted) return;
+
+      final normalizedRole = role?.trim().toLowerCase();
+
+      print("════════════════════════════════");
+      print("🟣 EXTERNAL FORM - LOAD CLASSES");
+      print("🟣 ROLE FROM SHARED PREFS: $role");
+      print("🟣 NORMALIZED ROLE: $normalizedRole");
+      print("🟣 WIDGET isTeacher: ${widget.isTeacher}");
+      print("════════════════════════════════");
+
+      setState(() {
+        classesLoading = true;
+        classes = [];
+      });
+
+      final cubit = context.read<ExternalCubit>();
+
+      if (normalizedRole == "teacher") {
+        print("🔵 CALLING getTeacherClasses()");
+        await cubit.getTeacherClasses();
+      } else if (normalizedRole == "manager") {
+        print("🔵 CALLING getAllClasses()");
+        await cubit.getAllClasses();
+      } else {
+        print("🔴 UNKNOWN ROLE: $normalizedRole");
+
+        if (!mounted) return;
+
+        setState(() {
+          classesLoading = false;
+        });
+      }
+    } catch (e, stackTrace) {
+      print("🔴 LOAD CLASSES ERROR: $e");
+      print(stackTrace);
+
+      if (!mounted) return;
+
+      setState(() {
+        classesLoading = false;
+      });
+    }
   }
 
   @override
@@ -51,8 +121,11 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
     notesController.dispose();
     super.dispose();
   }
+
   Future<void> pickFile() async {
     if (_submitted) return;
+
+    print("🟣 OPENING FILE PICKER...");
 
     final result = await FilePicker.pickFiles(
       type: FileType.any,
@@ -61,6 +134,7 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
     );
 
     if (result == null || result.files.isEmpty) {
+      print("🟡 FILE PICKER CANCELLED");
       return;
     }
 
@@ -69,17 +143,33 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
     setState(() {
       selectedFile = result.files.first;
     });
+
+    print("🟢 SELECTED FILE: ${selectedFile!.name}");
+    print("🟢 FILE SIZE: ${selectedFile!.size}");
+    print("🟢 FILE EXTENSION: ${selectedFile!.extension}");
   }
 
   void submit() {
     if (_submitted) return;
 
+    print("════════════════════════════════");
+    print("🟣 SUBMIT EXTERNAL");
+    print("🟣 schoolClassId: $schoolClassId");
+    print("🟣 selectedFile: ${selectedFile?.name}");
+    print("🟣 notes: ${notesController.text}");
+    print("🟣 isEdit: ${widget.isEdit}");
+    print("════════════════════════════════");
+
     if (schoolClassId == null) {
+      print("🔴 schoolClassId IS NULL");
+
       _showMessage("Please select a school class");
       return;
     }
 
     if (!widget.isEdit && selectedFile == null) {
+      print("🔴 FILE IS NULL");
+
       _showMessage("Please select a file");
       return;
     }
@@ -91,6 +181,8 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
     final cubit = context.read<ExternalCubit>();
 
     if (widget.isEdit) {
+      print("🔵 UPDATING EXTERNAL...");
+
       cubit.updateExternal(
         id: widget.external!.id,
         schoolClassId: schoolClassId,
@@ -98,6 +190,8 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
         notes: notesController.text.trim(),
       );
     } else {
+      print("🔵 ADDING EXTERNAL...");
+
       cubit.addExternal(
         schoolClassId: schoolClassId!,
         file: selectedFile!,
@@ -105,6 +199,7 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
       );
     }
   }
+
   void _showMessage(String message) {
     if (!mounted) return;
 
@@ -112,50 +207,162 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<ExternalCubit, ExternalState>(
       listener: (context, state) {
-        if (state is ExternalAddSuccess || state is ExternalUpdateSuccess) {
+        print("🟡 FORM STATE: ${state.runtimeType}");
+
+        // =========================
+        // TEACHER CLASSES
+        // =========================
+        if (state is TeacherClassesLoaded) {
+          print("════════════════════════════════");
+          print("🟢 TEACHER CLASSES RECEIVED");
+          print("🟢 COUNT: ${state.classes.length}");
+
+          for (final item in state.classes) {
+            print(
+              "➡️ id=${item.id}, "
+              "label=${item.label}, "
+              "year=${item.year}, "
+              "number=${item.number}",
+            );
+          }
+
+          print("════════════════════════════════");
+
+          if (!mounted) return;
+
+          setState(() {
+            classes = List<SchoolClassModel>.from(state.classes);
+            classesLoading = false;
+
+            // إذا الصف القديم غير موجود بالقائمة
+            if (schoolClassId != null &&
+                !classes.any((item) => item.id == schoolClassId)) {
+              print(
+                "🟡 OLD CLASS ID $schoolClassId NOT FOUND IN TEACHER CLASSES",
+              );
+
+              schoolClassId = null;
+            }
+          });
+
+          return;
+        }
+
+        // =========================
+        // MANAGER CLASSES
+        // =========================
+        if (state is AllClassesLoaded) {
+          print("════════════════════════════════");
+          print("🟢 ALL CLASSES RECEIVED");
+          print("🟢 COUNT: ${state.classes.length}");
+
+          for (final item in state.classes) {
+            print(
+              "➡️ id=${item.id}, "
+              "label=${item.label}, "
+              "year=${item.year}, "
+              "number=${item.number}",
+            );
+          }
+
+          print("════════════════════════════════");
+
+          if (!mounted) return;
+
+          setState(() {
+            classes = List<SchoolClassModel>.from(state.classes);
+            classesLoading = false;
+
+            if (schoolClassId != null &&
+                !classes.any((item) => item.id == schoolClassId)) {
+              print(
+                "🟡 OLD CLASS ID $schoolClassId NOT FOUND IN ALL CLASSES",
+              );
+
+              schoolClassId = null;
+            }
+          });
+
+          return;
+        }
+
+        // =========================
+        // ADD SUCCESS
+        // =========================
+        if (state is ExternalAddSuccess) {
+          print("🟢 EXTERNAL ADDED SUCCESSFULLY");
+
           Navigator.pop(context, true);
           return;
         }
 
+        // =========================
+        // UPDATE SUCCESS
+        // =========================
+        if (state is ExternalUpdateSuccess) {
+          print("🟢 EXTERNAL UPDATED SUCCESSFULLY");
+
+          Navigator.pop(context, true);
+          return;
+        }
+
+        // =========================
+        // ERROR
+        // =========================
         if (state is ExternalError) {
+          print("🔴 EXTERNAL FORM ERROR:");
+          print(state.message);
+
           if (mounted) {
             setState(() {
               _submitted = false;
             });
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.redAccent,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
           }
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
+          return;
         }
       },
       builder: (context, state) {
         final bool loading = state is ExternalAddLoading ||
             state is ExternalUpdateLoading ||
             _submitted;
-        List<SchoolClassModel> classes = [];
 
-        if (state is TeacherClassesLoaded) {
-          classes = state.classes;
-        }
+        print(
+          "🟡 BUILD FORM | "
+          "classes=${classes.length} | "
+          "classesLoading=$classesLoading | "
+          "selectedClassId=$schoolClassId | "
+          "loading=$loading",
+        );
+
         SchoolClassModel? selectedClass;
 
-        for (final item in classes) {
-          if (item.id == schoolClassId) {
-            selectedClass = item;
-            break;
+        if (schoolClassId != null) {
+          for (final item in classes) {
+            if (item.id == schoolClassId) {
+              selectedClass = item;
+              break;
+            }
           }
         }
+
         return Container(
           width: 600,
           padding: const EdgeInsets.all(24),
@@ -171,7 +378,9 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-              
+                // =========================
+                // HEADER
+                // =========================
                 Row(
                   children: [
                     Container(
@@ -207,21 +416,116 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
                 ),
 
                 const SizedBox(height: 25),
-                _dropdown<SchoolClassModel>(
-                  label: "School Class",
-                  value: selectedClass,
-                  items: classes,
-                  itemLabel: (item) => item.label ?? "Class ${item.id}",
-                  onChanged: loading
-                      ? null
-                      : (value) {
-                          setState(() {
-                            schoolClassId = value?.id;
-                          });
-                        },
-                ),
+
+                // =========================
+                // SCHOOL CLASS
+                // =========================
+                if (classesLoading)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 18,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.cardElement,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.cardBorder.withOpacity(.3),
+                      ),
+                    ),
+                    child: const Row(
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: AppColors.primary,
+                            strokeWidth: 2,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          "Loading school classes...",
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else if (classes.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 18,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.cardElement,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.redAccent.withOpacity(.3),
+                      ),
+                    ),
+                    child: const Text(
+                      "No school classes available",
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  )
+                else
+                  _dropdown<SchoolClassModel>(
+                    label: "School Class",
+                    value: selectedClass,
+                    items: classes,
+                    itemLabel: (item) {
+                      final label = item.label;
+
+                      print(
+                        "🟢 DROPDOWN ITEM → "
+                        "id=${item.id}, "
+                        "label=$label",
+                      );
+
+                      if (label != null && label.trim().isNotEmpty) {
+                        return label;
+                      }
+
+                      return "Class ${item.id}";
+                    },
+                    onChanged: loading
+                        ? null
+                        : (value) {
+                            print("════════════════════════════════");
+                            print("🔵 DROPDOWN CHANGED");
+                            print("🔵 VALUE: $value");
+
+                            if (value == null) {
+                              print("🔴 SELECTED VALUE IS NULL");
+                              return;
+                            }
+
+                            print("🟢 SELECTED CLASS ID: ${value.id}");
+                            print("🟢 SELECTED CLASS LABEL: ${value.label}");
+
+                            setState(() {
+                              schoolClassId = value.id;
+                            });
+
+                            print(
+                              "🟢 schoolClassId AFTER SET: $schoolClassId",
+                            );
+                            print("════════════════════════════════");
+                          },
+                  ),
 
                 const SizedBox(height: 16),
+
+                // =========================
+                // FILE
+                // =========================
                 InkWell(
                   onTap: loading ? null : pickFile,
                   borderRadius: BorderRadius.circular(12),
@@ -265,6 +569,10 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
                 ),
 
                 const SizedBox(height: 16),
+
+                // =========================
+                // NOTES
+                // =========================
                 TextField(
                   controller: notesController,
                   maxLines: 4,
@@ -293,6 +601,10 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
                 ),
 
                 const SizedBox(height: 25),
+
+                // =========================
+                // BUTTONS
+                // =========================
                 Row(
                   children: [
                     Expanded(
@@ -308,9 +620,7 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text(
-                          "Cancel",
-                        ),
+                        child: const Text("Cancel"),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -350,6 +660,7 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
       },
     );
   }
+
   Widget _dropdown<T>({
     required String label,
     required T? value,
@@ -357,6 +668,10 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
     required String Function(T) itemLabel,
     required ValueChanged<T?>? onChanged,
   }) {
+    print("🟡 DROPDOWN BUILD: $label");
+    print("🟡 ITEMS COUNT: ${items.length}");
+    print("🟡 CURRENT VALUE: $value");
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: 12,
@@ -387,13 +702,16 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
           color: AppColors.textPrimary,
         ),
         items: items.map((item) {
+          final text = itemLabel(item);
+
           return DropdownMenuItem<T>(
             value: item,
             child: Text(
-              itemLabel(item),
+              text,
               style: const TextStyle(
                 color: AppColors.textPrimary,
               ),
+              overflow: TextOverflow.ellipsis,
             ),
           );
         }).toList(),

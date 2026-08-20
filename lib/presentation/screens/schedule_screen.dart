@@ -28,27 +28,42 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             listener: (context, state) {},
             builder: (context, state) {
               if (state is ScheduleLoading || state is ScheduleInitial) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
               }
+
               if (state is ScheduleError) {
-                return _buildErrorState(context, state.message);
+                return _buildErrorState(
+                  context,
+                  state.message,
+                );
               }
 
               final loaded = state as ScheduleLoaded;
               final classes = loaded.classes;
 
-              // default to first class
               if (_selectedClassId == null && classes.isNotEmpty) {
                 _selectedClassId = classes.first.id;
               }
 
               final classSlots = loaded.slots
-                  .where((s) => s.classId == _selectedClassId)
+                  .where(
+                    (s) => s.classId == _selectedClassId,
+                  )
                   .toList()
                 ..sort((a, b) {
-                  final dayCompare = a.dayOfWeek.compareTo(b.dayOfWeek);
-                  if (dayCompare != 0) return dayCompare;
-                  return a.periodNumber.compareTo(b.periodNumber);
+                  final dayCompare = a.dayOfWeek.compareTo(
+                    b.dayOfWeek,
+                  );
+
+                  if (dayCompare != 0) {
+                    return dayCompare;
+                  }
+
+                  return a.periodNumber.compareTo(
+                    b.periodNumber,
+                  );
                 });
 
               return SingleChildScrollView(
@@ -56,15 +71,26 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildHeader(context, classes, loaded),
+                    _buildHeader(
+                      context,
+                      classes,
+                      loaded,
+                    ),
                     const SizedBox(height: 20),
                     if (classes.isEmpty)
                       _emptyBox(
-                          'No classes found. Add a class from the Classes page first.')
+                        'No classes found. Add a class from the Classes page first.',
+                      )
                     else if (classSlots.isEmpty)
-                      _emptyBox('No schedule slots added for this class yet.')
+                      _emptyBox(
+                        'No schedule slots added for this class yet.',
+                      )
                     else
-                      _buildWeekGroups(context, classSlots, loaded),
+                      _buildWeekGroups(
+                        context,
+                        classSlots,
+                        loaded,
+                      ),
                   ],
                 ),
               );
@@ -76,7 +102,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Widget _buildHeader(
-      BuildContext context, List<ClassItem> classes, ScheduleLoaded loaded) {
+    BuildContext context,
+    List<ClassItem> classes,
+    ScheduleLoaded loaded,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -95,14 +124,23 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             ElevatedButton.icon(
               onPressed: classes.isEmpty
                   ? null
-                  : () => _openEditDialog(context, loaded, existing: null),
-              icon: const Icon(Icons.add_rounded, size: 18),
+                  : () => _openEditDialog(
+                        context,
+                        loaded,
+                        existing: null,
+                      ),
+              icon: const Icon(
+                Icons.add_rounded,
+                size: 18,
+              ),
               label: const Text('Add Slot'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -114,48 +152,83 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  Widget _buildClassDropdown(List<ClassItem> classes) {
+  Widget _buildClassDropdown(
+    List<ClassItem> classes,
+  ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+      ),
       decoration: BoxDecoration(
         gradient: app.AppGradients.cardGradient,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.cardBorder.withOpacity(0.4)),
+        border: Border.all(
+          color: AppColors.cardBorder.withOpacity(0.4),
+        ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
           value: _selectedClassId,
           dropdownColor: const Color(0xFF0A0F22),
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
-          icon: const Icon(Icons.keyboard_arrow_down_rounded,
-              color: AppColors.textSecondary),
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 13,
+          ),
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: AppColors.textSecondary,
+          ),
           items: classes
-              .map((c) => DropdownMenuItem(
-                    value: c.id,
-                    child: Text(c.name),
-                  ))
+              .map(
+                (c) => DropdownMenuItem(
+                  value: c.id,
+                  child: Text(c.name),
+                ),
+              )
               .toList(),
-          onChanged: (val) => setState(() => _selectedClassId = val),
+          onChanged: (val) {
+            setState(() {
+              _selectedClassId = val;
+            });
+          },
         ),
       ),
     );
   }
 
   Widget _buildWeekGroups(
-      BuildContext context, List<ScheduleSlot> slots, ScheduleLoaded loaded) {
+    BuildContext context,
+    List<ScheduleSlot> slots,
+    ScheduleLoaded loaded,
+  ) {
     final Map<int, List<ScheduleSlot>> byDay = {};
+
     for (final s in slots) {
-      byDay.putIfAbsent(s.dayOfWeek, () => []).add(s);
+      byDay
+          .putIfAbsent(
+            s.dayOfWeek,
+            () => [],
+          )
+          .add(s);
     }
+
     final days = byDay.keys.toList()..sort();
 
     return Column(
       children: days.map((day) {
         final daySlots = byDay[day]!
-          ..sort((a, b) => a.periodNumber.compareTo(b.periodNumber));
+          ..sort(
+            (a, b) => a.periodNumber.compareTo(
+              b.periodNumber,
+            ),
+          );
+
         final dayLabel = daySlots.first.dayName;
+
         return Container(
-          margin: const EdgeInsets.only(bottom: 14),
+          margin: const EdgeInsets.only(
+            bottom: 14,
+          ),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: app.AppGradients.cardGradient,
@@ -174,7 +247,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              ...daySlots.map((slot) => _buildSlotTile(context, slot, loaded)),
+              ...daySlots.map(
+                (slot) => _buildSlotTile(
+                  context,
+                  slot,
+                  loaded,
+                ),
+              ),
             ],
           ),
         );
@@ -183,17 +262,29 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Widget _buildSlotTile(
-      BuildContext context, ScheduleSlot slot, ScheduleLoaded loaded) {
+    BuildContext context,
+    ScheduleSlot slot,
+    ScheduleLoaded loaded,
+  ) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(
+        bottom: 8,
+      ),
       child: Material(
         color: Colors.white.withOpacity(0.03),
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
-          onTap: () => _openEditDialog(context, loaded, existing: slot),
+          onTap: () => _openEditDialog(
+            context,
+            loaded,
+            existing: slot,
+          ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 10,
+            ),
             child: Row(
               children: [
                 Container(
@@ -237,15 +328,27 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.edit_rounded,
-                      size: 18, color: AppColors.textSecondary),
-                  onPressed: () =>
-                      _openEditDialog(context, loaded, existing: slot),
+                  icon: const Icon(
+                    Icons.edit_rounded,
+                    size: 18,
+                    color: AppColors.textSecondary,
+                  ),
+                  onPressed: () => _openEditDialog(
+                    context,
+                    loaded,
+                    existing: slot,
+                  ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded,
-                      size: 18, color: Colors.redAccent),
-                  onPressed: () => _confirmDelete(context, slot),
+                  icon: const Icon(
+                    Icons.delete_outline_rounded,
+                    size: 18,
+                    color: Colors.redAccent,
+                  ),
+                  onPressed: () => _confirmDelete(
+                    context,
+                    slot,
+                  ),
                 ),
               ],
             ),
@@ -263,22 +366,41 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         gradient: app.AppGradients.cardGradient,
         borderRadius: BorderRadius.circular(14),
       ),
-      child: Text(text, style: const TextStyle(color: AppColors.textSecondary)),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: AppColors.textSecondary,
+        ),
+      ),
     );
   }
 
-  Widget _buildErrorState(BuildContext context, String message) {
+  Widget _buildErrorState(
+    BuildContext context,
+    String message,
+  ) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.error_outline_rounded, color: Colors.red, size: 40),
+          const Icon(
+            Icons.error_outline_rounded,
+            color: Colors.red,
+            size: 40,
+          ),
           const SizedBox(height: 8),
-          Text('Failed to load schedule: $message',
-              style: const TextStyle(color: Colors.red)),
+          Text(
+            'Failed to load schedule: $message',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.red,
+            ),
+          ),
           const SizedBox(height: 12),
           TextButton(
-            onPressed: () => context.read<ScheduleCubit>().loadAll(),
+            onPressed: () {
+              context.read<ScheduleCubit>().loadAll();
+            },
             child: const Text('Retry'),
           ),
         ],
@@ -286,17 +408,27 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  void _confirmDelete(BuildContext context, ScheduleSlot slot) {
+  void _confirmDelete(
+    BuildContext context,
+    ScheduleSlot slot,
+  ) {
     final cubit = context.read<ScheduleCubit>();
+
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
         backgroundColor: const Color(0xFF0A0F22),
-        title: const Text('Delete Slot',
-            style: TextStyle(color: AppColors.textPrimary)),
+        title: const Text(
+          'Delete Slot',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+          ),
+        ),
         content: Text(
           'Delete ${slot.subjectName ?? slot.subjectId} on ${slot.dayName} - Period ${slot.periodNumber}?',
-          style: const TextStyle(color: AppColors.textSecondary),
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+          ),
         ),
         actions: [
           TextButton(
@@ -306,40 +438,153 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(dialogCtx);
-              final ok = await cubit.deleteSchedule(slot.id);
+
+              final ok = await cubit.deleteSchedule(
+                slot.id,
+              );
+
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                      content:
-                          Text(ok ? 'Deleted successfully' : 'Delete failed')),
+                    content: Text(
+                      ok ? 'Deleted successfully' : 'Delete failed',
+                    ),
+                  ),
                 );
               }
             },
-            child:
-                const Text('Delete', style: TextStyle(color: Colors.redAccent)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(
+                color: Colors.redAccent,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _openEditDialog(BuildContext context, ScheduleLoaded loaded,
-      {ScheduleSlot? existing}) {
+  void _showConflictDialog(
+    BuildContext context,
+    String message,
+  ) {
+    String title = 'Schedule Conflict';
+    String description = message;
+
+    if (message.toLowerCase().contains('teacher')) {
+      title = 'Teacher Conflict';
+      description = 'This teacher is already booked in this time slot.\n\n'
+          'Please choose another teacher, day, or period.';
+    } else if (message.toLowerCase().contains('class')) {
+      title = 'Class Conflict';
+      description = 'This class already has a subject in this time slot.\n\n'
+          'Please choose another day or period.';
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF0A0F22),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: Colors.orangeAccent.withOpacity(.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.orangeAccent,
+                  size: 25,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            description,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(
+                  dialogContext,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    10,
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _openEditDialog(
+    BuildContext context,
+    ScheduleLoaded loaded, {
+    ScheduleSlot? existing,
+  }) {
     final cubit = context.read<ScheduleCubit>();
-    if (_selectedClassId == null) return;
+
+    if (_selectedClassId == null) {
+      return;
+    }
 
     final subjects = loaded.subjects;
 
     int selectedDay = existing?.dayOfWeek ?? 0;
-    int? selectedSubjectId = existing?.subjectId;
-    int? selectedTeacherId = existing?.teacherId;
-    final periodController =
-        TextEditingController(text: (existing?.periodNumber ?? 1).toString());
-    final academicYearController = TextEditingController(text: '2');
 
-    // إذا القيمة الحالية مش موجودة بقائمة المواد (نادراً)، خليها null
+    int? selectedSubjectId = existing?.subjectId;
+
+    int? selectedTeacherId = existing?.teacherId;
+
+    final periodController = TextEditingController(
+      text: (existing?.periodNumber ?? 1).toString(),
+    );
+
+    final academicYearController = TextEditingController(
+      text: '2',
+    );
+
     if (selectedSubjectId != null &&
-        !subjects.any((s) => s.id == selectedSubjectId)) {
+        !subjects.any(
+          (s) => s.id == selectedSubjectId,
+        )) {
       selectedSubjectId = null;
     }
 
@@ -347,12 +592,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (dialogCtx, setDialogState) {
-          // فلترة الأساتذة حسب المادة المختارة (مؤقتاً معتمدة على الجدول الحالي)
-          final filteredTeachers = cubit.teachersForSubject(selectedSubjectId);
+          final filteredTeachers = cubit.teachersForSubject(
+            selectedSubjectId,
+          );
 
-          // إذا الأستاذ المختار حالياً مش من ضمن الأساتذة المفلترين، صفّر الاختيار
           if (selectedTeacherId != null &&
-              !filteredTeachers.any((t) => t.id == selectedTeacherId)) {
+              !filteredTeachers.any(
+                (t) => t.id == selectedTeacherId,
+              )) {
             selectedTeacherId = null;
           }
 
@@ -360,42 +607,62 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             backgroundColor: const Color(0xFF0A0F22),
             title: Text(
               existing == null ? 'Add New Slot' : 'Edit Slot',
-              style: const TextStyle(color: AppColors.textPrimary),
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+              ),
             ),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // أسبوع الدراسة 5 أيام بس: الأحد -> الخميس (0..4)
                   _dialogDropdown<int>(
                     label: 'Day',
                     value: selectedDay,
                     items: List.generate(
                       5,
                       (i) => DropdownMenuItem(
-                          value: i, child: Text(ScheduleSlot.dayNames[i])),
+                        value: i,
+                        child: Text(
+                          ScheduleSlot.dayNames[i],
+                        ),
+                      ),
                     ),
-                    onChanged: (v) =>
-                        setDialogState(() => selectedDay = v ?? 0),
+                    onChanged: (v) {
+                      setDialogState(() {
+                        selectedDay = v ?? 0;
+                      });
+                    },
                   ),
                   const SizedBox(height: 12),
-                  _dialogField('Period Number', periodController),
+                  _dialogField(
+                    'Period Number',
+                    periodController,
+                  ),
                   const SizedBox(height: 4),
                   _dialogDropdown<int>(
                     label: 'Subject',
                     value: selectedSubjectId,
                     hint: 'Select subject',
                     items: subjects
-                        .map((s) =>
-                            DropdownMenuItem(value: s.id, child: Text(s.name)))
+                        .map(
+                          (s) => DropdownMenuItem(
+                            value: s.id,
+                            child: Text(
+                              s.name,
+                            ),
+                          ),
+                        )
                         .toList(),
-                    onChanged: (v) => setDialogState(() {
-                      selectedSubjectId = v;
-                      // إعادة تعيين الأستاذ لما تتغير المادة، لأن قائمة الأساتذة رح تتغير
-                      selectedTeacherId = null;
-                    }),
+                    onChanged: (v) {
+                      setDialogState(() {
+                        selectedSubjectId = v;
+                        selectedTeacherId = null;
+                      });
+                    },
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(
+                    height: 12,
+                  ),
                   _dialogDropdown<int>(
                     label: 'Teacher',
                     value: selectedTeacherId,
@@ -403,39 +670,68 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         ? 'Select subject first'
                         : 'Select teacher',
                     items: filteredTeachers
-                        .map((t) =>
-                            DropdownMenuItem(value: t.id, child: Text(t.name)))
+                        .map(
+                          (t) => DropdownMenuItem(
+                            value: t.id,
+                            child: Text(
+                              t.name,
+                            ),
+                          ),
+                        )
                         .toList(),
-                    onChanged: (v) =>
-                        setDialogState(() => selectedTeacherId = v),
+                    onChanged: (v) {
+                      setDialogState(() {
+                        selectedTeacherId = v;
+                      });
+                    },
                   ),
                   if (existing == null) ...[
-                    const SizedBox(height: 12),
-                    _dialogField('Academic Year ID', academicYearController),
+                    const SizedBox(
+                      height: 12,
+                    ),
+                    _dialogField(
+                      'Academic Year ID',
+                      academicYearController,
+                    ),
                   ],
                 ],
               ),
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(dialogCtx),
+                onPressed: () => Navigator.pop(
+                  dialogCtx,
+                ),
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
                 onPressed: () async {
                   if (selectedSubjectId == null || selectedTeacherId == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(
                       const SnackBar(
-                          content:
-                              Text('Please select a subject and a teacher')),
+                        content: Text(
+                          'Please select a subject and a teacher',
+                        ),
+                      ),
                     );
                     return;
                   }
-                  final period = int.tryParse(periodController.text) ?? 1;
+
+                  final period = int.tryParse(
+                        periodController.text,
+                      ) ??
+                      1;
 
                   bool ok;
+
                   if (existing == null) {
-                    final year = int.tryParse(academicYearController.text) ?? 1;
+                    final year = int.tryParse(
+                          academicYearController.text,
+                        ) ??
+                        1;
+
                     ok = await cubit.addSchedule(
                       classId: _selectedClassId!,
                       subjectId: selectedSubjectId!,
@@ -454,13 +750,66 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     );
                   }
 
-                  if (dialogCtx.mounted) Navigator.pop(dialogCtx);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(ok
-                            ? 'Saved successfully'
-                            : 'Save failed, try again'),
+                  if (!context.mounted) {
+                    return;
+                  }
+
+                  if (ok) {
+                    if (dialogCtx.mounted) {
+                      Navigator.pop(
+                        dialogCtx,
+                      );
+                    }
+
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Saved successfully',
+                        ),
+                        backgroundColor: AppColors.cardGreen,
+                      ),
+                    );
+                    return;
+                  }
+
+                  final currentState = context.read<ScheduleCubit>().state;
+
+                  if (currentState is ScheduleError) {
+                    final message = currentState.message;
+
+                    final isConflict = message.toLowerCase().contains(
+                              'already booked',
+                            ) ||
+                        message.toLowerCase().contains(
+                              'already has a subject',
+                            );
+
+                    if (isConflict) {
+                      _showConflictDialog(
+                        context,
+                        message,
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            message,
+                          ),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                    }
+                  } else {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Save failed, try again',
+                        ),
+                        backgroundColor: Colors.redAccent,
                       ),
                     );
                   }
@@ -478,21 +827,32 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  Widget _dialogField(String label, TextEditingController controller) {
+  Widget _dialogField(
+    String label,
+    TextEditingController controller,
+  ) {
     return TextField(
       controller: controller,
       keyboardType: TextInputType.number,
-      style: const TextStyle(color: AppColors.textPrimary),
+      style: const TextStyle(
+        color: AppColors.textPrimary,
+      ),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        labelStyle: const TextStyle(
+          color: AppColors.textSecondary,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          borderSide: BorderSide(
+            color: Colors.white.withOpacity(0.1),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.primary),
+          borderSide: const BorderSide(
+            color: AppColors.primary,
+          ),
         ),
       ),
     );
@@ -507,33 +867,51 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+      ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.1),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text(label,
-                style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: 11)),
+            padding: const EdgeInsets.only(
+              top: 6,
+            ),
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 11,
+              ),
+            ),
           ),
           DropdownButtonHideUnderline(
             child: DropdownButton<T>(
               value: value,
               isExpanded: true,
-              hint: Text(hint ?? '',
-                  style: const TextStyle(
-                      color: AppColors.textSecondary, fontSize: 13)),
+              hint: Text(
+                hint ?? '',
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
+                ),
+              ),
               dropdownColor: const Color(0xFF0A0F22),
-              style:
-                  const TextStyle(color: AppColors.textPrimary, fontSize: 13),
-              icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                  color: AppColors.textSecondary),
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 13,
+              ),
+              icon: const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: AppColors.textSecondary,
+              ),
               items: items,
               onChanged: onChanged,
             ),

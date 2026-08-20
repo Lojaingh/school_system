@@ -1,117 +1,85 @@
 import 'package:flutter/material.dart';
-
 import 'package:school_management/constants/app_colors.dart';
 import 'package:school_management/data/model/external_model.dart';
 
 class ExternalCard extends StatelessWidget {
   final ExternalModel external;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+  final bool canManage;
 
   const ExternalCard({
     super.key,
     required this.external,
-    required this.onEdit,
-    required this.onDelete,
+    this.onEdit,
+    this.onDelete,
+    this.canManage = false,
   });
-
-  // ============================================================
-  // FILE ICON
-  // ============================================================
 
   IconData _fileIcon() {
     switch (external.extension.toLowerCase()) {
       case "pdf":
         return Icons.picture_as_pdf_rounded;
-
       case "doc":
       case "docx":
         return Icons.article_rounded;
-
       case "jpg":
       case "jpeg":
       case "png":
       case "webp":
         return Icons.image_rounded;
-
       case "xls":
       case "xlsx":
         return Icons.table_chart_rounded;
-
       case "ppt":
       case "pptx":
         return Icons.slideshow_rounded;
-
       default:
         return Icons.insert_drive_file_rounded;
     }
   }
 
-  // ============================================================
-  // FILE COLOR
-  // ============================================================
-
   Color _fileColor() {
     switch (external.extension.toLowerCase()) {
       case "pdf":
         return Colors.redAccent;
-
       case "doc":
       case "docx":
         return Colors.blueAccent;
-
       case "jpg":
       case "jpeg":
       case "png":
       case "webp":
         return Colors.tealAccent.shade400;
-
       case "xls":
       case "xlsx":
         return Colors.greenAccent.shade400;
-
       case "ppt":
       case "pptx":
         return Colors.orangeAccent;
-
       default:
         return AppColors.primary;
     }
   }
 
-  // ============================================================
-  // ACADEMIC YEAR
-  // ============================================================
-
   String _academicYear() {
     return "Academic Year ${external.academicId}";
   }
-  // ============================================================
-  // CREATED DATE
-  // ============================================================
 
   String _createdDate() {
     if (external.createdAt == null || external.createdAt!.trim().isEmpty) {
       return "Unknown date";
     }
-
     final value = external.createdAt!;
-
     if (value.length >= 10) {
       final date = value.substring(0, 10);
       final parts = date.split('-');
-
       if (parts.length == 3) {
         return "${parts[2]}/${parts[1]}/${parts[0]}";
       }
     }
-
     return value;
   }
-
-  // ============================================================
-  // INFO ROW
-  // ============================================================
 
   Widget _infoRow({
     required IconData icon,
@@ -151,7 +119,6 @@ class ExternalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fileColor = _fileColor();
-
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -166,10 +133,6 @@ class ExternalCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ============================================================
-          // HEADER
-          // ============================================================
-
           Row(
             children: [
               Container(
@@ -212,80 +175,69 @@ class ExternalCard extends StatelessWidget {
                   ],
                 ),
               ),
-              PopupMenuButton<String>(
-                color: AppColors.cardBg,
-                padding: EdgeInsets.zero,
-                icon: const Icon(
-                  Icons.more_horiz_rounded,
-                  color: AppColors.textSecondary,
-                  size: 25,
+              if (canManage)
+                PopupMenuButton<String>(
+                  color: AppColors.cardBg,
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(
+                    Icons.more_horiz_rounded,
+                    color: AppColors.textSecondary,
+                    size: 25,
+                  ),
+                  onSelected: (value) {
+                    if (value == "edit") {
+                      onEdit?.call();
+                    } else if (value == "delete") {
+                      onDelete?.call();
+                    }
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(
+                      value: "edit",
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.edit_rounded,
+                            color: AppColors.primary,
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            "Edit",
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: "delete",
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.delete_outline_rounded,
+                            color: Colors.redAccent,
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            "Delete",
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                onSelected: (value) {
-                  if (value == "edit") {
-                    onEdit();
-                  } else if (value == "delete") {
-                    onDelete();
-                  }
-                },
-                itemBuilder: (_) => const [
-                  PopupMenuItem(
-                    value: "edit",
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.edit_rounded,
-                          color: AppColors.primary,
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          "Edit",
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: "delete",
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.delete_outline_rounded,
-                          color: Colors.redAccent,
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          "Delete",
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
-
           const SizedBox(height: 17),
-
-          // ============================================================
-          // CLASS
-          // ============================================================
-
           _infoRow(
             icon: Icons.school_rounded,
             text: external.classLabel ?? "Class ${external.schoolClassId}",
           ),
-
           const SizedBox(height: 9),
-
-          // ============================================================
-          // TEACHER
-          // ============================================================
-
           if (external.teacherName != null &&
               external.teacherName!.isNotEmpty) ...[
             _infoRow(
@@ -294,33 +246,16 @@ class ExternalCard extends StatelessWidget {
             ),
             const SizedBox(height: 9),
           ],
-
-          // ============================================================
-          // ACADEMIC YEAR
-          // ============================================================
-
           _infoRow(
             icon: Icons.calendar_month_rounded,
             text: _academicYear(),
           ),
-
           const SizedBox(height: 9),
-
-          // ============================================================
-          // CREATED DATE
-          // ============================================================
-
           _infoRow(
             icon: Icons.schedule_rounded,
             text: "Added ${_createdDate()}",
           ),
-
           const SizedBox(height: 13),
-
-          // ============================================================
-          // NOTES
-          // ============================================================
-
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(
@@ -360,70 +295,66 @@ class ExternalCard extends StatelessWidget {
               ],
             ),
           ),
-
-          const SizedBox(height: 14),
-
-          // ============================================================
-          // ACTIONS
-          // ============================================================
-
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onEdit,
-                  icon: const Icon(
-                    Icons.edit_rounded,
-                    size: 19,
-                  ),
-                  label: const Text(
-                    "Edit",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+          if (canManage) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onEdit,
+                    icon: const Icon(
+                      Icons.edit_rounded,
+                      size: 19,
+                    ),
+                    label: const Text(
+                      "Edit",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: BorderSide(
+                        color: AppColors.primary.withOpacity(.65),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 13,
+                      ),
+                      minimumSize: const Size(
+                        0,
+                        46,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(11),
+                      ),
                     ),
                   ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: BorderSide(
-                      color: AppColors.primary.withOpacity(.65),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 13,
-                    ),
-                    minimumSize: const Size(
-                      0,
-                      46,
-                    ),
+                ),
+                const SizedBox(width: 10),
+                IconButton(
+                  onPressed: onDelete,
+                  tooltip: "Delete",
+                  padding: const EdgeInsets.all(10),
+                  constraints: const BoxConstraints(
+                    minWidth: 46,
+                    minHeight: 46,
+                  ),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.redAccent.withOpacity(.10),
+                    foregroundColor: Colors.redAccent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(11),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              IconButton(
-                onPressed: onDelete,
-                tooltip: "Delete",
-                padding: const EdgeInsets.all(10),
-                constraints: const BoxConstraints(
-                  minWidth: 46,
-                  minHeight: 46,
-                ),
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.redAccent.withOpacity(.10),
-                  foregroundColor: Colors.redAccent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(11),
+                  icon: const Icon(
+                    Icons.delete_outline_rounded,
+                    size: 22,
                   ),
                 ),
-                icon: const Icon(
-                  Icons.delete_outline_rounded,
-                  size: 22,
-                ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ],
       ),
     );

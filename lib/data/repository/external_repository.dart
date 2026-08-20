@@ -9,6 +9,11 @@ class ExternalRepository {
   final ExternalService service;
 
   ExternalRepository(this.service);
+
+  // =========================
+  // EXTERNALS
+  // =========================
+
   Future<List<ExternalModel>> getExternals() async {
     try {
       final response = await service.getExternals();
@@ -19,6 +24,7 @@ class ExternalRepository {
       final data = response.data['data'];
 
       if (data is! List) {
+        print("🔴 EXTERNAL DATA IS NOT LIST");
         return [];
       }
 
@@ -33,6 +39,8 @@ class ExternalRepository {
       throw Exception(
         e.response?.data?.toString() ?? e.message ?? e.toString(),
       );
+    } catch (e) {
+      throw Exception(e.toString());
     }
   }
 
@@ -53,8 +61,15 @@ class ExternalRepository {
       throw Exception(
         e.response?.data?.toString() ?? e.message ?? e.toString(),
       );
+    } catch (e) {
+      throw Exception(e.toString());
     }
   }
+
+  // =========================
+  // ADD
+  // =========================
+
   Future<String> addExternal({
     required int schoolClassId,
     required PlatformFile file,
@@ -67,13 +82,19 @@ class ExternalRepository {
         notes: notes,
       );
 
-      return response.data['message'] ?? 'Uploaded successfully';
+      return response.data['message']?.toString() ?? 'Uploaded successfully';
     } on DioException catch (e) {
       throw Exception(
         e.response?.data?.toString() ?? e.message ?? e.toString(),
       );
+    } catch (e) {
+      throw Exception(e.toString());
     }
   }
+
+  // =========================
+  // UPDATE
+  // =========================
 
   Future<String> updateExternal({
     required int id,
@@ -89,71 +110,160 @@ class ExternalRepository {
         notes: notes,
       );
 
-      return response.data['message'] ?? 'External updated successfully';
+      return response.data['message']?.toString() ??
+          'External updated successfully';
     } on DioException catch (e) {
       throw Exception(
         e.response?.data?.toString() ?? e.message ?? e.toString(),
       );
+    } catch (e) {
+      throw Exception(e.toString());
     }
   }
+
+  // =========================
+  // DELETE
+  // =========================
 
   Future<String> deleteExternal(int id) async {
     try {
       final response = await service.deleteExternal(id);
 
-      return response.data['message'] ?? 'External deleted successfully';
+      return response.data['message']?.toString() ??
+          'External deleted successfully';
     } on DioException catch (e) {
       throw Exception(
         e.response?.data?.toString() ?? e.message ?? e.toString(),
       );
+    } catch (e) {
+      throw Exception(e.toString());
     }
   }
+
+  // =========================
+  // TEACHER CLASSES
+  // =========================
 
   Future<List<SchoolClassModel>> getTeacherClasses() async {
     try {
+      print("🟣 REPOSITORY: getTeacherClasses()");
+
       final response = await service.getTeacherClasses();
 
-      final rawData = response.data['data'];
+      print("🟢 TEACHER CLASSES RESPONSE:");
+      print(response.data);
+
+      dynamic rawData = response.data;
+
+      // إذا الـ API رجع {data: [...]}
+      if (rawData is Map<String, dynamic>) {
+        rawData = rawData['data'];
+      }
 
       if (rawData is! List) {
+        print("🔴 TEACHER CLASS RESPONSE IS NOT LIST");
         return [];
       }
 
-      return rawData
+      final classes = rawData
           .map(
             (item) => SchoolClassModel.fromJson(
               Map<String, dynamic>.from(item),
             ),
           )
           .toList();
+
+      print("🟢 TEACHER CLASSES PARSED: ${classes.length}");
+
+      return classes;
     } on DioException catch (e) {
       throw Exception(
         e.response?.data?.toString() ?? e.message ?? e.toString(),
       );
+    } catch (e) {
+      throw Exception(e.toString());
     }
   }
 
-  Future<List<SchoolClassModel>> getGradeClasses(int year) async {
-    try {
-      final response = await service.getGradeClasses(year);
+  // =========================
+  // MANAGER - ALL CLASSES
+  // =========================
 
-      final rawData = response.data['data'] ?? response.data;
+  Future<List<SchoolClassModel>> getAllClasses() async {
+    try {
+      print("🟣 REPOSITORY: getAllClasses()");
+
+      final response = await service.getAllClasses();
+
+      print("🟢 ALL CLASSES RESPONSE:");
+      print(response.data);
+
+      dynamic rawData = response.data;
+
+      // مهم جداً:
+      // /class/all عندك يرجع List مباشرة
+      //
+      // [
+      //   {id: 17, ...},
+      //   {id: 18, ...}
+      // ]
+      //
+      // وليس:
+      //
+      // {data: [...]}
+
+      if (rawData is Map<String, dynamic>) {
+        rawData = rawData['data'];
+      }
 
       if (rawData is! List) {
+        print("🔴 CLASS RESPONSE IS NOT LIST");
+        print("🔴 TYPE: ${rawData.runtimeType}");
         return [];
       }
 
-      return rawData
-          .map(
-            (item) => SchoolClassModel.fromJson(
-              Map<String, dynamic>.from(item),
-            ),
-          )
-          .toList();
+      print("🟢 RAW CLASSES COUNT: ${rawData.length}");
+
+      final List<SchoolClassModel> classes = [];
+
+      for (final item in rawData) {
+        try {
+          if (item is! Map) {
+            print("🔴 CLASS ITEM IS NOT MAP: $item");
+            continue;
+          }
+
+          final map = Map<String, dynamic>.from(item);
+
+          print("🟡 PARSING CLASS: $map");
+
+          final schoolClass = SchoolClassModel.fromJson(map);
+
+          classes.add(schoolClass);
+
+          print(
+            "🟢 CLASS PARSED → "
+            "id=${schoolClass.id}, "
+            "label=${schoolClass.label}, "
+            "year=${schoolClass.year}, "
+            "number=${schoolClass.number}",
+          );
+        } catch (e) {
+          print("🔴 CLASS PARSE ERROR: $e");
+        }
+      }
+
+      print(
+        "🟢 ALL CLASSES PARSED: ${classes.length}",
+      );
+
+      return classes;
     } on DioException catch (e) {
       throw Exception(
         e.response?.data?.toString() ?? e.message ?? e.toString(),
       );
+    } catch (e) {
+      throw Exception(e.toString());
     }
   }
 }
