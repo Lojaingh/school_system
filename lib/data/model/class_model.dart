@@ -1,5 +1,3 @@
-// lib/data/model/class_model.dart
-
 class SchoolClass {
   final int id;
   final int academicId;
@@ -43,14 +41,11 @@ class SchoolClass {
     };
   }
 
-  // عرض اسم الصف (مثلاً: Grade 11 - Section 1)
   String get displayName => 'Grade $year - Section $number';
 
-  // عرض مختصر (مثلاً: 11-1)
   String get shortName => '$year-$number';
 }
 
-// نموذج لإضافة صف جديد
 class AddClassRequest {
   final int? supervisorId;
   final int year;

@@ -15,19 +15,14 @@ class LoginCubit extends Cubit<LoginState> {
     try {
       emit(LoginLoading());
 
-      // 1. تسجيل الدخول
       final response = await repository.login(
         userName,
         password,
       );
 
-      // 2. حفظ التوكن
       await SharedPrefsHelper.saveToken(
         response.token,
       );
-
-      // 3. أخذ الدور مباشرة من Login Response
-      // الـ Backend يرجع role داخل /login
       final role = response.roleTitle ?? 'unknown';
 
       // 4. حفظ الدور
@@ -39,8 +34,6 @@ class LoginCubit extends Cubit<LoginState> {
       print(
         '🔵 Login successful - Role: $role',
       );
-
-      // 5. نجاح تسجيل الدخول
       emit(
         LoginSuccess(
           response.token,

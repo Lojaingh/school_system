@@ -1,5 +1,3 @@
-// lib/cubit/assignment/assignment_state.dart
-
 import 'package:school_management/data/model/assignment_model.dart';
 
 abstract class AssignmentState {}

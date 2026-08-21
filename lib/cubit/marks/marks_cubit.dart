@@ -2,23 +2,22 @@ import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:school_management/data/repository/marks_repository.dart';
+import 'package:school_management/utils/shared_prefs_helper.dart';
 
 import 'marks_state.dart';
 
 class MarksCubit extends Cubit<MarksState> {
   final MarksRepository _repository;
 
-  final String role;
-
-  MarksCubit(
-    this._repository, {
-    required this.role,
-  }) : super(const MarksInitial());
+  MarksCubit(this._repository) : super(const MarksInitial());
 
   Future<void> getSubjectMarks() async {
     emit(const MarksLoading());
 
     try {
+      final role =
+          (await SharedPrefsHelper.getRole())?.trim().toLowerCase() ?? '';
+
       final response = await _repository.getSubjectMarks(
         role: role,
       );
@@ -39,6 +38,7 @@ class MarksCubit extends Cubit<MarksState> {
 
   Future<void> saveStudentMarks({
     required int studentId,
+    required int subjectId,
     required double participation,
     required double firstQuiz,
     required double midtermExam,
@@ -50,6 +50,7 @@ class MarksCubit extends Cubit<MarksState> {
     try {
       final response = await _repository.saveStudentMarks(
         studentId: studentId,
+        subjectId: subjectId,
         participation: participation,
         firstQuiz: firstQuiz,
         midtermExam: midtermExam,
@@ -71,7 +72,9 @@ class MarksCubit extends Cubit<MarksState> {
     }
   }
 
-  String _extractErrorMessage(Object error) {
+  String _extractErrorMessage(
+    Object error,
+  ) {
     if (error is DioException) {
       final data = error.response?.data;
 

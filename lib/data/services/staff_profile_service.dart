@@ -14,6 +14,7 @@ class StaffProfileService {
             },
     );
   }
+
   Future<Response> deleteStaff(int id) async {
     return await dio.delete(
       "/staff/$id",
@@ -41,7 +42,6 @@ class StaffProfileService {
     );
   }
 
-  // Reset Password
   Future<Response> resetPassword(
     int id,
     String newPassword,

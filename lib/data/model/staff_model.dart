@@ -9,8 +9,6 @@ class StaffModel {
   final String hireDate;
   final double salary;
   final String contact;
-
-  // Teacher only
   final int? subjectId;
   final String? notes;
 
@@ -44,7 +42,6 @@ class StaffModel {
     };
   }
 
-  // JSON خاص بالأستاذ
   Map<String, dynamic> toTeacherJson() {
     return {
       "f_name": fName,

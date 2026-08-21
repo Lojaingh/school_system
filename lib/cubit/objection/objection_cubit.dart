@@ -1,5 +1,4 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import '../../data/repository/objection_repository.dart';
 import 'objection_state.dart';
 
@@ -24,6 +23,7 @@ class ObjectionCubit extends Cubit<ObjectionState> {
       );
     }
   }
+
   Future<void> updateObjectionStatus({
     required int id,
     required String status,

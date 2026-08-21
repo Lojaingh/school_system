@@ -1,7 +1,4 @@
-// lib/data/repository/auth_repository.dart
-
 import 'package:school_management/data/model/profile_model.dart';
-
 import '../model/login_response.dart';
 import '../services/auth_service.dart';
 
@@ -57,9 +54,6 @@ class AuthRepository {
     }
   }
 
-  // ✅ جديد: جلب دور المستخدم الحالي من GET /get/profile
-  // (endpoint بياخد التوكن بس من الـ Header، وبيرجع بيانات المستخدم
-  // المسجل دخوله حالياً بما فيها roles[0]['title'])
   Future<String?> fetchRole() async {
     try {
       final response = await authService.getProfile();

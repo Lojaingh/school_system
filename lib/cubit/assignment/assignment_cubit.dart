@@ -54,10 +54,6 @@ class AssignmentCubit extends Cubit<AssignmentState> {
     loadAssignments();
   }
 
-  // ============================================================
-  // ADD ASSIGNMENT
-  // ============================================================
-
   Future<void> addAssignment({
     required String title,
     required String body,
@@ -96,10 +92,6 @@ class AssignmentCubit extends Cubit<AssignmentState> {
     }
   }
 
-  // ============================================================
-  // UPDATE ASSIGNMENT
-  // ============================================================
-
   Future<void> updateAssignment({
     required int id,
     int? subjectId,
@@ -112,7 +104,7 @@ class AssignmentCubit extends Cubit<AssignmentState> {
     try {
       emit(AssignmentLoading());
 
-      print('📤 Cubit - Updating assignment');
+      print(' Cubit - Updating assignment');
       print('   id: $id');
       print('   subjectId: $subjectId');
       print('   title: $title');
@@ -142,10 +134,6 @@ class AssignmentCubit extends Cubit<AssignmentState> {
       );
     }
   }
-
-  // ============================================================
-  // DELETE ASSIGNMENT
-  // ============================================================
 
   Future<void> deleteAssignment(int id) async {
     if (isClosed) return;

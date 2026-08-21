@@ -233,15 +233,12 @@ class _MarksEditDialogState extends State<MarksEditDialog> {
 
   void _save() {
     final participation = double.tryParse(_participation.text.trim());
-
     final firstQuiz = double.tryParse(_firstQuiz.text.trim());
-
     final midterm = double.tryParse(_midterm.text.trim());
-
     final secondQuiz = double.tryParse(_secondQuiz.text.trim());
-
     final finalExam = double.tryParse(_finalExam.text.trim());
 
+    // التأكد من إدخال جميع العلامات
     if (participation == null ||
         firstQuiz == null ||
         midterm == null ||
@@ -257,8 +254,42 @@ class _MarksEditDialogState extends State<MarksEditDialog> {
       return;
     }
 
+    // التأكد أن العلامات بين 0 و 20
+    if (participation < 0 ||
+        participation > 20 ||
+        firstQuiz < 0 ||
+        firstQuiz > 20 ||
+        midterm < 0 ||
+        midterm > 20 ||
+        secondQuiz < 0 ||
+        secondQuiz > 20 ||
+        finalExam < 0 ||
+        finalExam > 20) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Marks must be between 0 and 20.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    // التأكد من وجود المادة
+    if (widget.student.subjectId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Subject information is missing.',
+          ),
+        ),
+      );
+      return;
+    }
+
     context.read<MarksCubit>().saveStudentMarks(
           studentId: widget.student.studentId,
+          subjectId: widget.student.subjectId!,
           participation: participation,
           firstQuiz: firstQuiz,
           midtermExam: midterm,

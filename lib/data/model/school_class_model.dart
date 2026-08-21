@@ -60,10 +60,7 @@ class SchoolClassModel {
       supervisorId: supervisorId,
       year: year,
       number: number,
-
-      // إذا الـ API ما رجّع label منولده هون
       label: json['label']?.toString() ?? 'Grade $year - $number',
-
       createdAt: json['created_at']?.toString(),
       updatedAt: json['updated_at']?.toString(),
     );

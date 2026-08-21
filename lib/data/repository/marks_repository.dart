@@ -19,6 +19,7 @@ class MarksRepository {
 
   Future<StudentMarksResponse> saveStudentMarks({
     required int studentId,
+    required int subjectId,
     required double participation,
     required double firstQuiz,
     required double midtermExam,
@@ -27,6 +28,7 @@ class MarksRepository {
   }) {
     return _service.saveStudentMarks(
       studentId: studentId,
+      subjectId: subjectId,
       participation: participation,
       firstQuiz: firstQuiz,
       midtermExam: midtermExam,

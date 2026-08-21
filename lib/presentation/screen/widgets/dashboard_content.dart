@@ -240,7 +240,6 @@ class _DashboardContentState extends State<DashboardContent> {
     );
   }
 
-  // ── إحصائيات المدير ──
   Widget _buildManagerStats() {
     return BlocBuilder<DashboardCubit, DashboardState>(
       builder: (context, state) {
@@ -302,7 +301,6 @@ class _DashboardContentState extends State<DashboardContent> {
     );
   }
 
-  // ── إحصائيات المشرف ──
   Widget _buildSupervisorStats() {
     return Row(
       children: [
@@ -353,7 +351,6 @@ class _DashboardContentState extends State<DashboardContent> {
     );
   }
 
-  // ── إحصائيات المعلم ──
   Widget _buildTeacherStats() {
     return Row(
       children: [
@@ -393,7 +390,6 @@ class _DashboardContentState extends State<DashboardContent> {
     );
   }
 
-  // ── إحصائيات أمين المكتبة ──
   Widget _buildLibrarianStats() {
     return Row(
       children: [
@@ -444,7 +440,6 @@ class _DashboardContentState extends State<DashboardContent> {
     );
   }
 
-  // ── إحصائيات الطالب ──
   Widget _buildStudentStats() {
     return Row(
       children: [
@@ -495,7 +490,6 @@ class _DashboardContentState extends State<DashboardContent> {
     );
   }
 
-  // ── إحصائيات افتراضية ──
   Widget _buildDefaultStats() {
     return Row(
       children: [
@@ -565,9 +559,6 @@ class _DashboardContentState extends State<DashboardContent> {
   }
 }
 
-// ══════════════════════════════════════════
-// Stat Card Skeleton
-// ══════════════════════════════════════════
 class _StatCardSkeleton extends StatelessWidget {
   const _StatCardSkeleton();
 
@@ -624,9 +615,6 @@ class _StatCardSkeleton extends StatelessWidget {
   }
 }
 
-// ══════════════════════════════════════════
-// Stat Card
-// ══════════════════════════════════════════
 class _StatCard extends StatelessWidget {
   final String title;
   final String value;
@@ -723,9 +711,6 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ══════════════════════════════════════════
-// Class Overview Card
-// ══════════════════════════════════════════
 class _ClassOverviewCard extends StatelessWidget {
   const _ClassOverviewCard();
 
@@ -774,9 +759,6 @@ class _ClassOverviewCard extends StatelessWidget {
   }
 }
 
-// ══════════════════════════════════════════
-// Class Attendance Card
-// ══════════════════════════════════════════
 class _ClassAttendanceCard extends StatelessWidget {
   const _ClassAttendanceCard();
 
@@ -826,9 +808,6 @@ class _ClassAttendanceCard extends StatelessWidget {
   }
 }
 
-// ══════════════════════════════════════════
-// Library Stats Card
-// ══════════════════════════════════════════
 class _LibraryStatsCard extends StatelessWidget {
   const _LibraryStatsCard();
 
@@ -880,9 +859,6 @@ class _LibraryStatsCard extends StatelessWidget {
   }
 }
 
-// ══════════════════════════════════════════
-// Recent Books Card
-// ══════════════════════════════════════════
 class _RecentBooksCard extends StatelessWidget {
   const _RecentBooksCard();
 
@@ -931,9 +907,6 @@ class _RecentBooksCard extends StatelessWidget {
   }
 }
 
-// ══════════════════════════════════════════
-// My Books Card
-// ══════════════════════════════════════════
 class _MyBooksCard extends StatelessWidget {
   const _MyBooksCard();
 
@@ -983,9 +956,6 @@ class _MyBooksCard extends StatelessWidget {
   }
 }
 
-// ══════════════════════════════════════════
-// My Exams Card
-// ══════════════════════════════════════════
 class _MyExamsCard extends StatelessWidget {
   const _MyExamsCard();
 
@@ -1036,9 +1006,6 @@ class _MyExamsCard extends StatelessWidget {
   }
 }
 
-// ══════════════════════════════════════════
-// Upcoming Exams Card
-// ══════════════════════════════════════════
 class _UpcomingExamsCard extends StatelessWidget {
   const _UpcomingExamsCard();
 
@@ -1185,9 +1152,6 @@ class _UpcomingExamsCard extends StatelessWidget {
   }
 }
 
-// ══════════════════════════════════════════
-// Attendance Overview Card
-// ══════════════════════════════════════════
 class _AttendanceCard extends StatelessWidget {
   const _AttendanceCard();
 
@@ -1313,7 +1277,6 @@ class _AttendanceCard extends StatelessWidget {
   }
 }
 
-// ── Line Chart Painter ──
 class _LineChartPainter extends CustomPainter {
   final List<double> data;
   final double maxVal;
@@ -1395,9 +1358,6 @@ class _LineChartPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// ══════════════════════════════════════════
-// Recent Activities Card
-// ══════════════════════════════════════════
 class _RecentActivitiesCard extends StatelessWidget {
   const _RecentActivitiesCard();
 
@@ -1531,9 +1491,6 @@ class _ActivityTile extends StatelessWidget {
   }
 }
 
-// ══════════════════════════════════════════
-// Staff Attendance Card (Fees Collection)
-// ══════════════════════════════════════════
 class _FeesCollectionCard extends StatelessWidget {
   const _FeesCollectionCard();
 
@@ -1773,9 +1730,6 @@ class _DonutChartPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// ══════════════════════════════════════════
-// Top Classes Card
-// ══════════════════════════════════════════
 class _TopClassesCard extends StatelessWidget {
   const _TopClassesCard();
 
@@ -1876,9 +1830,6 @@ class _TopClassesCard extends StatelessWidget {
   }
 }
 
-// ══════════════════════════════════════════
-// Weekly Schedule Card (horizontal day columns)
-// ══════════════════════════════════════════
 class _WeeklyScheduleCard extends StatelessWidget {
   final VoidCallback? onOpenSchedule;
   const _WeeklyScheduleCard({this.onOpenSchedule});

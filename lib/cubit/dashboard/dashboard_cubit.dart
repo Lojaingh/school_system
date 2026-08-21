@@ -2,10 +2,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/model/dashboard_model.dart';
 import '../../data/network/dio_client.dart';
 
-// ==========================================
-// States
-// ==========================================
-
 abstract class DashboardState {}
 
 class DashboardInitial extends DashboardState {}
@@ -24,10 +20,6 @@ class DashboardError extends DashboardState {
   DashboardError(this.message);
 }
 
-// ==========================================
-// Cubit
-// ==========================================
-
 class DashboardCubit extends Cubit<DashboardState> {
   DashboardCubit() : super(DashboardInitial());
 
@@ -38,7 +30,7 @@ class DashboardCubit extends Cubit<DashboardState> {
       final results = await Future.wait([
         DioClient.dio.get('/staff/numbers'),
         DioClient.dio.get('/students/number'),
-        DioClient.dio.get('/attendance/weekly'), // تأكد من صحة الـ endpoint
+        DioClient.dio.get('/attendance/weekly'),
       ]);
 
       final staffStats = StaffStats.fromJson(results[0].data);

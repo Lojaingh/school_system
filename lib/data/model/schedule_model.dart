@@ -5,11 +5,11 @@ class ScheduleSlot {
   final int subjectId;
   final String? subjectName;
   final int teacherId;
-  final String? teacherUserName; // e.g. USM-0000017 (from /schedules)
-  final String? teacherName; // real name, resolved from /staff/all
+  final String? teacherUserName;
+  final String? teacherName;
   final int? academicYearId;
-  final int dayOfWeek; // 0 = Sunday ... 4 = Thursday (system uses 5-day week)
-  final String? dayLabel; // e.g. "Sunday" (comes directly from API)
+  final int dayOfWeek;
+  final String? dayLabel;
   final int periodNumber;
 
   ScheduleSlot({
@@ -64,7 +64,6 @@ class ScheduleSlot {
     );
   }
 
-  /// يرجّع نسخة جديدة من نفس الـ slot مع اسم الأستاذ الحقيقي (بعد جلبه من /staff/all)
   ScheduleSlot withTeacherName(String? name) {
     return ScheduleSlot(
       id: id,
@@ -82,7 +81,6 @@ class ScheduleSlot {
     );
   }
 
-  /// النظام بيستخدم أسبوع دراسي من 5 أيام بس: الأحد (0) للخميس (4)
   static const List<String> dayNames = [
     'Sunday',
     'Monday',
@@ -97,11 +95,9 @@ class ScheduleSlot {
           ? dayNames[dayOfWeek]
           : 'Day $dayOfWeek');
 
-  /// اسم الأستاذ للعرض: الاسم الحقيقي إذا موجود، وإلا الـ username، وإلا الـ ID
   String get teacherDisplayName =>
       teacherName ?? teacherUserName ?? 'Teacher #$teacherId';
 
-  /// يحاول استخراج قائمة الحصص بغض النظر عن شكل الـ wrapper القادم من الـ API
   static List<ScheduleSlot> listFromResponse(dynamic data) {
     List rawList = [];
     if (data is List) {
@@ -154,8 +150,6 @@ class ClassItem {
   }
 }
 
-/// مادة دراسية - من GET /subjects
-/// شكل الـ response: { "data": [ { "id":1, "name":"Physics", ... } ], "message": "..." }
 class SubjectItem {
   final int id;
   final String name;
@@ -189,26 +183,10 @@ class SubjectItem {
   }
 }
 
-/// موظف/أستاذ - من GET /staff/all
-/// شكل الـ response الفعلي:
-/// {
-///   "data": [
-///     {
-///       "user_id": 27,
-///       "username": "USM-0000017",
-///       "profile": { "f_name": "qqqq", "l_name": "one", "dob": "...", "gender": "..." },
-///       "roles": [ { "role_id": 5, "title": "teacher", "started_at": "...", "finished_at": null } ]
-///     }
-///   ]
-/// }
-///
-/// ملاحظة: subject_id (تخصص الأستاذ) مش موجود بهاد الـ response — لهيك فلترة
-/// "أساتذة هالمادة" بالكود حالياً معتمدة على الجدول نفسه (شو درّس الأستاذ سابقاً)
-/// كحل مؤقت، لحد ما نتأكد وين مخزّن subject_id (غالباً GET /staff/{id}).
 class StaffMember {
-  final int id; // = user_id (هو نفسه teacher.id بالجدول الأسبوعي)
+  final int id;
   final String username;
-  final String name; // f_name + l_name
+  final String name;
   final bool isTeacher;
 
   StaffMember({

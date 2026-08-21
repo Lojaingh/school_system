@@ -1,5 +1,3 @@
-// lib/data/model/student_profile_model.dart
-
 class StudentProfileModel {
   final int? userId;
   final String? username;
@@ -24,16 +22,13 @@ class StudentProfileModel {
   });
 
   factory StudentProfileModel.fromJson(Map<String, dynamic> json) {
-    // ✅ استخراج الـ profile
     final profile = json['profile'] ?? {};
 
-    // ✅ محاولة استخراج الاسم من عدة مصادر
     String firstName = '';
     String lastName = '';
     String gender = '';
     String dob = '';
 
-    // الطريقة 1: من profile (API الجديد /class?class_id)
     if (profile.isNotEmpty) {
       firstName =
           profile['name'] ?? profile['first name'] ?? profile['f_name'] ?? '';
@@ -42,7 +37,6 @@ class StudentProfileModel {
       dob = profile['dob'] ?? profile['Date of Birth'] ?? '';
     }
 
-    // الطريقة 2: من json مباشرة (API القديم)
     if (firstName.isEmpty) {
       firstName = json['f_name'] ?? json['first name'] ?? '';
     }
@@ -56,12 +50,10 @@ class StudentProfileModel {
       dob = json['dob'] ?? json['Date of Birth'] ?? '';
     }
 
-    // ✅ استخراج class_id من details (إذا كان موجود)
     int? classId;
     if (json['details'] != null) {
       classId = json['details']['class_id'];
     }
-    // أو من enrollment
     if (classId == null && json['enrollments'] != null) {
       final enrollments = json['enrollments'] as List? ?? [];
       if (enrollments.isNotEmpty) {

@@ -1,7 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/data/model/student_model.dart';
 import 'package:school_management/data/repository/register_repository.dart';
-
 import 'register_state.dart';
 
 class RegisterCubit extends Cubit<RegisterState> {

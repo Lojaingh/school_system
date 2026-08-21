@@ -1,5 +1,3 @@
-// lib/cubit/auth/login/login_state.dart
-
 abstract class LoginState {}
 
 class LoginInitial extends LoginState {}

@@ -7,10 +7,6 @@ class BookRepository {
   final BookService bookService;
 
   BookRepository(this.bookService);
-
-  // ─────────────────────────────────────────────
-  // Get all books
-  // ─────────────────────────────────────────────
   Future<List<Book>> getBooks() async {
     try {
       final response = await bookService.getBooks();
@@ -36,9 +32,6 @@ class BookRepository {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // Get book by ID
-  // ─────────────────────────────────────────────
   Future<Book> getBook(int id) async {
     try {
       final response = await bookService.getBook(id);
@@ -60,9 +53,6 @@ class BookRepository {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // Add book
-  // ─────────────────────────────────────────────
   Future<Book> addBook({
     required String title,
     required String summary,
@@ -94,9 +84,6 @@ class BookRepository {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // Update book
-  // ─────────────────────────────────────────────
   Future<Book> updateBook({
     required int id,
     String? title,
@@ -130,9 +117,6 @@ class BookRepository {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // Delete book
-  // ─────────────────────────────────────────────
   Future<void> deleteBook(int id) async {
     try {
       final response = await bookService.deleteBook(id);
@@ -148,9 +132,6 @@ class BookRepository {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // Borrow book
-  // ─────────────────────────────────────────────
   Future<Lending> lendBook(int bookId) async {
     try {
       final response = await bookService.lendBook(bookId);
@@ -172,9 +153,6 @@ class BookRepository {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // Return book
-  // ─────────────────────────────────────────────
   Future<void> returnBook(int lendingId) async {
     try {
       final response = await bookService.returnBook(lendingId);
@@ -190,9 +168,6 @@ class BookRepository {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // Get all lendings
-  // ─────────────────────────────────────────────
   Future<List<Lending>> getLendings() async {
     try {
       final response = await bookService.getLendings();
@@ -218,9 +193,6 @@ class BookRepository {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // Get my lendings
-  // ─────────────────────────────────────────────
   Future<List<Lending>> getMyLendings() async {
     try {
       final response = await bookService.getMyLendings();

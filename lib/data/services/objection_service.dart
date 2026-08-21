@@ -3,10 +3,15 @@ import 'package:school_management/data/network/dio_client.dart';
 
 class ObjectionService {
   Future<Response> getObjections() async {
-    return await DioClient.dio.get(
+    final response = await DioClient.dio.get(
       '/objections',
     );
+
+    print('📥 OBJECTIONS RESPONSE: ${response.data}');
+
+    return response;
   }
+
   Future<Response> updateObjectionStatus({
     required int id,
     required String status,

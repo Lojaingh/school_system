@@ -79,14 +79,12 @@ class ExternalService {
     );
   }
 
-  // Teacher
   Future<Response> getTeacherClasses() async {
     return await dio.get(
       "/teacher/classes",
     );
   }
 
-  // Manager
   Future<Response> getAllClasses() async {
     return await dio.get(
       "/class/all",

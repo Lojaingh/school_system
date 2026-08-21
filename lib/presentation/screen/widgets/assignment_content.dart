@@ -14,13 +14,13 @@ import '../../../data/services/subject_service.dart';
 class AssignmentContent extends StatefulWidget {
   final bool showOnlyUpcoming;
   final int? limit;
-  final String userRole; // ✅ استقبال الدور من الأب
+  final String userRole;
 
   const AssignmentContent({
     super.key,
     this.showOnlyUpcoming = false,
     this.limit,
-    required this.userRole, // ✅ جعلته مطلوباً
+    required this.userRole,
   });
 
   @override
@@ -176,10 +176,6 @@ class _AssignmentContentState extends State<AssignmentContent> {
   }
 }
 
-// ============================================================
-// TOP CARD
-// ============================================================
-
 class _TopCard extends StatelessWidget {
   final String title;
   final String value;
@@ -233,13 +229,9 @@ class _TopCard extends StatelessWidget {
   }
 }
 
-// ============================================================
-// ASSIGNMENT CARD
-// ============================================================
-
 class _AssignmentCard extends StatelessWidget {
   final Assignment assignment;
-  final String userRole; // ✅ استقبال الدور
+  final String userRole;
 
   const _AssignmentCard({
     required this.assignment,
@@ -319,8 +311,6 @@ class _AssignmentCard extends StatelessWidget {
                 children: [
                   _StatusBadge(assignment: assignment),
                   const SizedBox(height: 8),
-
-                  // ✅ التعديل هنا: أزرار التعديل والحذف تظهر للمعلم فقط
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -417,10 +407,6 @@ class _AssignmentCard extends StatelessWidget {
       ),
     );
   }
-
-  // ============================================================
-  // EDIT DIALOG
-  // ============================================================
 
   void _showEditAssignmentDialog(
     BuildContext context,
@@ -585,10 +571,6 @@ class _AssignmentCard extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // DELETE
-  // ============================================================
-
   void _showDeleteDialog(
     BuildContext context,
     int assignmentId,
@@ -653,10 +635,6 @@ class _AssignmentCard extends StatelessWidget {
   }
 }
 
-// ============================================================
-// STATUS BADGE
-// ============================================================
-
 class _StatusBadge extends StatelessWidget {
   final Assignment assignment;
 
@@ -696,10 +674,6 @@ class _StatusBadge extends StatelessWidget {
     );
   }
 }
-
-// ============================================================
-// EMPTY
-// ============================================================
 
 class _EmptyAssignments extends StatelessWidget {
   const _EmptyAssignments();
@@ -741,10 +715,6 @@ class _EmptyAssignments extends StatelessWidget {
     );
   }
 }
-
-// ============================================================
-// ERROR
-// ============================================================
 
 class _ErrorWidget extends StatelessWidget {
   final String message;

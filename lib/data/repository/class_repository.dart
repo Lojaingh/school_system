@@ -7,74 +7,134 @@ class ClassRepository {
 
   ClassRepository(this.classService);
 
-  // ── جلب جميع الصفوف ──
+  // ============================================================
+  // GET CLASSES
+  // ============================================================
+
   Future<List<SchoolClass>> getClasses() async {
     try {
       final response = await classService.getClasses();
+      print('🔥 CLASSES RESPONSE: ${response.data}');
 
       if (response.statusCode == 200) {
-        if (response.data is List) {
-          final data = response.data as List;
-          return data.map((json) => SchoolClass.fromJson(json)).toList();
-        } else if (response.data is Map && response.data['data'] != null) {
-          final data = response.data['data'] as List? ?? [];
-          return data.map((json) => SchoolClass.fromJson(json)).toList();
-        } else {
-          return [];
+        dynamic rawData = response.data;
+
+        if (rawData is Map && rawData['data'] != null) {
+          rawData = rawData['data'];
         }
-      } else {
-        throw Exception('Failed to load classes: ${response.statusCode}');
+
+        if (rawData is List) {
+          return rawData
+              .map(
+                (json) => SchoolClass.fromJson(
+                  Map<String, dynamic>.from(json),
+                ),
+              )
+              .toList();
+        }
+
+        return [];
       }
+
+      throw Exception(
+        'Failed to load classes: ${response.statusCode}',
+      );
     } catch (e) {
       print('❌ Error fetching classes: $e');
       rethrow;
     }
   }
 
-  // ── جلب الصفوف حسب السنة ──
-  Future<List<SchoolClass>> getClassesByGrade(int year) async {
+  // ============================================================
+  // GET CLASSES BY GRADE
+  // ============================================================
+
+  Future<List<SchoolClass>> getClassesByGrade(
+    int year,
+  ) async {
     try {
       final response = await classService.getClassesByGrade(year);
 
       if (response.statusCode == 200) {
-        if (response.data is List) {
-          final data = response.data as List;
-          return data.map((json) => SchoolClass.fromJson(json)).toList();
-        } else if (response.data is Map && response.data['data'] != null) {
-          final data = response.data['data'] as List? ?? [];
-          return data.map((json) => SchoolClass.fromJson(json)).toList();
-        } else {
-          return [];
+        dynamic rawData = response.data;
+
+        if (rawData is Map && rawData['data'] != null) {
+          rawData = rawData['data'];
         }
-      } else {
-        throw Exception(
-            'Failed to load classes by grade: ${response.statusCode}');
+
+        if (rawData is List) {
+          return rawData
+              .map(
+                (json) => SchoolClass.fromJson(
+                  Map<String, dynamic>.from(json),
+                ),
+              )
+              .toList();
+        }
+
+        return [];
       }
+
+      throw Exception(
+        'Failed to load classes by grade: '
+        '${response.statusCode}',
+      );
     } catch (e) {
-      print('❌ Error fetching classes by grade: $e');
+      print(
+        '❌ Error fetching classes by grade: $e',
+      );
+
       rethrow;
     }
   }
 
-  // ── ✅ جلب طلاب شعبة معينة (API جديد) ──
-  Future<List<StudentProfileModel>> getClassStudents(int classId) async {
+  // ============================================================
+  // GET STUDENTS OF CLASS
+  // ============================================================
+
+  Future<List<StudentProfileModel>> getClassStudents(
+    int classId,
+  ) async {
     try {
       final response = await classService.getClassStudents(classId);
 
       if (response.statusCode == 200) {
-        final data = response.data['data'] as List? ?? [];
-        return data.map((json) => StudentProfileModel.fromJson(json)).toList();
-      } else {
-        throw Exception(
-            'Failed to load class students: ${response.statusCode}');
+        dynamic rawData = response.data;
+
+        if (rawData is Map && rawData['data'] != null) {
+          rawData = rawData['data'];
+        }
+
+        if (rawData is List) {
+          return rawData
+              .map(
+                (json) => StudentProfileModel.fromJson(
+                  Map<String, dynamic>.from(json),
+                ),
+              )
+              .toList();
+        }
+
+        return [];
       }
+
+      throw Exception(
+        'Failed to load class students: '
+        '${response.statusCode}',
+      );
     } catch (e) {
-      print('❌ Error fetching class students: $e');
+      print(
+        '❌ Error fetching class students: $e',
+      );
+
       rethrow;
     }
   }
 
-  // ── إضافة صف جديد ──
+  // ============================================================
+  // ADD CLASS
+  // ============================================================
+
   Future<SchoolClass> addClass({
     required int year,
     required int number,
@@ -89,29 +149,49 @@ class ClassRepository {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (response.data is Map && response.data['data'] != null) {
-          final data = response.data['data'];
-          return SchoolClass.fromJson(data);
-        } else if (response.data is Map) {
-          return SchoolClass.fromJson(response.data);
-        } else {
-          throw Exception('Invalid response format');
+          return SchoolClass.fromJson(
+            Map<String, dynamic>.from(
+              response.data['data'],
+            ),
+          );
         }
-      } else {
-        throw Exception('Failed to add class: ${response.statusCode}');
+
+        if (response.data is Map) {
+          return SchoolClass.fromJson(
+            Map<String, dynamic>.from(
+              response.data,
+            ),
+          );
+        }
+
+        throw Exception(
+          'Invalid response format',
+        );
       }
+
+      throw Exception(
+        'Failed to add class: '
+        '${response.statusCode}',
+      );
     } catch (e) {
       print('❌ Error adding class: $e');
       rethrow;
     }
   }
 
-  // ── حذف صف ──
+  // ============================================================
+  // DELETE CLASS
+  // ============================================================
+
   Future<void> deleteClass(int id) async {
     try {
       final response = await classService.deleteClass(id);
 
       if (response.statusCode != 200 && response.statusCode != 204) {
-        throw Exception('Failed to delete class: ${response.statusCode}');
+        throw Exception(
+          'Failed to delete class: '
+          '${response.statusCode}',
+        );
       }
     } catch (e) {
       print('❌ Error deleting class: $e');
@@ -119,21 +199,37 @@ class ClassRepository {
     }
   }
 
-  // ── توزيع الطلاب ──
-  Future<void> distributeStudents(int capacity) async {
+  // ============================================================
+  // DISTRIBUTE STUDENTS
+  // ============================================================
+
+  Future<void> distributeStudents(
+    int capacity,
+  ) async {
     try {
-      final response = await classService.distributeStudents(capacity);
+      final response = await classService.distributeStudents(
+        capacity,
+      );
+
       if (response.statusCode != 200) {
         throw Exception(
-            'Failed to distribute students: ${response.statusCode}');
+          'Failed to distribute students: '
+          '${response.statusCode}',
+        );
       }
     } catch (e) {
-      print('❌ Error distributing students: $e');
+      print(
+        '❌ Error distributing students: $e',
+      );
+
       rethrow;
     }
   }
 
-  // ── نقل طالب ──
+  // ============================================================
+  // MOVE STUDENT
+  // ============================================================
+
   Future<void> moveStudent({
     required int userId,
     required int classId,
@@ -145,38 +241,170 @@ class ClassRepository {
       );
 
       if (response.statusCode != 200) {
-        throw Exception('Failed to move student: ${response.statusCode}');
+        throw Exception(
+          'Failed to move student: '
+          '${response.statusCode}',
+        );
       }
     } catch (e) {
-      print('❌ Error moving student: $e');
+      print(
+        '❌ Error moving student: $e',
+      );
+
       rethrow;
     }
   }
 
-  // ── جلب الطلاب حسب السنة ──
-  Future<List<StudentProfileModel>> getStudentsByGrade(int year) async {
+  // ============================================================
+  // GET SUPERVISORS
+  // ============================================================
+
+  Future<List<Map<String, dynamic>>> getSupervisors() async {
+    try {
+      final response = await classService.getSupervisors();
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to load supervisors: '
+          '${response.statusCode}',
+        );
+      }
+
+      dynamic rawData = response.data;
+
+      if (rawData is Map && rawData['data'] != null) {
+        rawData = rawData['data'];
+      }
+
+      if (rawData is! List) {
+        return [];
+      }
+
+      return rawData
+          .map(
+            (e) => Map<String, dynamic>.from(e),
+          )
+          .toList();
+    } catch (e) {
+      print(
+        '❌ Error fetching supervisors: $e',
+      );
+
+      rethrow;
+    }
+  }
+
+  // ============================================================
+  // UPDATE CLASS SUPERVISOR
+  // ============================================================
+
+  Future<void> updateClassSupervisor({
+    required int classId,
+    required int? supervisorId,
+  }) async {
+    try {
+      final response = await classService.updateClassSupervisor(
+        classId: classId,
+        supervisorId: supervisorId,
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          'Failed to update supervisor: '
+          '${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      print(
+        '❌ Error updating class supervisor: $e',
+      );
+
+      rethrow;
+    }
+  }
+
+  // ============================================================
+  // ASSIGN SUPERVISOR
+  // ============================================================
+
+  Future<void> assignSupervisor({
+    required int classId,
+    required int supervisorId,
+  }) async {
+    try {
+      final response = await classService.assignSupervisor(
+        classId: classId,
+        supervisorId: supervisorId,
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          'Failed to assign supervisor: '
+          '${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      print(
+        '❌ Error assigning supervisor: $e',
+      );
+
+      rethrow;
+    }
+  }
+
+  // ============================================================
+  // GET STUDENTS BY GRADE
+  // ============================================================
+
+  Future<List<StudentProfileModel>> getStudentsByGrade(
+    int year,
+  ) async {
     try {
       final response = await classService.getStudentsByGrade(year);
 
       if (response.statusCode == 200) {
-        final data = response.data['data'] as List? ?? [];
-        return data.map((json) => StudentProfileModel.fromJson(json)).toList();
-      } else {
-        throw Exception(
-            'Failed to load students by grade: ${response.statusCode}');
+        dynamic rawData = response.data;
+
+        if (rawData is Map && rawData['data'] != null) {
+          rawData = rawData['data'];
+        }
+
+        if (rawData is List) {
+          return rawData
+              .map(
+                (json) => StudentProfileModel.fromJson(
+                  Map<String, dynamic>.from(json),
+                ),
+              )
+              .toList();
+        }
+
+        return [];
       }
+
+      throw Exception(
+        'Failed to load students by grade: '
+        '${response.statusCode}',
+      );
     } catch (e) {
-      print('❌ Error fetching students by grade: $e');
+      print(
+        '❌ Error fetching students by grade: $e',
+      );
+
       rethrow;
     }
   }
 
-  // ── جلب كل الطلاب (للحالات النادرة) ──
+  // ============================================================
+  // GET ALL STUDENTS
+  // ============================================================
+
   Future<List<StudentProfileModel>> getAllStudents() async {
     try {
       final basicResponse = await classService.getAllStudents();
 
       List basicList;
+
       if (basicResponse.data is Map && basicResponse.data['data'] != null) {
         basicList = basicResponse.data['data'] as List? ?? [];
       } else if (basicResponse.data is List) {
@@ -186,7 +414,15 @@ class ClassRepository {
       }
 
       final ids = basicList
-          .map((e) => e['id'] ?? e['user_id'])
+          .map(
+            (e) => e['id'] ?? e['user_id'],
+          )
+          .map(
+            (id) {
+              if (id is int) return id;
+              return int.tryParse(id?.toString() ?? '');
+            },
+          )
           .whereType<int>()
           .toList();
 
@@ -195,22 +431,38 @@ class ClassRepository {
       for (final id in ids) {
         try {
           final detailResponse = await classService.getStudentById(id);
+
           final data = detailResponse.data;
+
           final studentJson =
               (data is Map && data['data'] != null) ? data['data'] : data;
+
+          if (studentJson is! Map) {
+            continue;
+          }
+
           final student = StudentProfileModel.fromJson({
             'user_id': id,
-            ...Map<String, dynamic>.from(studentJson as Map),
+            ...Map<String, dynamic>.from(
+              studentJson,
+            ),
           });
+
           students.add(student);
         } catch (e) {
-          print('⚠️ Skipped student $id (failed to fetch details): $e');
+          print(
+            '⚠️ Skipped student $id '
+            '(failed to fetch details): $e',
+          );
         }
       }
 
       return students;
     } catch (e) {
-      print('❌ Error fetching all students: $e');
+      print(
+        '❌ Error fetching all students: $e',
+      );
+
       rethrow;
     }
   }

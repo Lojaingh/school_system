@@ -177,7 +177,6 @@ class StudentStats {
   }
 }
 
-// إحصائيات الداشبورد المجمعة
 class DashboardApiStats {
   final int students;
   final int teachers;
@@ -191,10 +190,6 @@ class DashboardApiStats {
     this.books = 0,
   });
 }
-
-// ============================================================
-// نماذج الحضور الأسبوعي (من API /attendance/weekly)
-// ============================================================
 
 class WeeklyAttendanceResponse {
   final WeekRange week;

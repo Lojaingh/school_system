@@ -23,6 +23,9 @@ class _MarksScreenState extends State<MarksScreen> {
   String _searchQuery = '';
   String _userRole = '';
 
+  int? _selectedClassId;
+  int? _selectedSubjectId;
+
   @override
   void initState() {
     super.initState();
@@ -52,8 +55,14 @@ class _MarksScreenState extends State<MarksScreen> {
     });
   }
 
+  bool get _isTeacher => _userRole == 'teacher';
+
+  bool get _isManager => _userRole == 'manager';
+
+  bool get _isSupervisor => _userRole == 'supervisor';
+
   bool get _canEditMarks {
-    return _userRole == 'teacher' || _userRole == 'manager';
+    return _isTeacher || _isManager || _isSupervisor;
   }
 
   @override
@@ -71,6 +80,7 @@ class _MarksScreenState extends State<MarksScreen> {
 
     return students.where((student) {
       final name = student.studentName.toLowerCase();
+
       final className = student.className?.toLowerCase() ?? '';
 
       return name.contains(_searchQuery) || className.contains(_searchQuery);
@@ -148,32 +158,192 @@ class _MarksScreenState extends State<MarksScreen> {
     BuildContext context,
     SubjectMarksData data,
   ) {
-    final students = _filterStudents(data.students);
+    // ==========================================================
+    // TEACHER
+    // ==========================================================
+    if (_isTeacher || !data.isGrouped) {
+      final students = _filterStudents(data.students);
 
-    final recordedCount =
-        data.students.where((student) => student.hasMarks).length;
+      final recordedCount = data.students
+          .where(
+            (student) => student.hasMarks,
+          )
+          .length;
 
-    final pendingCount = data.students.length - recordedCount;
+      final pendingCount = data.students.length - recordedCount;
 
-    final totals = data.students
-        .map((student) => student.total)
+      final totals = data.students
+          .map(
+            (student) => student.total,
+          )
+          .whereType<double>()
+          .toList();
+
+      final double? average = totals.isEmpty
+          ? null
+          : totals.reduce(
+                (a, b) => a + b,
+              ) /
+              totals.length;
+
+      final subjectTitle = data.subjectName?.trim().isNotEmpty == true
+          ? data.subjectName!
+          : 'Subject #${data.subjectId}';
+
+      return _buildStudentList(
+        context: context,
+        students: students,
+        subjectTitle: subjectTitle,
+        total: data.students.length,
+        recorded: recordedCount,
+        pending: pendingCount,
+        average: average,
+      );
+    }
+
+    // ==========================================================
+    // MANAGER / SUPERVISOR
+    // ==========================================================
+
+    final classes = data.availableClasses;
+
+    final subjects = data.availableSubjects;
+
+    // أول تحميل:
+    if (_selectedClassId == null && classes.isNotEmpty) {
+      _selectedClassId = classes.first.classId;
+    }
+
+    if (_selectedSubjectId == null && subjects.isNotEmpty) {
+      _selectedSubjectId = subjects.first.id;
+    }
+
+    final selectedClass = classes
+        .where(
+          (item) => item.classId == _selectedClassId,
+        )
+        .toList();
+
+    final selectedClassName = selectedClass.isNotEmpty
+        ? selectedClass.first.className
+        : 'All Classes';
+
+    final selectedSubject = subjects
+        .where(
+          (item) => item.id == _selectedSubjectId,
+        )
+        .toList();
+
+    final selectedSubjectName = selectedSubject.isNotEmpty
+        ? selectedSubject.first.name
+        : 'Select Subject';
+
+    final students = _selectedSubjectId == null
+        ? <StudentMark>[]
+        : _filterStudents(
+            data.studentsForSubject(
+              subjectId: _selectedSubjectId!,
+              classId: _selectedClassId,
+            ),
+          );
+
+    final allStudentsForStats = _selectedSubjectId == null
+        ? <StudentMark>[]
+        : data.studentsForSubject(
+            subjectId: _selectedSubjectId!,
+            classId: _selectedClassId,
+          );
+
+    final recordedCount = allStudentsForStats
+        .where(
+          (student) => student.hasMarks,
+        )
+        .length;
+
+    final pendingCount = allStudentsForStats.length - recordedCount;
+
+    final totals = allStudentsForStats
+        .map(
+          (student) => student.total,
+        )
         .whereType<double>()
         .toList();
 
-    final double? average =
-        totals.isEmpty ? null : totals.reduce((a, b) => a + b) / totals.length;
+    final double? average = totals.isEmpty
+        ? null
+        : totals.reduce(
+              (a, b) => a + b,
+            ) /
+            totals.length;
 
-    final subjectTitle = data.subjectName?.trim().isNotEmpty == true
-        ? data.subjectName!
-        : 'Subject #${data.subjectId}';
+    return Column(
+      children: [
+        _buildGroupedHeader(
+          context,
+          className: selectedClassName,
+          subjectName: selectedSubjectName,
+          classes: classes,
+          subjects: subjects,
+        ),
+        _buildStats(
+          total: allStudentsForStats.length,
+          recorded: recordedCount,
+          pending: pendingCount,
+          average: average,
+        ),
+        _buildSearch(),
+        Expanded(
+          child: students.isEmpty
+              ? _buildEmptyState()
+              : RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: () async {
+                    await context.read<MarksCubit>().getSubjectMarks();
+                  },
+                  child: GridView.builder(
+                    padding: const EdgeInsets.fromLTRB(
+                      24,
+                      12,
+                      24,
+                      24,
+                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 430,
+                      mainAxisExtent: 255,
+                      crossAxisSpacing: 18,
+                      mainAxisSpacing: 18,
+                    ),
+                    itemCount: students.length,
+                    itemBuilder: (context, index) {
+                      return MarksStudentCard(
+                        student: students[index],
+                        canEditMarks: _canEditMarks,
+                      );
+                    },
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
 
+  Widget _buildStudentList({
+    required BuildContext context,
+    required List<StudentMark> students,
+    required String subjectTitle,
+    required int total,
+    required int recorded,
+    required int pending,
+    required double? average,
+  }) {
     return Column(
       children: [
         _buildHeader(subjectTitle),
         _buildStats(
-          total: data.students.length,
-          recorded: recordedCount,
-          pending: pendingCount,
+          total: total,
+          recorded: recorded,
+          pending: pending,
           average: average,
         ),
         _buildSearch(),
@@ -203,8 +373,6 @@ class _MarksScreenState extends State<MarksScreen> {
                     itemBuilder: (context, index) {
                       return MarksStudentCard(
                         student: students[index],
-
-                        // المدير + الأستاذ يستطيعان إضافة وتعديل العلامات
                         canEditMarks: _canEditMarks,
                       );
                     },
@@ -215,7 +383,160 @@ class _MarksScreenState extends State<MarksScreen> {
     );
   }
 
-  Widget _buildHeader(String subjectTitle) {
+  Widget _buildGroupedHeader(
+    BuildContext context, {
+    required String className,
+    required String subjectName,
+    required List<MarksClass> classes,
+    required List<SubjectInfo> subjects,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        gradient: AppGradients.cardGradient,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(11),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(.12),
+                  borderRadius: BorderRadius.circular(
+                    12,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.grade_outlined,
+                  color: AppColors.primary,
+                  size: 25,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Text(
+                  'Student Marks',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 23,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Refresh',
+                onPressed: () {
+                  context.read<MarksCubit>().getSubjectMarks();
+                },
+                icon: const Icon(
+                  Icons.refresh_rounded,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: _buildDropdownContainer<int>(
+                  label: 'Class',
+                  value: _selectedClassId,
+                  items: classes
+                      .map(
+                        (item) => DropdownMenuItem<int>(
+                          value: item.classId,
+                          child: Text(
+                            item.className,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedClassId = value;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: _buildDropdownContainer<int>(
+                  label: 'Subject',
+                  value: _selectedSubjectId,
+                  items: subjects
+                      .map(
+                        (item) => DropdownMenuItem<int>(
+                          value: item.id,
+                          child: Text(
+                            item.name,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedSubjectId = value;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '$className • $subjectName',
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdownContainer<T>({
+    required String label,
+    required T? value,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.cardElement,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.cardBorder.withOpacity(
+            .35,
+          ),
+        ),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          value: value,
+          isExpanded: true,
+          dropdownColor: AppColors.cardBg,
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 13,
+          ),
+          items: items,
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(
+    String subjectTitle,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -228,7 +549,9 @@ class _MarksScreenState extends State<MarksScreen> {
             padding: const EdgeInsets.all(11),
             decoration: BoxDecoration(
               color: AppColors.primary.withOpacity(.12),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(
+                12,
+              ),
             ),
             child: const Icon(
               Icons.grade_outlined,
@@ -363,19 +686,25 @@ class _MarksScreenState extends State<MarksScreen> {
           filled: true,
           fillColor: AppColors.cardElement,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(13),
+            borderRadius: BorderRadius.circular(
+              13,
+            ),
             borderSide: BorderSide(
               color: AppColors.cardBorder.withOpacity(.35),
             ),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(13),
+            borderRadius: BorderRadius.circular(
+              13,
+            ),
             borderSide: BorderSide(
               color: AppColors.cardBorder.withOpacity(.35),
             ),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(13),
+            borderRadius: BorderRadius.circular(
+              13,
+            ),
             borderSide: BorderSide(
               color: AppColors.primary.withOpacity(.55),
             ),
@@ -406,7 +735,7 @@ class _MarksScreenState extends State<MarksScreen> {
           ),
           SizedBox(height: 5),
           Text(
-            'Try a different search term.',
+            'Try a different selection or search term.',
             style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 12,
@@ -417,7 +746,9 @@ class _MarksScreenState extends State<MarksScreen> {
     );
   }
 
-  Widget _buildError(BuildContext context) {
+  Widget _buildError(
+    BuildContext context,
+  ) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -456,11 +787,6 @@ class _MarksScreenState extends State<MarksScreen> {
   Widget _buildSaving() {
     return Stack(
       children: [
-        const Center(
-          child: CircularProgressIndicator(
-            color: AppColors.primary,
-          ),
-        ),
         Positioned.fill(
           child: Container(
             color: Colors.black.withOpacity(.08),
@@ -496,7 +822,9 @@ class _StatItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: 13,
@@ -504,7 +832,9 @@ class _StatItem extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: AppColors.cardElement,
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(
+          13,
+        ),
         border: Border.all(
           color: AppColors.cardBorder.withOpacity(.35),
         ),
@@ -528,7 +858,9 @@ class _StatItem extends StatelessWidget {
                     fontSize: 10,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(
+                  height: 2,
+                ),
                 Text(
                   value,
                   style: const TextStyle(

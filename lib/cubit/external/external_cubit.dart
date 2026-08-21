@@ -1,8 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'package:school_management/data/repository/external_repository.dart';
-
 import 'external_state.dart';
 
 class ExternalCubit extends Cubit<ExternalState> {
@@ -124,10 +122,6 @@ class ExternalCubit extends Cubit<ExternalState> {
     }
   }
 
-  // =========================
-  // TEACHER
-  // =========================
-
   Future<void> getTeacherClasses() async {
     try {
       emit(TeacherClassesLoading());
@@ -143,10 +137,6 @@ class ExternalCubit extends Cubit<ExternalState> {
       );
     }
   }
-
-  // =========================
-  // MANAGER
-  // =========================
 
   Future<void> getAllClasses() async {
     try {

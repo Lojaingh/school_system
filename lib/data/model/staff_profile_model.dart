@@ -1,18 +1,14 @@
 class StaffProfileModel {
   final int? userId;
   final String? username;
-
   final String firstName;
   final String lastName;
   final String gender;
   final String dob;
-
   final String? role;
   final int? roleId;
-
   final String? startedAt;
   final String? finishedAt;
-
   final String? hireDate;
   final String? employment;
   final double? salary;

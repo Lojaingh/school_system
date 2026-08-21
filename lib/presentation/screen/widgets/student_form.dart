@@ -28,7 +28,6 @@ class _StudentFormState extends State<StudentForm> {
     {"id": 4, "name": "Class 4"},
   ];
 
-  // Controllers
   final firstNameController = TextEditingController();
   final middleNameController = TextEditingController();
   final lastNameController = TextEditingController();
@@ -193,7 +192,6 @@ class _StudentFormState extends State<StudentForm> {
     });
   }
 
-  // Dialog لعرض بيانات تسجيل الدخول
   void _showCredentialsDialog({
     required String username,
     required String password,

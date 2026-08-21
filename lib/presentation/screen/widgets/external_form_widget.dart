@@ -1,7 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'package:school_management/constants/app_colors.dart';
 import 'package:school_management/cubit/external/external_cubit.dart';
 import 'package:school_management/cubit/external/external_state.dart';
@@ -12,8 +11,6 @@ import 'package:school_management/utils/shared_prefs_helper.dart';
 class ExternalFormWidget extends StatefulWidget {
   final ExternalModel? external;
 
-  /// true إذا المستخدم Teacher
-  /// false إذا Manager
   final bool isTeacher;
 
   const ExternalFormWidget({
@@ -46,7 +43,6 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
   void initState() {
     super.initState();
 
-    // إذا تعديل، نعبّي البيانات القديمة
     if (widget.external != null) {
       schoolClassId = widget.external!.schoolClassId;
       notesController.text = widget.external!.notes ?? "";
@@ -218,9 +214,6 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
       listener: (context, state) {
         print("🟡 FORM STATE: ${state.runtimeType}");
 
-        // =========================
-        // TEACHER CLASSES
-        // =========================
         if (state is TeacherClassesLoaded) {
           print("════════════════════════════════");
           print("🟢 TEACHER CLASSES RECEIVED");
@@ -257,9 +250,6 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
           return;
         }
 
-        // =========================
-        // MANAGER CLASSES
-        // =========================
         if (state is AllClassesLoaded) {
           print("════════════════════════════════");
           print("🟢 ALL CLASSES RECEIVED");
@@ -295,9 +285,6 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
           return;
         }
 
-        // =========================
-        // ADD SUCCESS
-        // =========================
         if (state is ExternalAddSuccess) {
           print("🟢 EXTERNAL ADDED SUCCESSFULLY");
 
@@ -305,9 +292,6 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
           return;
         }
 
-        // =========================
-        // UPDATE SUCCESS
-        // =========================
         if (state is ExternalUpdateSuccess) {
           print("🟢 EXTERNAL UPDATED SUCCESSFULLY");
 
@@ -378,9 +362,6 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // =========================
-                // HEADER
-                // =========================
                 Row(
                   children: [
                     Container(
@@ -414,12 +395,7 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 25),
-
-                // =========================
-                // SCHOOL CLASS
-                // =========================
                 if (classesLoading)
                   Container(
                     width: double.infinity,
@@ -520,12 +496,7 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
                             print("════════════════════════════════");
                           },
                   ),
-
                 const SizedBox(height: 16),
-
-                // =========================
-                // FILE
-                // =========================
                 InkWell(
                   onTap: loading ? null : pickFile,
                   borderRadius: BorderRadius.circular(12),
@@ -567,12 +538,7 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
-                // =========================
-                // NOTES
-                // =========================
                 TextField(
                   controller: notesController,
                   maxLines: 4,
@@ -599,12 +565,7 @@ class _ExternalFormWidgetState extends State<ExternalFormWidget> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 25),
-
-                // =========================
-                // BUTTONS
-                // =========================
                 Row(
                   children: [
                     Expanded(

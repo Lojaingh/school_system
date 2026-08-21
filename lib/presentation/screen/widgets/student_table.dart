@@ -49,7 +49,6 @@ class StudentTable extends StatelessWidget {
               ],
             ),
           ),
-          // ✅ التعديل: لفينا الـ ListView بـ Expanded وشلنا shrinkWrap/physics
           Expanded(
             child: ListView.separated(
               itemCount: students.length,

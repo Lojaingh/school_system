@@ -5,10 +5,6 @@ import '../network/dio_client.dart';
 class AssignmentRepository {
   AssignmentRepository();
 
-  // ============================================================
-  // GET ASSIGNMENTS
-  // ============================================================
-
   Future<List<Assignment>> getAssignments() async {
     try {
       final response = await DioClient.dio.get('/assignments');
@@ -58,10 +54,6 @@ class AssignmentRepository {
       rethrow;
     }
   }
-
-  // ============================================================
-  // GET CLASSES
-  // ============================================================
 
   Future<List<Map<String, dynamic>>> getClasses({
     required String role,
@@ -124,10 +116,6 @@ class AssignmentRepository {
     }
   }
 
-  // ============================================================
-  // GET ASSIGNMENT BY ID
-  // ============================================================
-
   Future<Assignment> getAssignmentById(
     int id,
   ) async {
@@ -159,10 +147,6 @@ class AssignmentRepository {
       rethrow;
     }
   }
-
-  // ============================================================
-  // CREATE ASSIGNMENT
-  // ============================================================
 
   Future<Assignment> createAssignment({
     required String title,
@@ -271,10 +255,6 @@ class AssignmentRepository {
     }
   }
 
-  // ============================================================
-  // UPDATE ASSIGNMENT
-  // ============================================================
-
   Future<Assignment> updateAssignment({
     required int id,
     int? subjectId,
@@ -360,10 +340,6 @@ class AssignmentRepository {
       rethrow;
     }
   }
-
-  // ============================================================
-  // DELETE ASSIGNMENT
-  // ============================================================
 
   Future<void> deleteAssignment(
     int id,

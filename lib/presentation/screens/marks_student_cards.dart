@@ -8,8 +8,6 @@ import 'package:school_management/presentation/screen/widgets/marks_edit_dialog.
 
 class MarksStudentCard extends StatelessWidget {
   final StudentMark student;
-
-  // الأستاذ + المدير
   final bool canEditMarks;
 
   const MarksStudentCard({
@@ -69,15 +67,27 @@ class MarksStudentCard extends StatelessWidget {
                         fontSize: 11,
                       ),
                     ),
+                    if (student.subjectName != null &&
+                        student.subjectName!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        student.subjectName!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.primaryLight,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
               _buildStatus(hasMarks),
             ],
           ),
-
           const SizedBox(height: 18),
-
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -117,10 +127,7 @@ class MarksStudentCard extends StatelessWidget {
               ],
             ),
           ),
-
           const Spacer(),
-
-          // فقط المدير والأستاذ يستطيعان إضافة / تعديل العلامات
           if (canEditMarks)
             SizedBox(
               width: double.infinity,

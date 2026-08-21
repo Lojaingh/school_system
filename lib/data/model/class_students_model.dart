@@ -20,14 +20,9 @@ class ClassStudentsResponse {
   }
 }
 
-// ✅ بدل ما نكرر منطق قراءة الـ profile (نفس اللي بـ StudentProfileModel
-// تماماً)، صرنا نستخدم StudentProfileModel كمصدر وحيد للحقيقة لبيانات
-// الطالب، ونضيف فوقه بس الحقول الخاصة بشاشة الحضور (status/time) كحالة
-// محلية قابلة للتعديل — هاي الحقول مالها معنى إلا بسياق الحضور، فمنطقي
-// تبقى هون وما تنحط بـ StudentProfileModel العام.
 class ClassStudent {
   final StudentProfileModel profile;
-  String status; // Present, Absent, Late, Excused
+  String status;
   String? time;
 
   ClassStudent({
@@ -42,8 +37,6 @@ class ClassStudent {
     );
   }
 
-  // ── Getters توصيلية حتى باقي الكود (attendance_content.dart) يشتغل
-  // بدون أي تعديل — نفس الأسماء يلي كان يستخدمها قبل مباشرة ──
   int get userId => profile.userId ?? 0;
   String get username => profile.username ?? '';
   String get firstName => profile.firstName;

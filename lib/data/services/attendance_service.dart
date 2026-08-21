@@ -1,12 +1,9 @@
-// lib/data/services/attendance_service.dart
-
 import 'package:dio/dio.dart';
 import '../network/dio_client.dart';
 
 class AttendanceService {
   final Dio _dio = DioClient.dio;
 
-  // ── جلب طلاب صف معين ──
   Future<Response> getClassStudents(int classId) async {
     try {
       print('🔵 Fetching students for class: $classId');
@@ -22,7 +19,6 @@ class AttendanceService {
     }
   }
 
-  // ── تسجيل الحضور للطلاب (بدون تغيير — مطابق للـ API الحالي) ──
   Future<Response> markAttendance({
     required int classId,
     required List<int> absent,
@@ -51,7 +47,7 @@ class AttendanceService {
 
   Future<Response> getClassAttendances({
     required int schoolClassId,
-    required String date, // بصيغة yyyy-MM-dd
+    required String date,
   }) async {
     try {
       print('🔵 Fetching class attendance: class=$schoolClassId, date=$date');
@@ -70,12 +66,10 @@ class AttendanceService {
     }
   }
 
-  // ✅ عدّلنا هون: ضفنا "date" لأنه الـ Backend (MarkStaffAttendanceRequest)
-  // عم يتطلبها ضمن الـ validated data، وكمان بدّلنا FormData إلى JSON عادي.
   Future<Response> markSingleStaffAttendance({
     required int userId,
-    required String status, // present / absent / late / excused (حروف صغيرة)
-    required String date, // بصيغة yyyy-MM-dd
+    required String status,
+    required String date,
   }) async {
     try {
       print(
@@ -96,7 +90,6 @@ class AttendanceService {
     }
   }
 
-  // ✅ عدّلنا هون: صار الـ method تاخد "date" وتمررها لكل نداء فردي
   Future<void> markStaffAttendanceBulk(
     Map<int, String> statuses, {
     required String date,

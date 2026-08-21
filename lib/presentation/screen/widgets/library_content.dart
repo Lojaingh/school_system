@@ -16,19 +16,11 @@ class LibraryContent extends StatefulWidget {
 class _LibraryContentState extends State<LibraryContent> {
   int selectedTab = 0;
 
-  // ❌ حذفنا selectedCategory (كان جزء من فلتر التصنيفات الوهمي)
   String selectedStatus = 'All';
   String searchQuery = '';
 
   late Future<List<Lending>> _lendingsFuture;
-
-  // ✅ جديد: نسخة محفوظة (Cache) من آخر نتيجة استعارات وصلت، حتى
-  // نقدر نستخدمها بشكل متزامن (synchronous) داخل _isBookLate — لأنه
-  // الفلتر بيحتاج يتحقق فوراً وقت البناء، مش ينتظر Future من جديد.
   List<Lending> _cachedLendings = [];
-
-  // ❌ حذفنا قائمة categories بالكامل (Programming/Mathematics/...) لأنها
-  // كانت قيم ثابتة يدوياً مش جاية من أي API حقيقي.
 
   final List<String> statusList = [
     'All',
@@ -41,21 +33,11 @@ class _LibraryContentState extends State<LibraryContent> {
   void initState() {
     super.initState();
 
-    // ✅ معدّل: نعيد جلب قائمة الكتب من جديد كل مرة تنفتح الصفحة (مش
-    // بس الاستعارات) — لأنه لو صارت استعارة/إرجاع من مكان تاني برّا
-    // التطبيق (Postman مثلاً، أو جهاز تاني)، الـ BookCubit عندنا كان
-    // محتفظ بنسخة قديمة (Cache) من قبل هيك، وما كانت بتتحدث لحالها.
     context.read<BookCubit>().refreshBooks();
 
-    // جلب استعارات الطالب مرة واحدة عند فتح الصفحة
     _loadLendings();
   }
 
-  // ==================== Refresh ====================
-
-  // ✅ معدّل: صارت تجيب الاستعارات وتحدّث الـ cache سوا، بدل ما تكتفي
-  // بس بتحديث الـ Future (يلي كان يخلي _isBookLate عاجز يشوف نتيجة
-  // جديدة بشكل متزامن).
   void _loadLendings() {
     final future = context.read<BookCubit>().getLendings();
 
@@ -69,17 +51,12 @@ class _LibraryContentState extends State<LibraryContent> {
           _cachedLendings = data;
         });
       }
-    }).catchError((_) {
-      // إذا فشل الجلب، منسيب الـ cache القديمة متل ما هي بدل ما نكسر
-      // الفلترة بالكامل.
-    });
+    }).catchError((_) {});
   }
 
   void _refreshLendings() {
     _loadLendings();
   }
-
-  // ==================== Dialogs ====================
 
   void _showAddBookDialog() {
     final titleController = TextEditingController();
@@ -210,7 +187,7 @@ class _LibraryContentState extends State<LibraryContent> {
     );
   }
 
-  // ==================== Borrow ====================
+  //
 
   void _showBorrowDialog(Book book) {
     showDialog(
@@ -286,8 +263,6 @@ class _LibraryContentState extends State<LibraryContent> {
     );
   }
 
-  // ==================== Return ====================
-
   void _showReturnDialog(Lending lending) {
     showDialog(
       context: context,
@@ -362,8 +337,6 @@ class _LibraryContentState extends State<LibraryContent> {
       ),
     );
   }
-
-  // ==================== Book Details ====================
 
   void _showBookDetails(Book book) {
     showModalBottomSheet(
@@ -519,9 +492,7 @@ class _LibraryContentState extends State<LibraryContent> {
                 color: AppColors.textPrimary,
               ),
             ),
-
             const SizedBox(height: 8),
-
             const Text(
               'Manage books, borrowing, and returns',
               style: TextStyle(
@@ -529,11 +500,7 @@ class _LibraryContentState extends State<LibraryContent> {
                 color: AppColors.textSecondary,
               ),
             ),
-
             const SizedBox(height: 24),
-
-            // ==================== STATS ====================
-
             BlocBuilder<BookCubit, BookState>(
               builder: (context, state) {
                 if (state is! BooksLoaded) {
@@ -578,11 +545,7 @@ class _LibraryContentState extends State<LibraryContent> {
                 );
               },
             ),
-
             const SizedBox(height: 24),
-
-            // ==================== SEARCH ====================
-
             _SearchAndAddRow(
               searchQuery: searchQuery,
               onSearchChanged: (value) {
@@ -592,11 +555,7 @@ class _LibraryContentState extends State<LibraryContent> {
               },
               onAddBook: _showAddBookDialog,
             ),
-
             const SizedBox(height: 16),
-
-            // ==================== TABS ====================
-
             _TabBar(
               selectedTab: selectedTab,
               onTabChanged: (index) {
@@ -605,13 +564,7 @@ class _LibraryContentState extends State<LibraryContent> {
                 });
               },
             ),
-
             const SizedBox(height: 16),
-
-            // ==================== FILTERS ====================
-            // ✅ صار الفلتر بس على Status (Available/Borrowed/Late)
-            // حذفنا فلتر Category بالكامل لأنه مش مبني على API حقيقي.
-
             if (selectedTab == 0)
               _FilterRow(
                 selectedStatus: selectedStatus,
@@ -622,21 +575,14 @@ class _LibraryContentState extends State<LibraryContent> {
                   });
                 },
               ),
-
             const SizedBox(height: 16),
-
-            // ==================== CONTENT ====================
-
             _buildTabContent(),
-
             const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
-
-  // ==================== Tab Content ====================
 
   Widget _buildTabContent() {
     return BlocBuilder<BookCubit, BookState>(
@@ -707,10 +653,7 @@ class _LibraryContentState extends State<LibraryContent> {
     );
   }
 
-  // ==================== Books Tab ====================
-
   Widget _buildBooksTab(List<Book> books) {
-    // ✅ حذفنا matchesCategory من منطق الفلترة
     final filteredBooks = books.where((book) {
       final matchesSearch = searchQuery.isEmpty ||
           book.title.toLowerCase().contains(searchQuery.toLowerCase());
@@ -748,8 +691,6 @@ class _LibraryContentState extends State<LibraryContent> {
       isLate: _isBookLate,
     );
   }
-
-  // ==================== Borrowed Tab ====================
 
   Widget _buildBorrowedTab() {
     return FutureBuilder<List<Lending>>(
@@ -802,8 +743,6 @@ class _LibraryContentState extends State<LibraryContent> {
     );
   }
 
-  // ==================== Returned Tab ====================
-
   Widget _buildReturnedTab() {
     return FutureBuilder<List<Lending>>(
       future: _lendingsFuture,
@@ -855,26 +794,17 @@ class _LibraryContentState extends State<LibraryContent> {
     );
   }
 
-  // ==================== Helpers ====================
-
-  // ✅ معدّل بالكامل: هلق فعلياً بيتحقق من الـ lending المرتبطة بالكتاب
   bool _isBookLate(Book book) {
-    // الكتاب المتاح لا يمكن أن يكون متأخرًا
     if (book.isAvailable) {
       return false;
     }
 
-    // نفحص هل في استعارة نشطة (غير مُرجعة) لهاد الكتاب وهي متأخرة
     return _cachedLendings.any(
       (lending) =>
           lending.book.id == book.id && !lending.isReturned && lending.isLate,
     );
   }
 }
-
-// ============================================================
-// STATS ROW
-// ============================================================
 
 class _StatsRow extends StatelessWidget {
   final int totalBooks;
@@ -928,10 +858,6 @@ class _StatsRow extends StatelessWidget {
     );
   }
 }
-
-// ============================================================
-// STAT CARD
-// ============================================================
 
 class _StatCard extends StatelessWidget {
   final String title;
@@ -1009,10 +935,6 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ============================================================
-// SEARCH AND ADD
-// ============================================================
-
 class _SearchAndAddRow extends StatelessWidget {
   final String searchQuery;
   final Function(String) onSearchChanged;
@@ -1075,10 +997,6 @@ class _SearchAndAddRow extends StatelessWidget {
   }
 }
 
-// ============================================================
-// ACTION BUTTON
-// ============================================================
-
 class _ActionIconButton extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -1130,10 +1048,6 @@ class _ActionIconButton extends StatelessWidget {
     );
   }
 }
-
-// ============================================================
-// TAB BAR
-// ============================================================
 
 class _TabBar extends StatelessWidget {
   final int selectedTab;
@@ -1198,11 +1112,6 @@ class _TabBar extends StatelessWidget {
   }
 }
 
-// ============================================================
-// FILTER ROW
-// ============================================================
-// ✅ معدّل بالكامل: صار فيه بس فلتر Status، وحذفنا Category نهائياً.
-
 class _FilterRow extends StatelessWidget {
   final String selectedStatus;
   final List<String> statusList;
@@ -1266,10 +1175,6 @@ class _FilterRow extends StatelessWidget {
     );
   }
 }
-
-// ============================================================
-// BOOKS TABLE
-// ============================================================
 
 class _BooksTable extends StatelessWidget {
   final List<Book> books;
@@ -1369,10 +1274,6 @@ class _BooksTable extends StatelessWidget {
     );
   }
 }
-
-// ============================================================
-// BOOK ROW
-// ============================================================
 
 class _BookRow extends StatelessWidget {
   final Book book;
@@ -1494,10 +1395,6 @@ class _BookRow extends StatelessWidget {
   }
 }
 
-// ============================================================
-// LENDINGS TABLE
-// ============================================================
-
 class _LendingsTable extends StatelessWidget {
   final List<Lending> lendings;
   final void Function(Lending)? onReturn;
@@ -1602,10 +1499,6 @@ class _LendingsTable extends StatelessWidget {
   }
 }
 
-// ============================================================
-// LENDING ROW
-// ============================================================
-
 class _LendingRow extends StatelessWidget {
   final Lending lending;
   final void Function(Lending)? onReturn;
@@ -1644,8 +1537,6 @@ class _LendingRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // ================= BOOK TITLE =================
-
           Expanded(
             flex: 2,
             child: Text(
@@ -1656,9 +1547,6 @@ class _LendingRow extends StatelessWidget {
               ),
             ),
           ),
-
-          // ================= BORROW DATE =================
-
           Expanded(
             flex: 1,
             child: Text(
@@ -1669,9 +1557,6 @@ class _LendingRow extends StatelessWidget {
               ),
             ),
           ),
-
-          // ================= DUE DATE =================
-
           Expanded(
             flex: 1,
             child: Column(
@@ -1685,7 +1570,6 @@ class _LendingRow extends StatelessWidget {
                     color: isLate ? AppColors.error : AppColors.textSecondary,
                   ),
                 ),
-                // ✅ جديد: مؤشر باقي كم يوم / متأخر كم يوم
                 if (_computeDueStatus(lending) != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
@@ -1701,9 +1585,6 @@ class _LendingRow extends StatelessWidget {
               ],
             ),
           ),
-
-          // ================= STATUS =================
-
           Expanded(
             flex: 1,
             child: Container(
@@ -1725,9 +1606,6 @@ class _LendingRow extends StatelessWidget {
               ),
             ),
           ),
-
-          // ================= RETURN ACTION =================
-
           if (onReturn != null)
             Expanded(
               flex: 1,
@@ -1746,11 +1624,6 @@ class _LendingRow extends StatelessWidget {
   }
 }
 
-// ============================================================
-// ✅ جديد: حساب "باقي كم يوم / متأخر كم يوم" لأي استعارة نشطة
-// ============================================================
-// منحسبها محلياً من due_date مقارنة بتاريخ اليوم، بدل الاعتماد على
-// days_overdue من الـ API (لأنها موجودة بس بالحالات المتأخرة).
 class _DueStatus {
   final String label;
   final Color color;
@@ -1759,7 +1632,6 @@ class _DueStatus {
 }
 
 _DueStatus? _computeDueStatus(Lending lending) {
-  // ما منعرض شي للسجلات يلي خلصت (مُرجعة) — مالها معنى "باقي كم يوم"
   if (lending.isReturned) return null;
 
   final dueDate = DateTime.tryParse(lending.book.dueDate);

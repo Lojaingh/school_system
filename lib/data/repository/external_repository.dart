@@ -10,10 +10,6 @@ class ExternalRepository {
 
   ExternalRepository(this.service);
 
-  // =========================
-  // EXTERNALS
-  // =========================
-
   Future<List<ExternalModel>> getExternals() async {
     try {
       final response = await service.getExternals();
@@ -66,10 +62,6 @@ class ExternalRepository {
     }
   }
 
-  // =========================
-  // ADD
-  // =========================
-
   Future<String> addExternal({
     required int schoolClassId,
     required PlatformFile file,
@@ -91,10 +83,6 @@ class ExternalRepository {
       throw Exception(e.toString());
     }
   }
-
-  // =========================
-  // UPDATE
-  // =========================
 
   Future<String> updateExternal({
     required int id,
@@ -121,10 +109,6 @@ class ExternalRepository {
     }
   }
 
-  // =========================
-  // DELETE
-  // =========================
-
   Future<String> deleteExternal(int id) async {
     try {
       final response = await service.deleteExternal(id);
@@ -139,10 +123,6 @@ class ExternalRepository {
       throw Exception(e.toString());
     }
   }
-
-  // =========================
-  // TEACHER CLASSES
-  // =========================
 
   Future<List<SchoolClassModel>> getTeacherClasses() async {
     try {
@@ -185,10 +165,6 @@ class ExternalRepository {
     }
   }
 
-  // =========================
-  // MANAGER - ALL CLASSES
-  // =========================
-
   Future<List<SchoolClassModel>> getAllClasses() async {
     try {
       print("🟣 REPOSITORY: getAllClasses()");
@@ -200,49 +176,37 @@ class ExternalRepository {
 
       dynamic rawData = response.data;
 
-      // مهم جداً:
-      // /class/all عندك يرجع List مباشرة
-      //
-      // [
-      //   {id: 17, ...},
-      //   {id: 18, ...}
-      // ]
-      //
-      // وليس:
-      //
-      // {data: [...]}
-
       if (rawData is Map<String, dynamic>) {
         rawData = rawData['data'];
       }
 
       if (rawData is! List) {
-        print("🔴 CLASS RESPONSE IS NOT LIST");
-        print("🔴 TYPE: ${rawData.runtimeType}");
+        print(" CLASS RESPONSE IS NOT LIST");
+        print(" TYPE: ${rawData.runtimeType}");
         return [];
       }
 
-      print("🟢 RAW CLASSES COUNT: ${rawData.length}");
+      print(" RAW CLASSES COUNT: ${rawData.length}");
 
       final List<SchoolClassModel> classes = [];
 
       for (final item in rawData) {
         try {
           if (item is! Map) {
-            print("🔴 CLASS ITEM IS NOT MAP: $item");
+            print(" CLASS ITEM IS NOT MAP: $item");
             continue;
           }
 
           final map = Map<String, dynamic>.from(item);
 
-          print("🟡 PARSING CLASS: $map");
+          print(" PARSING CLASS: $map");
 
           final schoolClass = SchoolClassModel.fromJson(map);
 
           classes.add(schoolClass);
 
           print(
-            "🟢 CLASS PARSED → "
+            " CLASS PARSED → "
             "id=${schoolClass.id}, "
             "label=${schoolClass.label}, "
             "year=${schoolClass.year}, "

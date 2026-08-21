@@ -5,23 +5,14 @@ class Assignment {
   final String title;
   final String body;
   final String dueDate;
-
   final bool hasFile;
   final String? fileUrl;
   final String? fileName;
-
   final double daysRemaining;
   final bool isOverdue;
-
-  // رقم المادة
   final int subjectId;
-
-  // السنة الدراسية - تأتي من Backend
   final int academicId;
-
-  // اسم المادة
   final String subjectName;
-
   final String createdAt;
   final String updatedAt;
 
@@ -47,19 +38,16 @@ class Assignment {
 
     String subjectName = '';
 
-    // إذا الـ API رجع subject كـ object
     if (json['subject'] is Map) {
       final subject = json['subject'] as Map;
 
       subjectName = subject['name']?.toString() ?? '';
 
-      // احتياطاً إذا subject_id غير موجود
       if (subjectId == 0 && subject['id'] != null) {
         subjectId = _parseInt(subject['id']);
       }
     }
 
-    // إذا الـ API رجع subject_name بشكل مباشر
     if (subjectName.isEmpty && json['subject_name'] != null) {
       subjectName = json['subject_name'].toString();
     }
@@ -69,29 +57,20 @@ class Assignment {
       title: json['title']?.toString() ?? '',
       body: json['body']?.toString() ?? '',
       dueDate: json['due_date']?.toString() ?? '',
-
       hasFile: _parseBool(json['has_file']),
-
       fileUrl: json['file_url']?.toString(),
       fileName: json['file_name']?.toString(),
-
       daysRemaining: _parseDouble(
         json['days_remaining'],
       ),
-
       isOverdue: _parseBool(
         json['is_overdue'],
       ),
-
       subjectId: subjectId,
-
-      // تأتي من Backend
       academicId: _parseInt(
         json['academic_id'],
       ),
-
       subjectName: subjectName,
-
       createdAt: json['created_at']?.toString() ?? '',
       updatedAt: json['updated_at']?.toString() ?? '',
     );
@@ -103,22 +82,14 @@ class Assignment {
       'title': title,
       'body': body,
       'due_date': dueDate,
-
       'has_file': hasFile,
       'file_url': fileUrl,
       'file_name': fileName,
-
       'days_remaining': daysRemaining,
       'is_overdue': isOverdue,
-
-      // رقم المادة
       'subject_id': subjectId,
-
-      // قراءة فقط من Backend
       'academic_id': academicId,
-
       'subject_name': subjectName,
-
       'created_at': createdAt,
       'updated_at': updatedAt,
     };

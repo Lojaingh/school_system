@@ -1,14 +1,9 @@
-// lib/data/services/book_service.dart
 import 'package:dio/dio.dart';
 import '../network/dio_client.dart';
 
 class BookService {
   final Dio _dio = DioClient.dio;
 
-  // ─────────────────────────────────────────────
-  // Get all books
-  // GET /books
-  // ─────────────────────────────────────────────
   Future<Response> getBooks() async {
     try {
       print('🔵 GET /books');
@@ -23,10 +18,6 @@ class BookService {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // Get book by ID
-  // GET /books/{id}
-  // ─────────────────────────────────────────────
   Future<Response> getBook(int id) async {
     try {
       print('🔵 GET /books/$id');
@@ -41,10 +32,6 @@ class BookService {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // Add book
-  // POST /books
-  // ─────────────────────────────────────────────
   Future<Response> addBook({
     required String title,
     required String summary,
@@ -72,10 +59,6 @@ class BookService {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // Update book
-  // PUT /books/{id}
-  // ─────────────────────────────────────────────
   Future<Response> updateBook({
     required int id,
     String? title,
@@ -117,10 +100,6 @@ class BookService {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // Delete book
-  // DELETE /books/{id}
-  // ─────────────────────────────────────────────
   Future<Response> deleteBook(int id) async {
     try {
       print('🔵 DELETE /books/$id');
@@ -135,10 +114,6 @@ class BookService {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // Borrow book
-  // POST /books/{id}/lend
-  // ─────────────────────────────────────────────
   Future<Response> lendBook(int bookId) async {
     try {
       print('🔵 POST /books/$bookId/lend');
@@ -158,10 +133,6 @@ class BookService {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // Return book
-  // PUT /lendings/{id}/return
-  // ─────────────────────────────────────────────
   Future<Response> returnBook(int lendingId) async {
     try {
       print('🔵 PUT /lendings/$lendingId/return');
@@ -181,10 +152,6 @@ class BookService {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // Get all lendings
-  // GET /lendings
-  // ─────────────────────────────────────────────
   Future<Response> getLendings() async {
     try {
       print('🔵 GET /lendings');
@@ -199,10 +166,6 @@ class BookService {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // Get current user's lendings
-  // GET /my/lendings
-  // ─────────────────────────────────────────────
   Future<Response> getMyLendings() async {
     try {
       print('🔵 GET /my/lendings');

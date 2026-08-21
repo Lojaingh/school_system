@@ -1,5 +1,3 @@
-// lib/cubit/class/class_state.dart
-
 part of 'class_cubit.dart';
 
 abstract class ClassState {}
@@ -14,7 +12,7 @@ class ClassLoaded extends ClassState {
   ClassLoaded(this.classes);
 }
 
-class ClassEmpty extends ClassState {} // ✅ حالة جديدة للقائمة الفارغة
+class ClassEmpty extends ClassState {}
 
 class ClassError extends ClassState {
   final String message;

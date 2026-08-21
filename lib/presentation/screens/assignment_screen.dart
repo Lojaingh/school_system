@@ -39,10 +39,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     _initialize();
   }
 
-  // ============================================================
-  // INITIALIZE
-  // ============================================================
-
   Future<void> _initialize() async {
     await _loadUserRole();
 
@@ -56,10 +52,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
       await loadClasses();
     }
   }
-
-  // ============================================================
-  // USER ROLE
-  // ============================================================
 
   Future<void> _loadUserRole() async {
     final role = await SharedPrefsHelper.getRole();
@@ -76,19 +68,11 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     );
   }
 
-  // ============================================================
-  // PERMISSIONS
-  // ============================================================
-
   bool get _isTeacher => userRole.toLowerCase() == 'teacher';
 
   bool get _isManager => userRole.toLowerCase() == 'manager';
 
   bool get _canManageAssignments => _isTeacher || _isManager;
-
-  // ============================================================
-  // LOAD SUBJECTS
-  // ============================================================
 
   Future<void> loadSubjects() async {
     try {
@@ -109,10 +93,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
       );
     }
   }
-
-  // ============================================================
-  // LOAD CLASSES
-  // ============================================================
 
   Future<void> loadClasses() async {
     if (!_canManageAssignments) return;
@@ -165,17 +145,12 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     }
   }
 
-  // ============================================================
-  // BUILD
-  // ============================================================
-
   @override
   Widget build(BuildContext context) {
     final canManageAssignments = _canManageAssignments;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -219,7 +194,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
           const SizedBox(width: 10),
         ],
       ),
-
       body: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: 20,
@@ -228,12 +202,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
           userRole: userRole,
         ),
       ),
-
-      // ========================================================
-      // ADD BUTTON
-      // TEACHER + MANAGER
-      // ========================================================
-
       floatingActionButton: canManageAssignments
           ? FloatingActionButton.extended(
               backgroundColor: AppColors.primary,
@@ -249,10 +217,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
           : null,
     );
   }
-
-  // ============================================================
-  // ADD ASSIGNMENT DIALOG
-  // ============================================================
 
   void _showAddAssignmentDialog() {
     if (!_canManageAssignments) {
@@ -296,10 +260,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      // ==================================================
-                      // TITLE
-                      // ==================================================
-
                       TextField(
                         controller: titleController,
                         style: const TextStyle(
@@ -309,15 +269,9 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                           "Title",
                         ),
                       ),
-
                       const SizedBox(
                         height: 15,
                       ),
-
-                      // ==================================================
-                      // DESCRIPTION
-                      // ==================================================
-
                       TextField(
                         controller: bodyController,
                         maxLines: 4,
@@ -328,15 +282,9 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                           "Description",
                         ),
                       ),
-
                       const SizedBox(
                         height: 15,
                       ),
-
-                      // ==================================================
-                      // DUE DATE
-                      // ==================================================
-
                       TextField(
                         controller: dueDateController,
                         readOnly: true,
@@ -367,15 +315,9 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                           }
                         },
                       ),
-
                       const SizedBox(
                         height: 15,
                       ),
-
-                      // ==================================================
-                      // SUBJECT
-                      // ==================================================
-
                       DropdownButtonFormField<SubjectModel>(
                         value: selectedSubject,
                         dropdownColor: AppColors.cardBg,
@@ -403,15 +345,9 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                           );
                         },
                       ),
-
                       const SizedBox(
                         height: 15,
                       ),
-
-                      // ==================================================
-                      // CLASS
-                      // ==================================================
-
                       if (isLoadingClasses)
                         const Padding(
                           padding: EdgeInsets.symmetric(
@@ -455,15 +391,9 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                             );
                           },
                         ),
-
                       const SizedBox(
                         height: 8,
                       ),
-
-                      // ==================================================
-                      // SUBJECT ID
-                      // ==================================================
-
                       if (selectedSubject != null)
                         Align(
                           alignment: Alignment.centerLeft,
@@ -475,11 +405,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                             ),
                           ),
                         ),
-
-                      // ==================================================
-                      // CLASS ID
-                      // ==================================================
-
                       if (selectedClass != null)
                         Align(
                           alignment: Alignment.centerLeft,
@@ -496,10 +421,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                 ),
               ),
               actions: [
-                // ========================================================
-                // CANCEL
-                // ========================================================
-
                 TextButton(
                   onPressed: () {
                     Navigator.pop(
@@ -510,11 +431,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                     "Cancel",
                   ),
                 ),
-
-                // ========================================================
-                // CREATE
-                // ========================================================
-
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
@@ -531,10 +447,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                     final body = bodyController.text.trim();
 
                     final dueDate = dueDateController.text.trim();
-
-                    // ====================================================
-                    // VALIDATION
-                    // ====================================================
 
                     if (title.isEmpty) {
                       _showError(
@@ -588,10 +500,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                       return;
                     }
 
-                    // ====================================================
-                    // CREATE
-                    // ====================================================
-
                     print(
                       '📤 Creating assignment as: $userRole',
                     );
@@ -638,10 +546,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     );
   }
 
-  // ============================================================
-  // CLASS NAME
-  // ============================================================
-
   String _className(
     Map<String, dynamic> item,
   ) {
@@ -663,10 +567,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     return 'Class ${item['id']}';
   }
 
-  // ============================================================
-  // CLASS ID
-  // ============================================================
-
   int? _classId(
     Map<String, dynamic> item,
   ) {
@@ -681,10 +581,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     );
   }
 
-  // ============================================================
-  // ERROR
-  // ============================================================
-
   void _showError(
     BuildContext context,
     String message,
@@ -696,10 +592,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
       ),
     );
   }
-
-  // ============================================================
-  // INPUT DECORATION
-  // ============================================================
 
   InputDecoration _decoration(
     String label,

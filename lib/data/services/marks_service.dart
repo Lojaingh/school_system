@@ -18,6 +18,12 @@ class MarksService {
 
     final response = await _dio.get(endpoint);
 
+    print('📥 MARKS RESPONSE: ${response.data}');
+
+    return SubjectMarksResponse.fromJson(
+      Map<String, dynamic>.from(response.data),
+    );
+
     return SubjectMarksResponse.fromJson(
       Map<String, dynamic>.from(response.data),
     );
@@ -25,6 +31,7 @@ class MarksService {
 
   Future<StudentMarksResponse> saveStudentMarks({
     required int studentId,
+    required int subjectId,
     required double participation,
     required double firstQuiz,
     required double midtermExam,
@@ -34,6 +41,7 @@ class MarksService {
     final response = await _dio.post(
       '/marks/student/$studentId',
       data: {
+        'subject_id': subjectId,
         'participation': participation,
         'first_quiz': firstQuiz,
         'midterm_exam': midtermExam,

@@ -99,9 +99,6 @@ class ScheduleCubit extends Cubit<ScheduleState> {
       subjectsResponse = await DioClient.dio.get('/subjects');
 
       if (isClosed) return;
-
-      // /staff/all مسموح للمدير فقط حسب الـBackend
-      // لذلك لا نطلبه للـSupervisor.
       if (normalizedRole == 'manager') {
         staffResponse = await DioClient.dio.get('/staff/all');
       }
@@ -121,8 +118,6 @@ class ScheduleCubit extends Cubit<ScheduleState> {
           staffResponse.data,
         );
       } else {
-        // للمشرف لا نملك staff/all،
-        // لذلك نحافظ على القائمة الحالية إن وجدت.
         _allStaff = List<StaffMember>.from(
           _allStaff,
         );
@@ -170,8 +165,6 @@ class ScheduleCubit extends Cubit<ScheduleState> {
       final schedulesResponse = await DioClient.dio.get('/schedules');
 
       if (isClosed) return;
-
-      // المدير فقط يستطيع staff/all
       if (normalizedRole == 'manager') {
         final staffResponse = await DioClient.dio.get('/staff/all');
 

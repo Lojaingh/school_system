@@ -1,5 +1,3 @@
-// lib/cubit/attendance/attendance_cubit.dart
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/model/class_students_model.dart';
 import '../../data/services/attendance_service.dart';
@@ -11,7 +9,6 @@ class AttendanceCubit extends Cubit<AttendanceState> {
 
   AttendanceCubit(this.service) : super(AttendanceInitial());
 
-  // ── جلب طلاب الصف ──
   Future<void> loadClassStudents(int classId) async {
     try {
       emit(AttendanceLoading());
@@ -29,7 +26,6 @@ class AttendanceCubit extends Cubit<AttendanceState> {
     }
   }
 
-  // ── تسجيل الحضور ──
   Future<void> markAttendance({
     required int classId,
     required List<int> absent,
@@ -55,7 +51,6 @@ class AttendanceCubit extends Cubit<AttendanceState> {
         final message =
             response.data['message'] ?? 'Attendance saved successfully';
         emit(AttendanceSaved(message));
-        // إعادة تحميل البيانات بعد الحفظ
         await loadClassStudents(classId);
       } else {
         emit(AttendanceError(

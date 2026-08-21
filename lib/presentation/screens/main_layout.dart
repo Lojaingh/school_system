@@ -39,8 +39,6 @@ import '../../cubit/student_profile/student_profile_cubit.dart';
 import '../screens/login_screen.dart';
 import 'package:school_management/presentation/screens/assignment_screen.dart';
 import 'package:school_management/utils/shared_prefs_helper.dart';
-// ✅ إزالة import غير مستخدم
-// import 'package:school_management/presentation/screens/externals_screen.dart'; // مش مستخدم
 
 class MainLayout extends StatefulWidget {
   final int initialIndex;
@@ -64,8 +62,6 @@ class _MainLayoutState extends State<MainLayout> {
 
   Future<void> _loadUserRole() async {
     final role = await SharedPrefsHelper.getRole();
-    // ✅ استخدم logging بدل print
-    // print('🔵 Loaded role: $role'); // تم التعليق لتجنب التحذير
 
     final validRoles = [
       'manager',
@@ -86,7 +82,6 @@ class _MainLayoutState extends State<MainLayout> {
     });
   }
 
-  // ✅ دالة فتح بروفايل الطالب
   void _openStudentProfile(int studentId) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -105,15 +100,13 @@ class _MainLayoutState extends State<MainLayout> {
     );
   }
 
-  // ✅ دالة فتح بروفايل الستاف - تم تعديلها
   void _openStaffProfile(int staffId, bool isManager) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => BlocProvider(
           create: (context) => StaffProfileCubit(
-            // ✅ استخدم StaffProfileRepository بدل StaffRepository
             StaffProfileRepository(
-              StaffProfileService(), // ✅ StaffService() مش staffService()
+              StaffProfileService(),
             ),
           ),
           child: StaffProfileScreen(
@@ -148,22 +141,18 @@ class _MainLayoutState extends State<MainLayout> {
 
       case 'supervisor':
         return [
-          //  const DashboardContent(),
           const AttendanceContent(),
           _buildObjectionScreen(),
-          const AssignmentScreen(),
-          const ScheduleScreen(),
+          const MarksScreen(),
         ];
 
       case 'librarian':
         return [
-          // const DashboardContent(),
           const LibraryContent(),
         ];
 
       case 'teacher':
         return [
-          // const DashboardContent(),
           const MarksScreen(),
           const AttendanceContent(),
           const AssignmentScreen(),
@@ -190,7 +179,6 @@ class _MainLayoutState extends State<MainLayout> {
     }
   }
 
-  // ✅ دالة لبناء ObjectionScreen مع جلب البيانات
   Widget _buildObjectionScreen() {
     return BlocProvider(
       create: (context) => ObjectionCubit(
@@ -202,7 +190,6 @@ class _MainLayoutState extends State<MainLayout> {
     );
   }
 
-  // ✅ دالة لبناء ExternalsScreen مع جلب البيانات
   Widget _buildExternalsScreen() {
     return BlocProvider(
       create: (context) => ExternalCubit(
@@ -235,25 +222,18 @@ class _MainLayoutState extends State<MainLayout> {
 
       case 'supervisor':
         return const [
-          //   SidebarXItem(icon: Icons.dashboard_rounded, label: 'Dashboard'),
           SidebarXItem(icon: Icons.how_to_reg_rounded, label: 'Attendance'),
           SidebarXItem(icon: Icons.gavel_rounded, label: 'Objections'),
-          SidebarXItem(icon: Icons.assignment_rounded, label: 'Assignments'),
-          SidebarXItem(icon: Icons.calendar_month_rounded, label: 'Schedule'),
+          SidebarXItem(icon: Icons.assignment_rounded, label: 'Marks'),
         ];
 
       case 'librarian':
         return const [
-          // SidebarXItem(icon: Icons.dashboard_rounded, label: 'Dashboard'),
           SidebarXItem(icon: Icons.menu_book_rounded, label: 'Library'),
         ];
 
       case 'teacher':
         return const [
-          /* SidebarXItem(
-            icon: Icons.dashboard_rounded,
-            label: 'Dashboard',
-          ),*/
           SidebarXItem(
             icon: Icons.grade_outlined,
             label: 'Marks',

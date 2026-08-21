@@ -60,166 +60,170 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.cardBg,
-      body: BlocBuilder<StudentProfileCubit, StudentProfileState>(
-        builder: (context, state) {
-          if (state is StudentProfileLoading) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
-              ),
-            );
-          }
-
-          if (state is StudentProfileError) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.error_outline_rounded,
-                    color: Colors.redAccent,
-                    size: 48,
+    return Container(
+        decoration: const BoxDecoration(
+          gradient: AppGradients.backgroundGradient,
+        ),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: BlocBuilder<StudentProfileCubit, StudentProfileState>(
+            builder: (context, state) {
+              if (state is StudentProfileLoading) {
+                return const Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.primary,
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    state.message,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                    ),
+                );
+              }
+
+              if (state is StudentProfileError) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        color: Colors.redAccent,
+                        size: 48,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        state.message,
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: loadProfile,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text("Try Again"),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: loadProfile,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text("Try Again"),
-                  ),
-                ],
-              ),
-            );
-          }
+                );
+              }
 
-          if (state is StudentProfileLoaded) {
-            final student = state.profile;
+              if (state is StudentProfileLoaded) {
+                final student = state.profile;
 
-            return SingleChildScrollView(
-              child: Column(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: const BoxDecoration(
-                      gradient: AppGradients.cardGradient,
-                    ),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          onPressed: widget.onBack,
-                          icon: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                          ),
+                return SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: const BoxDecoration(
+                          gradient: AppGradients.cardGradient,
                         ),
-
-                        const Expanded(
-                          child: Text(
-                            "Student Profile",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
+                        child: Row(
+                          children: [
+                            IconButton(
+                              onPressed: widget.onBack,
+                              icon: const Icon(
+                                Icons.arrow_back,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                        ),
 
-                        // Reset Password
-                        ElevatedButton.icon(
-                          onPressed: _showResetPassword,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 14,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          icon: const Icon(
-                            Icons.lock_reset_rounded,
-                          ),
-                          label: const Text(
-                            "Reset Password",
-                          ),
-                        ),
-
-                        const SizedBox(width: 10),
-
-                        // Edit Student
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (_) => Dialog(
-                                backgroundColor: Colors.transparent,
-                                insetPadding: const EdgeInsets.all(20),
-                                child: SizedBox(
-                                  width: 600,
-                                  child: EditStudentScreen(
-                                    student: student,
-                                    studentId: widget.studentId,
-                                  ),
+                            const Expanded(
+                              child: Text(
+                                "Student Profile",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            ).then((value) {
-                              if (value == true && mounted) {
-                                loadProfile();
-                              }
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 14,
                             ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          icon: const Icon(Icons.edit),
-                          label: const Text(
-                            "Edit Student",
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        StudentOverviewCard(
-                          student: student,
-                        ),
-                        const SizedBox(height: 20),
-                        StudentDetailsSection(
-                          student: student,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
 
-          return const SizedBox();
-        },
-      ),
-    );
+                            // Reset Password
+                            ElevatedButton.icon(
+                              onPressed: _showResetPassword,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              icon: const Icon(
+                                Icons.lock_reset_rounded,
+                              ),
+                              label: const Text(
+                                "Reset Password",
+                              ),
+                            ),
+
+                            const SizedBox(width: 10),
+
+                            // Edit Student
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (_) => Dialog(
+                                    backgroundColor: Colors.transparent,
+                                    insetPadding: const EdgeInsets.all(20),
+                                    child: SizedBox(
+                                      width: 600,
+                                      child: EditStudentScreen(
+                                        student: student,
+                                        studentId: widget.studentId,
+                                      ),
+                                    ),
+                                  ),
+                                ).then((value) {
+                                  if (value == true && mounted) {
+                                    loadProfile();
+                                  }
+                                });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              icon: const Icon(Icons.edit),
+                              label: const Text(
+                                "Edit Student",
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          children: [
+                            StudentOverviewCard(
+                              student: student,
+                            ),
+                            const SizedBox(height: 20),
+                            StudentDetailsSection(
+                              student: student,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return const SizedBox();
+            },
+          ),
+        ));
   }
 }
