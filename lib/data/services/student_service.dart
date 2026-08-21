@@ -9,6 +9,7 @@ class StudentService {
       '/staff/all',
       queryParameters: {
         'role_id': roleId,
+        'per_page': 100,
       },
     );
   }

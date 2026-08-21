@@ -5,9 +5,7 @@ import 'package:school_management/data/services/marks_service.dart';
 class MarksRepository {
   final MarksService _service;
 
-  MarksRepository(
-    this._service,
-  );
+  MarksRepository(this._service);
 
   Future<SubjectMarksResponse> getSubjectMarks({
     required String role,

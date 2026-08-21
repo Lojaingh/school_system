@@ -11,6 +11,9 @@ class StudentRepository {
     try {
       final response = await service.getStudents(roleId);
 
+      print("STUDENTS API RESPONSE:");
+      print(response.data);
+
       final List data = response.data['data'];
 
       return data.map((e) => StudentProfileModel.fromJson(e)).toList();

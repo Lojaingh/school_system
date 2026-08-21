@@ -57,8 +57,6 @@ class StaffDetailsSection extends StatelessWidget {
           _row("Gender", staff.gender),
           _divider(),
           _row("Date of Birth", staff.dob),
-          _divider(),
-          _row("Username", staff.username ?? "-"),
         ],
       ),
     );

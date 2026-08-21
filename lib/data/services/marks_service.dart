@@ -16,13 +16,12 @@ class MarksService {
     final endpoint =
         normalizedRole == 'teacher' ? '/teacher/marks' : '/supervisor/marks';
 
+    print('🔵 MARKS ROLE: $normalizedRole');
+    print('🔵 MARKS ENDPOINT: $endpoint');
+
     final response = await _dio.get(endpoint);
 
     print('📥 MARKS RESPONSE: ${response.data}');
-
-    return SubjectMarksResponse.fromJson(
-      Map<String, dynamic>.from(response.data),
-    );
 
     return SubjectMarksResponse.fromJson(
       Map<String, dynamic>.from(response.data),
@@ -38,17 +37,26 @@ class MarksService {
     required double secondQuiz,
     required double finalExam,
   }) async {
+    final requestData = {
+      'subject_id': subjectId,
+      'participation': participation,
+      'first_quiz': firstQuiz,
+      'midterm_exam': midtermExam,
+      'second_quiz': secondQuiz,
+      'final_exam': finalExam,
+    };
+
+    print('📤 SAVE MARKS');
+    print('📤 student_id: $studentId');
+    print('📤 subject_id: $subjectId');
+    print('📤 data: $requestData');
+
     final response = await _dio.post(
       '/marks/student/$studentId',
-      data: {
-        'subject_id': subjectId,
-        'participation': participation,
-        'first_quiz': firstQuiz,
-        'midterm_exam': midtermExam,
-        'second_quiz': secondQuiz,
-        'final_exam': finalExam,
-      },
+      data: requestData,
     );
+
+    print('📥 SAVE RESPONSE: ${response.data}');
 
     return StudentMarksResponse.fromJson(
       Map<String, dynamic>.from(response.data),

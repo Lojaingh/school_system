@@ -25,10 +25,10 @@ class SubjectMarksData {
   final int subjectId;
   final String? subjectName;
 
-  // الشكل القديم للأستاذ
+  // Teacher
   final List<StudentMark> students;
 
-  // الشكل الجديد للمدير والموجه
+  // Manager / Supervisor
   final List<MarksClass> classes;
 
   const SubjectMarksData({
@@ -43,25 +43,16 @@ class SubjectMarksData {
   factory SubjectMarksData.fromJson(
     Map<String, dynamic> json,
   ) {
-    // =========================================================
-    // الشكل الجديد:
-    // {
-    //   classes: [
-    //     {
-    //       class_id,
-    //       class_name,
-    //       students: [...]
-    //     }
-    //   ]
-    // }
-    // =========================================================
+    // ==========================================================
+    // MANAGER / SUPERVISOR
+    // ==========================================================
 
     final classesJson = json['classes'];
 
     if (classesJson is List) {
       return SubjectMarksData(
-        subjectId: 0,
-        subjectName: null,
+        subjectId: _toInt(json['subject_id']),
+        subjectName: json['subject_name']?.toString(),
         students: const [],
         classes: classesJson
             .whereType<Map>()
@@ -74,25 +65,29 @@ class SubjectMarksData {
       );
     }
 
-    // =========================================================
-    // الشكل القديم للأستاذ:
-    // {
-    //   subject_id,
-    //   subject_name,
-    //   students: [...]
-    // }
-    // =========================================================
+    // ==========================================================
+    // TEACHER
+    // ==========================================================
 
     final studentsJson = json['students'] as List? ?? [];
 
+    // مهم:
+    // الـTeacher API يرجع subject_id و subject_name
+    // على مستوى data وليس داخل كل student.
+    final teacherSubjectId = _toInt(json['subject_id']);
+
+    final teacherSubjectName = json['subject_name']?.toString();
+
     return SubjectMarksData(
-      subjectId: _toInt(json['subject_id']),
-      subjectName: json['subject_name']?.toString(),
+      subjectId: teacherSubjectId,
+      subjectName: teacherSubjectName,
       students: studentsJson
           .whereType<Map>()
           .map(
             (student) => StudentMark.fromLegacyJson(
               Map<String, dynamic>.from(student),
+              subjectId: teacherSubjectId > 0 ? teacherSubjectId : null,
+              subjectName: teacherSubjectName,
             ),
           )
           .toList(),
@@ -100,7 +95,10 @@ class SubjectMarksData {
     );
   }
 
-  // كل المواد الموجودة ضمن كل الصفوف
+  // ============================================================
+  // ALL SUBJECTS FOR MANAGER / SUPERVISOR
+  // ============================================================
+
   List<SubjectInfo> get availableSubjects {
     final Map<int, SubjectInfo> unique = {};
 
@@ -124,7 +122,10 @@ class SubjectMarksData {
     return result;
   }
 
-  // الطلاب حسب الصف + المادة
+  // ============================================================
+  // STUDENTS BY SUBJECT + CLASS
+  // ============================================================
+
   List<StudentMark> studentsForSubject({
     required int subjectId,
     int? classId,
@@ -137,10 +138,14 @@ class SubjectMarksData {
       }
 
       for (final student in schoolClass.students) {
-        final subject = student.subjects.cast<StudentSubjectMark?>().firstWhere(
-              (s) => s?.subjectId == subjectId,
-              orElse: () => null,
-            );
+        StudentSubjectMark? subject;
+
+        for (final item in student.subjects) {
+          if (item.subjectId == subjectId) {
+            subject = item;
+            break;
+          }
+        }
 
         if (subject == null) {
           continue;
@@ -158,14 +163,23 @@ class SubjectMarksData {
     return result;
   }
 
-  // جميع الصفوف
+  // ============================================================
+  // ALL CLASSES
+  // ============================================================
+
   List<MarksClass> get availableClasses {
     return List<MarksClass>.from(classes)
       ..sort(
-        (a, b) => a.className.compareTo(b.className),
+        (a, b) => a.className.compareTo(
+          b.className,
+        ),
       );
   }
 }
+
+// ================================================================
+// CLASS
+// ================================================================
 
 class MarksClass {
   final int classId;
@@ -198,6 +212,10 @@ class MarksClass {
   }
 }
 
+// ================================================================
+// GROUPED STUDENT
+// ================================================================
+
 class MarksGroupedStudent {
   final int studentId;
   final String studentName;
@@ -223,23 +241,35 @@ class MarksGroupedStudent {
     final subjectsJson = json['subjects'] as List? ?? [];
 
     return MarksGroupedStudent(
-      studentId: _toInt(json['student_id']),
+      studentId: _toInt(
+        json['student_id'],
+      ),
       studentName: json['student_name']?.toString() ?? '',
-      classId: _toInt(json['class_id']),
+      classId: _toInt(
+        json['class_id'],
+      ),
       className: json['class_name']?.toString(),
       subjects: subjectsJson
           .whereType<Map>()
           .map(
             (subject) => StudentSubjectMark.fromJson(
-              Map<String, dynamic>.from(subject),
+              Map<String, dynamic>.from(
+                subject,
+              ),
             ),
           )
           .toList(),
-      generalAverage: _toDouble(json['general_average']),
+      generalAverage: _toDouble(
+        json['general_average'],
+      ),
       isComplete: json['is_complete'] == true,
     );
   }
 }
+
+// ================================================================
+// SUBJECT MARK FOR GROUPED RESPONSE
+// ================================================================
 
 class StudentSubjectMark {
   final int subjectId;
@@ -278,6 +308,10 @@ class StudentSubjectMark {
   }
 }
 
+// ================================================================
+// SUBJECT INFO
+// ================================================================
+
 class SubjectInfo {
   final int id;
   final String name;
@@ -287,6 +321,10 @@ class SubjectInfo {
     required this.name,
   });
 }
+
+// ================================================================
+// FLAT STUDENT MARK
+// ================================================================
 
 class StudentMark {
   final int studentId;
@@ -317,9 +355,57 @@ class StudentMark {
     this.subjectName,
   });
 
+  // ============================================================
+  // TEACHER RESPONSE
+  // ============================================================
+  //
+  // API example:
+  //
+  // data: {
+  //   subject_id: 9,
+  //   subject_name: math1,
+  //   students: [...]
+  // }
+  //
+  // subject_id is NOT inside student.
+  //
   factory StudentMark.fromLegacyJson(
-    Map<String, dynamic> json,
-  ) {
+    Map<String, dynamic> json, {
+    int? subjectId,
+    String? subjectName,
+  }) {
+    // إذا مررنا subjectId من مستوى data
+    // نستخدمه مباشرة.
+    int? parsedSubjectId = subjectId;
+
+    // احتياطًا إذا الـstudent نفسه رجع subject_id
+    if (parsedSubjectId == null) {
+      final dynamic subjectValue = json['subject_id'];
+
+      if (subjectValue != null) {
+        final parsed = _toInt(subjectValue);
+
+        if (parsed > 0) {
+          parsedSubjectId = parsed;
+        }
+      }
+    }
+
+    // احتياط إضافي لو المادة جاءت كـobject
+    if (parsedSubjectId == null && json['subject'] is Map) {
+      final subject = Map<String, dynamic>.from(
+        json['subject'],
+      );
+
+      final parsed = _toInt(subject['id']);
+
+      if (parsed > 0) {
+        parsedSubjectId = parsed;
+      }
+
+      subjectName ??= subject['name']?.toString();
+    }
+
     return StudentMark(
       studentId: _toInt(json['student_id']),
       studentName: json['student_name']?.toString() ?? '',
@@ -330,10 +416,14 @@ class StudentMark {
       secondQuiz: _toDouble(json['second_quiz']),
       finalExam: _toDouble(json['final_exam']),
       total: _toDouble(json['total']),
-      subjectId: _toInt(json['subject_id']),
-      subjectName: json['subject_name']?.toString(),
+      subjectId: parsedSubjectId,
+      subjectName: subjectName ?? json['subject_name']?.toString(),
     );
   }
+
+  // ============================================================
+  // MANAGER / SUPERVISOR GROUPED RESPONSE
+  // ============================================================
 
   factory StudentMark.fromGroupedStudent({
     required MarksGroupedStudent student,
@@ -362,6 +452,10 @@ class StudentMark {
         finalExam != null;
   }
 }
+
+// ================================================================
+// HELPERS
+// ================================================================
 
 int _toInt(dynamic value) {
   if (value is int) {

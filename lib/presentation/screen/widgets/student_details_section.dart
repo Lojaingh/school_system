@@ -76,10 +76,6 @@ class StudentDetailsSection extends StatelessWidget {
       icon: Icons.school_outlined,
       child: Column(
         children: [
-          _infoRow(
-            "Class",
-            "Class ${student.classId ?? '-'}",
-          ),
           _divider(),
           _infoRow(
             "Status",

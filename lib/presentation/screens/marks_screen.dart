@@ -106,8 +106,6 @@ class _MarksScreenState extends State<MarksScreen> {
                   backgroundColor: Colors.green,
                 ),
               );
-
-              context.read<MarksCubit>().getSubjectMarks();
             }
 
             if (state is MarksError) {

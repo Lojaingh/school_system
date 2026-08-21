@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:school_management/constants/app_colors.dart';
 import 'package:school_management/cubit/auth/register/register_cubit.dart';
 import 'package:school_management/cubit/auth/register/register_state.dart';
@@ -16,23 +17,20 @@ class StudentForm extends StatefulWidget {
 
 class _StudentFormState extends State<StudentForm> {
   String? gender;
-  String? selectedClassId;
   DateTime? birthDate;
 
-  final genders = ["Male", "Female"];
-
-  final classes = [
-    {"id": 1, "name": "Class 1"},
-    {"id": 2, "name": "Class 2"},
-    {"id": 3, "name": "Class 3"},
-    {"id": 4, "name": "Class 4"},
-  ];
+  final gradeController = TextEditingController();
 
   final firstNameController = TextEditingController();
   final middleNameController = TextEditingController();
   final lastNameController = TextEditingController();
   final addressController = TextEditingController();
   final healthController = TextEditingController();
+
+  final genders = [
+    "Male",
+    "Female",
+  ];
 
   @override
   void dispose() {
@@ -41,6 +39,8 @@ class _StudentFormState extends State<StudentForm> {
     lastNameController.dispose();
     addressController.dispose();
     healthController.dispose();
+    gradeController.dispose();
+
     super.dispose();
   }
 
@@ -131,49 +131,41 @@ class _StudentFormState extends State<StudentForm> {
     );
   }
 
-  Widget _dropdownClass() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: AppColors.cardElement,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.cardBorder.withOpacity(0.3),
-        ),
+  Widget _gradeInput() {
+    return TextField(
+      controller: gradeController,
+      keyboardType: TextInputType.number,
+      maxLength: 2,
+      style: const TextStyle(
+        color: AppColors.textPrimary,
       ),
-      child: DropdownButton<String>(
-        value: selectedClassId,
-        hint: const Text(
-          "Class",
-          style: TextStyle(
-            color: AppColors.textHelper,
+      decoration: InputDecoration(
+        counterText: "",
+        hintText: "Choose Grade between 1 and 12",
+        hintStyle: const TextStyle(
+          color: AppColors.textHelper,
+          fontStyle: FontStyle.italic,
+        ),
+        filled: true,
+        fillColor: AppColors.cardElement,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: AppColors.cardBorder.withOpacity(0.3),
+            width: 1,
           ),
         ),
-        dropdownColor: AppColors.cardBg,
-        isExpanded: true,
-        underline: const SizedBox(),
-        icon: const Icon(
-          Icons.arrow_drop_down,
-          color: AppColors.textSecondary,
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: AppColors.primary,
+            width: 1.5,
+          ),
         ),
-        items: classes
-            .map(
-              (c) => DropdownMenuItem<String>(
-                value: c["id"].toString(),
-                child: Text(
-                  c["name"].toString(),
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
-            )
-            .toList(),
-        onChanged: (value) {
-          setState(() {
-            selectedClassId = value;
-          });
-        },
       ),
     );
   }
@@ -184,11 +176,11 @@ class _StudentFormState extends State<StudentForm> {
     lastNameController.clear();
     addressController.clear();
     healthController.clear();
+    gradeController.clear();
 
     setState(() {
       gender = null;
       birthDate = null;
-      selectedClassId = null;
     });
   }
 
@@ -235,10 +227,7 @@ class _StudentFormState extends State<StudentForm> {
                   fontSize: 14,
                 ),
               ),
-
               const SizedBox(height: 20),
-
-              // Username
               const Text(
                 "Username",
                 style: TextStyle(
@@ -246,9 +235,7 @@ class _StudentFormState extends State<StudentForm> {
                   fontSize: 13,
                 ),
               ),
-
               const SizedBox(height: 6),
-
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
@@ -265,10 +252,7 @@ class _StudentFormState extends State<StudentForm> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 14),
-
-              // Password
               const Text(
                 "Password",
                 style: TextStyle(
@@ -276,9 +260,7 @@ class _StudentFormState extends State<StudentForm> {
                   fontSize: 13,
                 ),
               ),
-
               const SizedBox(height: 6),
-
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
@@ -301,6 +283,7 @@ class _StudentFormState extends State<StudentForm> {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(dialogContext);
+
                 _clearFields();
               },
               style: ElevatedButton.styleFrom(
@@ -347,9 +330,22 @@ class _StudentFormState extends State<StudentForm> {
             onPressed: isLoading
                 ? null
                 : () async {
+                    final grade = int.tryParse(
+                      gradeController.text,
+                    );
+
                     if (gender == null ||
                         birthDate == null ||
-                        selectedClassId == null) {
+                        grade == null ||
+                        grade < 1 ||
+                        grade > 12) {
+                      AppToast.show(
+                        context,
+                        message: "Please enter Grade between 1 and 12",
+                        color: Colors.red,
+                        icon: Icons.error,
+                      );
+
                       return;
                     }
 
@@ -360,7 +356,7 @@ class _StudentFormState extends State<StudentForm> {
                       gender: gender!.toLowerCase(),
                       dob: birthDate!.toIso8601String(),
                       address: addressController.text,
-                      grade: int.parse(selectedClassId!),
+                      grade: grade,
                       healthStatus: healthController.text,
                       roleId: 6,
                     );
@@ -439,7 +435,7 @@ class _StudentFormState extends State<StudentForm> {
               addressController,
             ),
             const SizedBox(height: 12),
-            _dropdownClass(),
+            _gradeInput(),
             const SizedBox(height: 12),
             _input(
               "Health Status",

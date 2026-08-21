@@ -63,6 +63,9 @@ class MarksCubit extends Cubit<MarksState> {
           response: response,
         ),
       );
+
+      // إعادة تحميل البيانات بعد الحفظ
+      await getSubjectMarks();
     } catch (error) {
       emit(
         MarksError(
@@ -72,9 +75,7 @@ class MarksCubit extends Cubit<MarksState> {
     }
   }
 
-  String _extractErrorMessage(
-    Object error,
-  ) {
+  String _extractErrorMessage(Object error) {
     if (error is DioException) {
       final data = error.response?.data;
 

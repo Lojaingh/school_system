@@ -143,7 +143,6 @@ class _MainLayoutState extends State<MainLayout> {
         return [
           const AttendanceContent(),
           _buildObjectionScreen(),
-          const MarksScreen(),
         ];
 
       case 'librarian':
@@ -154,7 +153,6 @@ class _MainLayoutState extends State<MainLayout> {
       case 'teacher':
         return [
           const MarksScreen(),
-          const AttendanceContent(),
           const AssignmentScreen(),
         ];
 
@@ -224,7 +222,6 @@ class _MainLayoutState extends State<MainLayout> {
         return const [
           SidebarXItem(icon: Icons.how_to_reg_rounded, label: 'Attendance'),
           SidebarXItem(icon: Icons.gavel_rounded, label: 'Objections'),
-          SidebarXItem(icon: Icons.assignment_rounded, label: 'Marks'),
         ];
 
       case 'librarian':
@@ -237,10 +234,6 @@ class _MainLayoutState extends State<MainLayout> {
           SidebarXItem(
             icon: Icons.grade_outlined,
             label: 'Marks',
-          ),
-          SidebarXItem(
-            icon: Icons.how_to_reg_rounded,
-            label: 'Attendance',
           ),
           SidebarXItem(
             icon: Icons.assignment_rounded,
@@ -602,30 +595,6 @@ class _MainLayoutState extends State<MainLayout> {
                   border: Border.all(
                     color: AppColors.primary.withOpacity(0.15),
                     width: 1,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.notifications_none_rounded,
-                  color: Colors.white70,
-                  size: 22,
-                ),
-              ),
-              Positioned(
-                top: 2,
-                right: 2,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: Colors.redAccent,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.redAccent.withOpacity(0.5),
-                        blurRadius: 6,
-                        spreadRadius: 0,
-                      ),
-                    ],
                   ),
                 ),
               ),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:school_management/constants/app_colors.dart';
 import 'package:school_management/cubit/marks/marks_cubit.dart';
 import 'package:school_management/cubit/marks/marks_state.dart';
-
 import 'package:school_management/data/model/subject_marks_model.dart';
 
 class MarksEditDialog extends StatefulWidget {
@@ -141,9 +141,7 @@ class _MarksEditDialogState extends State<MarksEditDialog> {
           onPressed: () {
             Navigator.pop(context);
           },
-          child: const Text(
-            'Cancel',
-          ),
+          child: const Text('Cancel'),
         ),
         BlocBuilder<MarksCubit, MarksState>(
           builder: (context, state) {
@@ -164,9 +162,7 @@ class _MarksEditDialogState extends State<MarksEditDialog> {
                       Icons.save_outlined,
                       size: 17,
                     ),
-              label: const Text(
-                'Save',
-              ),
+              label: const Text('Save'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -184,9 +180,7 @@ class _MarksEditDialogState extends State<MarksEditDialog> {
     IconData icon,
   ) {
     return Padding(
-      padding: const EdgeInsets.only(
-        bottom: 12,
-      ),
+      padding: const EdgeInsets.only(bottom: 12),
       child: TextField(
         controller: controller,
         keyboardType: const TextInputType.numberWithOptions(
@@ -231,14 +225,31 @@ class _MarksEditDialogState extends State<MarksEditDialog> {
     );
   }
 
-  void _save() {
-    final participation = double.tryParse(_participation.text.trim());
-    final firstQuiz = double.tryParse(_firstQuiz.text.trim());
-    final midterm = double.tryParse(_midterm.text.trim());
-    final secondQuiz = double.tryParse(_secondQuiz.text.trim());
-    final finalExam = double.tryParse(_finalExam.text.trim());
+  Future<void> _save() async {
+    final participation = double.tryParse(
+      _participation.text.trim(),
+    );
 
-    // التأكد من إدخال جميع العلامات
+    final firstQuiz = double.tryParse(
+      _firstQuiz.text.trim(),
+    );
+
+    final midterm = double.tryParse(
+      _midterm.text.trim(),
+    );
+
+    final secondQuiz = double.tryParse(
+      _secondQuiz.text.trim(),
+    );
+
+    final finalExam = double.tryParse(
+      _finalExam.text.trim(),
+    );
+
+    // ==========================================================
+    // VALIDATION
+    // ==========================================================
+
     if (participation == null ||
         firstQuiz == null ||
         midterm == null ||
@@ -254,7 +265,6 @@ class _MarksEditDialogState extends State<MarksEditDialog> {
       return;
     }
 
-    // التأكد أن العلامات بين 0 و 20
     if (participation < 0 ||
         participation > 20 ||
         firstQuiz < 0 ||
@@ -275,21 +285,31 @@ class _MarksEditDialogState extends State<MarksEditDialog> {
       return;
     }
 
-    // التأكد من وجود المادة
-    if (widget.student.subjectId == null) {
+    // ==========================================================
+    // SUBJECT ID
+    // ==========================================================
+
+    final subjectId = widget.student.subjectId;
+
+    if (subjectId == null || subjectId <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
             'Subject information is missing.',
           ),
+          backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
-    context.read<MarksCubit>().saveStudentMarks(
+    // ==========================================================
+    // SAVE
+    // ==========================================================
+
+    await context.read<MarksCubit>().saveStudentMarks(
           studentId: widget.student.studentId,
-          subjectId: widget.student.subjectId!,
+          subjectId: subjectId,
           participation: participation,
           firstQuiz: firstQuiz,
           midtermExam: midterm,
@@ -297,6 +317,8 @@ class _MarksEditDialogState extends State<MarksEditDialog> {
           finalExam: finalExam,
         );
 
-    Navigator.pop(context);
+    if (mounted) {
+      Navigator.pop(context);
+    }
   }
 }
