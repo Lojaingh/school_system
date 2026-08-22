@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:school_management/constants/app_colors.dart';
+
 import 'package:school_management/cubit/resetpassword/reset_password_cubit.dart';
+
 import 'package:school_management/cubit/resetpassword/reset_password_state.dart';
 
 import 'package:school_management/data/repository/reset_password_repository.dart';
+
 import 'package:school_management/data/services/reset_password_service.dart';
+
+import 'package:school_management/presentation/screen/widgets/app_error_dialog.dart';
 
 class ResetPasswordDialog extends StatefulWidget {
   final int userId;
@@ -48,10 +55,12 @@ class _ResetPasswordDialogState extends State<ResetPasswordDialog> {
           }
 
           if (state is ResetPasswordError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
+            showDialog(
+              context: context,
+              builder: (_) => AppErrorDialog(
+                title: 'Reset Password Failed',
+                message: state.message,
+                icon: Icons.error_outline_rounded,
               ),
             );
           }
@@ -127,11 +136,8 @@ class _ResetPasswordDialogState extends State<ResetPasswordDialog> {
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: isLoading
-                              ? null
-                              : () => Navigator.pop(
-                                    context,
-                                  ),
+                          onPressed:
+                              isLoading ? null : () => Navigator.pop(context),
                           child: const Text("Cancel"),
                         ),
                       ),
@@ -147,25 +153,34 @@ class _ResetPasswordDialogState extends State<ResetPasswordDialog> {
                                   final confirmation =
                                       confirmationController.text.trim();
 
+                                  // Empty fields
                                   if (password.isEmpty ||
                                       confirmation.isEmpty) {
-                                    return;
-                                  }
-
-                                  if (password != confirmation) {
-                                    ScaffoldMessenger.of(
-                                      context,
-                                    ).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          "Passwords do not match",
-                                        ),
-                                        backgroundColor: Colors.red,
+                                    showDialog(
+                                      context: context,
+                                      builder: (_) => const AppErrorDialog(
+                                        title: 'Error',
+                                        message: 'Please fill all fields.',
+                                        icon: Icons.error_outline_rounded,
                                       ),
                                     );
                                     return;
                                   }
 
+                                  // Passwords do not match
+                                  if (password != confirmation) {
+                                    showDialog(
+                                      context: context,
+                                      builder: (_) => const AppErrorDialog(
+                                        title: 'Password Error',
+                                        message: 'Passwords do not match.',
+                                        icon: Icons.lock_outline_rounded,
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  // Send request
                                   context
                                       .read<ResetPasswordCubit>()
                                       .resetPassword(

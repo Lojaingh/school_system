@@ -35,8 +35,10 @@ class MarksSaved extends MarksState {
 
 class MarksError extends MarksState {
   final String message;
+  final int? statusCode;
 
   const MarksError({
     required this.message,
+    this.statusCode,
   });
 }

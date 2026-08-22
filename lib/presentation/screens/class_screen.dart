@@ -1,5 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:school_management/presentation/screen/widgets/app_error_dialog.dart';
 
 import 'package:school_management/presentation/screen/widgets/class_content.dart';
 
@@ -47,7 +49,23 @@ class ClassScreen extends StatelessWidget {
             ),
           ],
         ),
-        body: const ClassContent(),
+        body: BlocListener<ClassCubit, ClassState>(
+          listener: (context, state) {
+            if (state is ClassDistributionError) {
+              showDialog(
+                context: context,
+                builder: (_) => AppErrorDialog(
+                  title: 'Distribution Failed',
+                  message: state.message,
+                  icon: Icons.groups_rounded,
+                ),
+              ).then((_) {
+                context.read<ClassCubit>().loadClasses();
+              });
+            }
+          },
+          child: const ClassContent(),
+        ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () {
             _showAddClassDialog(context);
@@ -448,27 +466,30 @@ class ClassScreen extends StatelessWidget {
                 );
 
                 if (capacity != null && capacity > 0) {
-                  context.read<ClassCubit>().distributeStudents(
-                        capacity,
-                      );
-
                   Navigator.pop(dialogContext);
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Students distributed successfully!',
+                  context
+                      .read<ClassCubit>()
+                      .distributeStudents(capacity)
+                      .catchError((error) {
+                    showDialog(
+                      context: context,
+                      builder: (_) => AppErrorDialog(
+                        title: 'Distribution Failed',
+                        message: error is DioException &&
+                                error.response?.statusCode == 409
+                            ? 'Students are already distributed.'
+                            : 'Something went wrong.',
+                        icon: Icons.groups_rounded,
                       ),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
+                    );
+                  });
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Please enter a valid capacity',
-                      ),
-                      backgroundColor: Colors.red,
+                  showDialog(
+                    context: context,
+                    builder: (_) => const AppErrorDialog(
+                      title: 'Invalid Capacity',
+                      message: 'Please enter a valid capacity number.',
                     ),
                   );
                 }

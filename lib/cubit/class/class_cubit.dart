@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:dio/dio.dart';
 
 import 'package:school_management/data/model/student_profile_model.dart';
-
 import '../../data/model/class_model.dart';
 import '../../data/repository/class_repository.dart';
 
@@ -12,10 +12,6 @@ class ClassCubit extends Cubit<ClassState> {
 
   ClassCubit(this.repository) : super(ClassInitial());
 
-  // ============================================================
-  // GET CLASSES
-  // ============================================================
-
   Future<void> loadClasses() async {
     try {
       emit(ClassLoading());
@@ -25,13 +21,14 @@ class ClassCubit extends Cubit<ClassState> {
       emit(ClassLoaded(classes));
     } catch (e) {
       print('❌ ClassCubit Error: $e');
-      emit(ClassError(e.toString()));
+
+      emit(
+        ClassError(
+          _cleanErrorMessage(e),
+        ),
+      );
     }
   }
-
-  // ============================================================
-  // GET CLASSES BY GRADE
-  // ============================================================
 
   Future<void> loadClassesByGrade(int year) async {
     try {
@@ -42,13 +39,14 @@ class ClassCubit extends Cubit<ClassState> {
       emit(ClassLoaded(classes));
     } catch (e) {
       print('❌ ClassCubit Error: $e');
-      emit(ClassError(e.toString()));
+
+      emit(
+        ClassError(
+          _cleanErrorMessage(e),
+        ),
+      );
     }
   }
-
-  // ============================================================
-  // ADD CLASS
-  // ============================================================
 
   Future<void> addClass({
     required int year,
@@ -66,14 +64,15 @@ class ClassCubit extends Cubit<ClassState> {
 
       await loadClasses();
     } catch (e) {
-      print('❌ ClassCubit Error adding class: $e');
-      emit(ClassError(e.toString()));
+      print('❌ Add class error: $e');
+
+      emit(
+        ClassError(
+          _cleanErrorMessage(e),
+        ),
+      );
     }
   }
-
-  // ============================================================
-  // DELETE CLASS
-  // ============================================================
 
   Future<void> deleteClass(int id) async {
     try {
@@ -83,14 +82,15 @@ class ClassCubit extends Cubit<ClassState> {
 
       await loadClasses();
     } catch (e) {
-      print('❌ ClassCubit Error deleting class: $e');
-      emit(ClassError(e.toString()));
+      print('❌ Delete class error: $e');
+
+      emit(
+        ClassError(
+          _cleanErrorMessage(e),
+        ),
+      );
     }
   }
-
-  // ============================================================
-  // MOVE STUDENT
-  // ============================================================
 
   Future<void> moveStudent({
     required int userId,
@@ -104,57 +104,54 @@ class ClassCubit extends Cubit<ClassState> {
 
       await loadClasses();
     } catch (e) {
-      print('❌ ClassCubit Error moving student: $e');
-      emit(ClassError(e.toString()));
-      rethrow;
+      print('❌ Move student error: $e');
+
+      emit(
+        ClassError(
+          _cleanErrorMessage(e),
+        ),
+      );
     }
   }
 
-  // ============================================================
-  // DISTRIBUTE STUDENTS
-  // ============================================================
-
-  Future<void> distributeStudents(int capacity) async {
+  Future<bool> distributeStudents(int capacity) async {
     try {
-      emit(ClassLoading());
-
       await repository.distributeStudents(capacity);
-
       await loadClasses();
+      return true;
     } catch (e) {
       print('❌ ClassCubit Error distributing students: $e');
-      emit(ClassError(e.toString()));
+
+      if (e is DioException && e.response?.statusCode == 409) {
+        emit(
+          ClassDistributionError('Students are already distributed.'),
+        );
+        return false;
+      }
+
+      emit(
+        ClassDistributionError(
+          _cleanErrorMessage(e),
+        ),
+      );
+
+      return false;
     }
   }
-
-  // ============================================================
-  // GET SUPERVISORS
-  // ============================================================
 
   Future<List<Map<String, dynamic>>> getSupervisors() async {
     try {
-      print('🔵 ClassCubit: loading supervisors...');
-
       final supervisors = await repository.getSupervisors();
-
-      print(
-        '🟢 ClassCubit: '
-        '${supervisors.length} supervisors found',
-      );
 
       return supervisors;
     } catch (e) {
       print(
-        '❌ ClassCubit Error loading supervisors: $e',
+        '❌ Supervisors error: $e',
       );
 
       return [];
     }
   }
-
-  // ============================================================
-  // UPDATE CLASS SUPERVISOR
-  // ============================================================
 
   Future<void> updateClassSupervisor({
     required int classId,
@@ -162,8 +159,7 @@ class ClassCubit extends Cubit<ClassState> {
   }) async {
     try {
       print(
-        '🔵 Updating supervisor '
-        '$supervisorId for class $classId',
+        '🔵 Updating supervisor $supervisorId for class $classId',
       );
 
       await repository.updateClassSupervisor(
@@ -178,83 +174,55 @@ class ClassCubit extends Cubit<ClassState> {
       await loadClasses();
     } catch (e) {
       print(
-        '❌ ClassCubit updateClassSupervisor Error: $e',
+        '❌ Update supervisor error: $e',
       );
 
-      emit(ClassError(e.toString()));
-
-      rethrow;
+      emit(
+        ClassError(
+          _cleanErrorMessage(e),
+        ),
+      );
     }
   }
-
-  // ============================================================
-  // OLD ASSIGN SUPERVISOR
-  // ============================================================
 
   Future<void> assignSupervisor({
     required int classId,
     required int supervisorId,
   }) async {
     try {
-      print(
-        '🔵 Assigning supervisor $supervisorId '
-        'to class $classId',
-      );
-
       await repository.assignSupervisor(
         classId: classId,
         supervisorId: supervisorId,
       );
 
-      print(
-        '🟢 Supervisor assigned successfully',
-      );
-
       await loadClasses();
     } catch (e) {
       print(
-        '❌ ClassCubit assignSupervisor Error: $e',
+        '❌ Assign supervisor error: $e',
       );
 
-      emit(ClassError(e.toString()));
-
-      rethrow;
+      emit(
+        ClassError(
+          _cleanErrorMessage(e),
+        ),
+      );
     }
   }
-
-  // ============================================================
-  // GET STUDENTS FOR CLASS
-  // ============================================================
 
   Future<List<StudentProfileModel>> getStudentsForClass(
     int classId,
     int year,
   ) async {
     try {
-      print(
-        '🔵 Getting students for class: $classId',
-      );
-
-      final students = await repository.getClassStudents(classId);
-
-      print(
-        '🔵 Found ${students.length} '
-        'students in class $classId',
-      );
-
-      return students;
+      return await repository.getClassStudents(classId);
     } catch (e) {
       print(
-        '❌ Error getting students for class: $e',
+        '❌ Students error: $e',
       );
 
       return [];
     }
   }
-
-  // ============================================================
-  // GET STUDENTS BY GRADE
-  // ============================================================
 
   Future<List<StudentProfileModel>> getStudentsByGrade(
     int year,
@@ -262,27 +230,45 @@ class ClassCubit extends Cubit<ClassState> {
     return repository.getStudentsByGrade(year);
   }
 
-  // ============================================================
-  // GET ALL STUDENTS
-  // ============================================================
-
   Future<List<StudentProfileModel>> fetchAllStudents() {
     return repository.getAllStudents();
   }
-
-  // ============================================================
-  // GET ALL CLASSES
-  // ============================================================
 
   Future<List<SchoolClass>> fetchAllClasses() {
     return repository.getClasses();
   }
 
-  // ============================================================
-  // REFRESH
-  // ============================================================
-
   void refreshClasses() {
     loadClasses();
+  }
+
+  String _cleanErrorMessage(dynamic error) {
+    if (error is DioException) {
+      final status = error.response?.statusCode;
+
+      if (status == 403) {
+        return "You are not allowed to perform this action.";
+      }
+
+      if (status == 401) {
+        return "Your session has expired. Please login again.";
+      }
+
+      if (status == 404) {
+        return "Requested data not found.";
+      }
+
+      if (status == 500) {
+        return "Server error. Please try again later.";
+      }
+
+      final data = error.response?.data;
+
+      if (data is Map && data['message'] != null) {
+        return data['message'].toString();
+      }
+    }
+
+    return "Something went wrong. Please try again.";
   }
 }

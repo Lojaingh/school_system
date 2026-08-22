@@ -6,6 +6,12 @@ class ClassInitial extends ClassState {}
 
 class ClassLoading extends ClassState {}
 
+class ClassDistributionError extends ClassState {
+  final String message;
+
+  ClassDistributionError(this.message);
+}
+
 class ClassLoaded extends ClassState {
   final List<SchoolClass> classes;
 

@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/data/repository/auth_repository.dart';
 import 'package:school_management/utils/shared_prefs_helper.dart';
 import 'login_state.dart';
+import 'package:dio/dio.dart';
 
 class LoginCubit extends Cubit<LoginState> {
   final AuthRepository repository;
@@ -23,17 +24,13 @@ class LoginCubit extends Cubit<LoginState> {
       await SharedPrefsHelper.saveToken(
         response.token,
       );
+
       final role = response.roleTitle ?? 'unknown';
 
-      // 4. حفظ الدور
-      await SharedPrefsHelper.saveRole(
-        role,
-      );
       await SharedPrefsHelper.saveRole(role);
 
-      print(
-        '🔵 Login successful - Role: $role',
-      );
+      print('🔵 Login successful - Role: $role');
+
       emit(
         LoginSuccess(
           response.token,
@@ -41,14 +38,27 @@ class LoginCubit extends Cubit<LoginState> {
         ),
       );
     } catch (e) {
-      print(
-        '❌ Login error: $e',
-      );
+      print('❌ Login error: $e');
+
+      String message = "Something went wrong. Please try again.";
+
+      if (e is DioException) {
+        final data = e.response?.data;
+
+        if (e.response?.statusCode == 401) {
+          message = data is Map
+              ? data['message'] ?? "Username or password is incorrect"
+              : "Username or password is incorrect";
+        }
+      } else {
+        // إذا الريبو حولها لـ Exception عادية
+        if (e.toString().contains("Username or password is incorrect")) {
+          message = "Username or password is incorrect";
+        }
+      }
 
       emit(
-        LoginError(
-          e.toString(),
-        ),
+        LoginError(message),
       );
     }
   }

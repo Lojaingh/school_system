@@ -246,12 +246,16 @@ class _StaffScreenState extends State<StaffScreen> {
                           child: Text("Manager"),
                         ),
                         DropdownMenuItem(
-                          value: 2,
-                          child: Text("Assistant"),
-                        ),
-                        DropdownMenuItem(
                           value: 3,
                           child: Text("Supervisor"),
+                        ),
+                        DropdownMenuItem(
+                          value: 4,
+                          child: Text("Libraian"),
+                        ),
+                        DropdownMenuItem(
+                          value: 5,
+                          child: Text("Teacher"),
                         ),
                       ],
                       onChanged: _changeRole,

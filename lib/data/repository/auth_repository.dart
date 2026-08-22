@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:school_management/data/model/profile_model.dart';
 import '../model/login_response.dart';
 import '../services/auth_service.dart';
@@ -26,6 +27,8 @@ class AuthRepository {
       } else {
         throw Exception('Login failed: ${response.statusCode}');
       }
+    } on DioException catch (e) {
+      rethrow;
     } catch (e) {
       throw Exception('Login error: $e');
     }

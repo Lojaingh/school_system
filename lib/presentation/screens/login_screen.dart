@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:school_management/cubit/auth/login/login_cubit.dart';
 import 'package:school_management/cubit/auth/login/login_state.dart';
+import 'package:school_management/presentation/screen/widgets/app_error_dialog.dart';
 import '../../../constants/app_colors.dart';
 import '../screen/dashboard_page.dart';
 
@@ -56,8 +57,13 @@ class _LoginScreenState extends State<LoginScreen> {
               );
             }
             if (state is LoginError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
+              showDialog(
+                context: context,
+                builder: (_) => AppErrorDialog(
+                  title: 'Login Failed',
+                  message: state.message,
+                  icon: Icons.error_outline_rounded,
+                ),
               );
             }
           },

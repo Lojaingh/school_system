@@ -11,12 +11,28 @@ class MarksCubit extends Cubit<MarksState> {
 
   MarksCubit(this._repository) : super(const MarksInitial());
 
+  // ============================================================
+  // GET MARKS
+  // ============================================================
+
   Future<void> getSubjectMarks() async {
     emit(const MarksLoading());
 
     try {
       final role =
           (await SharedPrefsHelper.getRole())?.trim().toLowerCase() ?? '';
+
+      if (role.isEmpty) {
+        emit(
+          const MarksError(
+            message: 'User role not found. Please login again.',
+            statusCode: 401,
+          ),
+        );
+        return;
+      }
+
+      print('🔵 MARKS CUBIT ROLE: $role');
 
       final response = await _repository.getSubjectMarks(
         role: role,
@@ -28,13 +44,26 @@ class MarksCubit extends Cubit<MarksState> {
         ),
       );
     } catch (error) {
+      print('❌ GET MARKS ERROR: $error');
+
+      final errorInfo = _extractError(error);
+
+      if (errorInfo.statusCode == 401) {
+        await _clearSession();
+      }
+
       emit(
         MarksError(
-          message: _extractErrorMessage(error),
+          message: errorInfo.message,
+          statusCode: errorInfo.statusCode,
         ),
       );
     }
   }
+
+  // ============================================================
+  // SAVE STUDENT MARKS
+  // ============================================================
 
   Future<void> saveStudentMarks({
     required int studentId,
@@ -58,38 +87,180 @@ class MarksCubit extends Cubit<MarksState> {
         finalExam: finalExam,
       );
 
+      print('✅ MARKS SAVED SUCCESSFULLY');
+
       emit(
         MarksSaved(
           response: response,
         ),
       );
-
-      // إعادة تحميل البيانات بعد الحفظ
-      await getSubjectMarks();
     } catch (error) {
+      print('❌ SAVE MARKS ERROR: $error');
+
+      final errorInfo = _extractError(error);
+
+      if (errorInfo.statusCode == 401) {
+        await _clearSession();
+      }
+
       emit(
         MarksError(
-          message: _extractErrorMessage(error),
+          message: errorInfo.message,
+          statusCode: errorInfo.statusCode,
         ),
       );
     }
   }
 
-  String _extractErrorMessage(Object error) {
+  // ============================================================
+  // RELOAD AFTER SAVE
+  // ============================================================
+
+  Future<void> _reloadMarksAfterSave() async {
+    try {
+      final role =
+          (await SharedPrefsHelper.getRole())?.trim().toLowerCase() ?? '';
+
+      if (role.isEmpty) {
+        return;
+      }
+
+      final response = await _repository.getSubjectMarks(
+        role: role,
+      );
+
+      emit(
+        MarksLoaded(
+          data: response.data,
+        ),
+      );
+    } catch (error) {
+      print('⚠️ MARKS RELOAD ERROR: $error');
+
+      // هون ما منحوّل النجاح لخطأ.
+      // الحفظ أصلاً نجح، بس إعادة التحميل فشلت.
+    }
+  }
+
+  // ============================================================
+  // ERROR HANDLING
+  // ============================================================
+
+  _MarksErrorInfo _extractError(Object error) {
     if (error is DioException) {
+      final statusCode = error.response?.statusCode;
       final data = error.response?.data;
 
+      print('❌ Dio Status Code: $statusCode');
+      print('❌ Dio Response: $data');
+
+      // Laravel غالباً بيرجع message
       if (data is Map && data['message'] != null) {
-        return data['message'].toString();
+        return _MarksErrorInfo(
+          statusCode: statusCode,
+          message: data['message'].toString(),
+        );
       }
 
-      if (error.message != null && error.message!.isNotEmpty) {
-        return error.message!;
+      // Validation errors 422
+      if (statusCode == 422) {
+        if (data is Map && data['errors'] is Map) {
+          final errors = data['errors'] as Map;
+
+          final firstError = errors.values.first;
+
+          if (firstError is List && firstError.isNotEmpty) {
+            return _MarksErrorInfo(
+              statusCode: statusCode,
+              message: firstError.first.toString(),
+            );
+          }
+        }
+
+        return const _MarksErrorInfo(
+          statusCode: 422,
+          message: 'Please check the entered data and try again.',
+        );
       }
 
-      return 'Something went wrong. Please try again.';
+      switch (statusCode) {
+        case 400:
+          return const _MarksErrorInfo(
+            statusCode: 400,
+            message: 'Invalid request.',
+          );
+
+        case 401:
+          return const _MarksErrorInfo(
+            statusCode: 401,
+            message: 'Your session has expired. Please login again.',
+          );
+
+        case 403:
+          return const _MarksErrorInfo(
+            statusCode: 403,
+            message: 'You do not have permission to perform this action.',
+          );
+
+        case 404:
+          return const _MarksErrorInfo(
+            statusCode: 404,
+            message: 'The requested data was not found.',
+          );
+
+        case 405:
+          return const _MarksErrorInfo(
+            statusCode: 405,
+            message: 'This action is not allowed.',
+          );
+
+        case 409:
+          return const _MarksErrorInfo(
+            statusCode: 409,
+            message: 'This request conflicts with existing data.',
+          );
+
+        case 500:
+          return const _MarksErrorInfo(
+            statusCode: 500,
+            message: 'Server error. Please try again later.',
+          );
+
+        default:
+          return const _MarksErrorInfo(
+            message: 'Something went wrong. Please try again.',
+          );
+      }
     }
 
-    return error.toString();
+    print('❌ UNKNOWN ERROR: $error');
+
+    return const _MarksErrorInfo(
+      message: 'Something went wrong. Please try again.',
+    );
   }
+
+  // ============================================================
+  // CLEAR SESSION
+  // ============================================================
+
+  Future<void> _clearSession() async {
+    await SharedPrefsHelper.clearToken();
+    await SharedPrefsHelper.clearRole();
+    await SharedPrefsHelper.clearUserId();
+  }
+}
+
+// ============================================================
+// ERROR MODEL
+// ============================================================
+
+class _MarksErrorInfo {
+  final int? statusCode;
+  final String message;
+
+  const _MarksErrorInfo({
+    this.statusCode,
+    required this.message,
+  });
 }

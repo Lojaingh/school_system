@@ -27,7 +27,6 @@ class _StaffFormState extends State<StaffForm> {
   final genders = ["male", "female"];
 
   final roles = [
-    {"id": "2", "title": "Assistant"},
     {"id": "3", "title": "Supervisor"},
     {"id": "4", "title": "Librarian"},
     {"id": "5", "title": "Teacher"},

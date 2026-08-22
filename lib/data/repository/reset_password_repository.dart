@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+
 import '../services/reset_password_service.dart';
 
 class ResetPasswordRepository {
@@ -25,8 +26,30 @@ class ResetPasswordRepository {
     } on DioException catch (e) {
       print('RESET PASSWORD ERROR: ${e.response?.data}');
 
+      final data = e.response?.data;
+
+      if (data is Map) {
+        // Laravel validation errors
+        if (data['errors'] != null && data['errors'] is Map) {
+          final errors = data['errors'] as Map;
+
+          final firstError = errors.values.first;
+
+          if (firstError is List && firstError.isNotEmpty) {
+            throw Exception(firstError.first.toString());
+          }
+        }
+
+        // Laravel message
+        if (data['message'] != null) {
+          throw Exception(
+            data['message'].toString(),
+          );
+        }
+      }
+
       throw Exception(
-        e.response?.data?.toString() ?? e.message ?? 'Failed to reset password',
+        e.message ?? 'Failed to reset password',
       );
     }
   }

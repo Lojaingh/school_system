@@ -310,14 +310,14 @@ class _ClassContentState extends State<ClassContent> {
     SchoolClass classItem,
     List<Map<String, dynamic>> supervisors,
   ) {
-    int? selectedSupervisorId = classItem.supervisorId;
+    int? selectedSupervisorId;
 
     final supervisorIds =
         supervisors.map(_getSupervisorId).whereType<int>().toSet();
 
-    if (selectedSupervisorId != null &&
-        !supervisorIds.contains(selectedSupervisorId)) {
-      selectedSupervisorId = null;
+    if (classItem.supervisorId != null &&
+        supervisorIds.contains(classItem.supervisorId)) {
+      selectedSupervisorId = classItem.supervisorId;
     }
 
     showDialog(
@@ -358,7 +358,7 @@ class _ClassContentState extends State<ClassContent> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<int?>(
+                  DropdownButtonFormField<int>(
                     value: selectedSupervisorId,
                     dropdownColor: const Color(0xFF1E2746),
                     style: const TextStyle(
@@ -383,8 +383,8 @@ class _ClassContentState extends State<ClassContent> {
                       ),
                     ),
                     items: [
-                      const DropdownMenuItem<int?>(
-                        value: null,
+                      const DropdownMenuItem<int>(
+                        value: -1,
                         child: Text(
                           'No Supervisor',
                           style: TextStyle(
@@ -400,7 +400,7 @@ class _ClassContentState extends State<ClassContent> {
                         (supervisor) {
                           final id = _getSupervisorId(supervisor)!;
 
-                          return DropdownMenuItem<int?>(
+                          return DropdownMenuItem<int>(
                             value: id,
                             child: Text(
                               _getSupervisorName(supervisor),
@@ -414,7 +414,7 @@ class _ClassContentState extends State<ClassContent> {
                     ],
                     onChanged: (value) {
                       setStateDialog(() {
-                        selectedSupervisorId = value;
+                        selectedSupervisorId = value == -1 ? null : value;
                       });
                     },
                   ),
